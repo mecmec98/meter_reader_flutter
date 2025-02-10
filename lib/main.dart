@@ -13,9 +13,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      initialRoute: '/',
       routes: {
-        '/postmeterreading': (context) => Postmeterreading()
+        '/': (context) => HomePage(),
+        '/postmeterreading': (context) => Postmeterreading(),
       },
     );
   }

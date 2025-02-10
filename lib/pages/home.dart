@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:meter_reader_flutter/models/category_model.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:meter_reader_flutter/pages/postmeterreading.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'dart:io';
-import 'package:meter_reader_flutter/pages/postmeterreading.dart';
+//import 'package:path/path.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
+
+// import 'dart:io';
+// import 'package:meter_reader_flutter/pages/postmeterreading.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'package:sqflite/sqflite.dart';
+// import 'package:meter_reader_flutter/models/category_model.dart';
+// import 'package:file_picker/file_picker.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -17,20 +19,29 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<CategoryModel> categories = [];
+  Future<Map<String, dynamic>?>? _masterData;
+  // List<CategoryModel> categories = [];
 
-  void _getCategories() {
-    categories = CategoryModel.getCategories();
-  }
+  // void _getCategories() {
+  //   categories = CategoryModel.getCategories();
+  // }
 
   @override
-  void _initState() {
-    _getCategories();
+  void initState() {
+    super.initState();
+    _fetchData();
+    // _getCategories();
+  }
+
+  void _fetchData() {
+    setState(() {
+      _masterData = DatabaseHelper().getMasterByID(1);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    _getCategories();
+    // _getCategories();
     return Scaffold(
       appBar: appBar(),
       body: Column(
@@ -40,13 +51,49 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             height: 20,
           ),
-          categoriesSection()
+          menuButtons(),
+          SizedBox(
+            height: 20,
+          ),
+          Center(child: databaseConnectionSample())
         ],
       ),
     );
   }
 
-  Column categoriesSection() {
+  Container databaseConnectionSample() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: _masterData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else if (!snapshot.hasData || snapshot.data == null) {
+            return Text('No data found');
+          } else {
+            final data = snapshot.data!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ACC: ${data['ACC1']}'),
+                Text('Name: ${data['NAME']}'),
+                Text('ADDRESS:${data['ADDRESS']}'),
+              ],
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Column menuButtons() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -72,10 +119,7 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.only(top: 1, right: 50, left: 50),
               child: GestureDetector(
                 onTap: () {
-                  Navigator.of(context as BuildContext).push(
-                    MaterialPageRoute(
-                        builder: (context) => const Postmeterreading()),
-                  );
+                  Navigator.pushNamed(context, '/postmeterreading');
                 },
                 child: Container(
                   height: 100,
@@ -188,6 +232,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         )
+        //Commented Container sample
         // Container(
         //   height: 600,
         //   //color: Colors.blue,
@@ -234,35 +279,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Container searchBar() {
-    return Container(
-      margin: EdgeInsets.only(top: 40, left: 20, right: 20),
-      decoration: BoxDecoration(boxShadow: [
-        BoxShadow(
-          color: Color.fromARGB(255, 230, 223, 223).withValues(),
-          blurRadius: 8,
-          spreadRadius: 0.0,
-        )
-      ]),
-      child: TextField(
-          decoration: InputDecoration(
-        hintText: 'Search',
-        hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
-        filled: true,
-        fillColor: Colors.white,
-        prefixIcon: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: SvgPicture.asset(
-            'assets/icons/search.svg',
-            colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          ),
-        ),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none),
-      )),
-    );
-  }
+  
 
   AppBar appBar() {
     return AppBar(
