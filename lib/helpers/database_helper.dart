@@ -60,4 +60,15 @@ class DatabaseHelper {
     );
     return result.isNotEmpty ? result.first : null;
   }
+
+    Future<List<Map<String, dynamic>>> getMasterByIDforlist({int limit = 8, int offset = 0}) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME','ADDRESS','MNO'],
+      limit: limit,
+      offset: offset,
+    );
+    return result;
+  }
 }

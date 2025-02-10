@@ -159,7 +159,11 @@ class _HomePageState extends State<HomePage> {
             //Edit Meter Reading
             Padding(
               padding: EdgeInsets.only(top: 20, right: 50, left: 50),
-              child: Container(
+              child: GestureDetector(
+                onTap: () {
+                   Navigator.pushNamed(context, '/sample');
+                },
+                 child: Container(
                 height: 100,
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -192,6 +196,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              )
+             
             ),
             //Print Bill
             Padding(
