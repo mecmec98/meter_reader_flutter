@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -22,7 +22,7 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-     // On Linux in debug mode, initialize the ffi database factory.
+    // On Linux in debug mode, initialize the ffi database factory.
     if (Platform.isLinux && kDebugMode) {
       print("Debug mode on Linux detected. Initializing sqflite ffi.");
       sqfliteFfiInit();
@@ -53,7 +53,7 @@ class DatabaseHelper {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
-      columns: ['ACC1','ADDRESS','NAME'],
+      columns: ['ACC1', 'ADDRESS', 'NAME'],
       where: '_id = ?',
       whereArgs: [id],
       limit: 1,
@@ -61,14 +61,52 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
-    Future<List<Map<String, dynamic>>> getMasterByIDforlist({int limit = 8, int offset = 0}) async {
+  Future<List<Map<String, dynamic>>> getMasterByIDforlist(
+      {int limit = 8, int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
-      columns: ['NAME','ADDRESS','MNO'],
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
       limit: limit,
       offset: offset,
     );
     return result;
+  }
+
+  Future<Map<String, dynamic>?> getCardByID(int id) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: [
+        'NAME',
+        'ADDRESS',
+        'MNO',
+        '_id',
+        'ACC1',
+        'ZB',
+        'CLSSSZ',
+        'BRAND',
+        'PREADING',
+        'CREADING',
+        'ARREARS',
+        'ARO',
+      ],
+      where: '_id=?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  Future<Map<String, dynamic>?> getClassfromRates(int classcode) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'rates',
+      columns: ['LTYPE'],
+      where: 'code=?',
+      whereArgs: [classcode],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
   }
 }

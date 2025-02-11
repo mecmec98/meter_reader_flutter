@@ -5,11 +5,14 @@ class PostmeterlistModel {
   String postName;
   String postAddress;
   String postMeterno;
+  int postID;
+
 
   PostmeterlistModel({
     required this.postName,
     required this.postAddress,
     required this.postMeterno,
+    required this.postID,
   });
 
   factory PostmeterlistModel.fromMap(Map<String, dynamic> map) {
@@ -17,6 +20,7 @@ class PostmeterlistModel {
       postName: map['NAME'],
       postAddress: map['ADDRESS'],
       postMeterno: map['MNO'],
+      postID: map['_id'],
     );
   }
    // Static method to fetch a paginated list of models
