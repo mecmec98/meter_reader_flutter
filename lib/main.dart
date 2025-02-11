@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/pages/home.dart';
 import 'package:meter_reader_flutter/pages/postmeterreading.dart';
 import 'package:meter_reader_flutter/pages/consumercard.dart';
-//import 'package:meter_reader_flutter/pages/sample.dart';
+import 'package:meter_reader_flutter/pages/sample.dart';
 
 void main() {
   runApp(MyApp());
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => HomePage(),
         '/postmeterreading': (context) => Postmeterreading(),
         '/consumercard': (context) => Consumercard(),
-        //'/sample': (context) => PostmeterListScreen()
+        '/sample': (context) => TestBillingPage()
       },
     );
   }

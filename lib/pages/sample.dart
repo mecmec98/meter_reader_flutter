@@ -1,119 +1,92 @@
-// import 'package:flutter/material.dart';
-// import 'package:meter_reader_flutter/models/postmeterlist_model.dart';
+import 'package:flutter/material.dart';
+import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart'; // Adjust the import path as needed
 
-// class PostmeterListScreen extends StatefulWidget {
-//   @override
-//   // ignore: library_private_types_in_public_api
-//   _PostmeterListScreenState createState() => _PostmeterListScreenState();
-// }
+class TestBillingPage extends StatefulWidget {
+  @override
+  _TestBillingPageState createState() => _TestBillingPageState();
+}
 
-// class _PostmeterListScreenState extends State<PostmeterListScreen> {
-//   final ScrollController _scrollController = ScrollController();
-//   List<PostmeterlistModel> _posts = [];
-//   bool _isLoading = false;
-//   int _offset = 0;
-//   final int _limit = 8;
-//   bool _hasMore = true; // flag to know if more data is available
+class _TestBillingPageState extends State<TestBillingPage> {
+  // Text editing controller to capture usage input.
+  final TextEditingController _usageController = TextEditingController();
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _loadData(); // load the first page
-//     _scrollController.addListener(() {
-//       // When scroll reaches near the bottom and more data is available, load the next page
-//       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-//           !_isLoading &&
-//           _hasMore) {
-//         _loadData();
-//       }
-//     });
-//   }
+  // Variable to hold the calculated bill result.
+  String _resultText = '';
 
-//   Future<void> _loadData() async {
-//     setState(() {
-//       _isLoading = true;
-//     });
-//     // Fetch the next page
-//     List<PostmeterlistModel> newPosts =
-//         await PostmeterlistModel.getMasterModelList(limit: _limit, offset: _offset);
+  // For testing, we use a fixed CSSSZ value.
+  final String _csssz = "102";
 
-//     setState(() {
-//       _posts.addAll(newPosts);
-//       _offset += newPosts.length; // update offset
-//       _isLoading = false;
-//       // if fewer items were returned than the limit, there are no more items
-//       if (newPosts.length < _limit) {
-//         _hasMore = false;
-//       }
-//     });
-//   }
+  // Method to perform the calculation.
+  Future<void> _calculateBill() async {
+    // Get the usage value from the text field.
+    final usageStr = _usageController.text;
+    if (usageStr.isEmpty) {
+      setState(() {
+        _resultText = "Please enter a usage value.";
+      });
+      return;
+    }
+    int? usage = int.tryParse(usageStr);
+    if (usage == null) {
+      setState(() {
+        _resultText = "Invalid usage value.";
+      });
+      return;
+    }
 
-//   @override
-//   void dispose() {
-//     _scrollController.dispose();
-//     super.dispose();
-//   }
+    try {
+      // Call the helper function to calculate the bill.
+      double bill = await CalculatebillHelper.calculateBill(_csssz, usage);
+      setState(() {
+        _resultText = "Calculated Bill: P ${bill.toStringAsFixed(2)}";
+      });
+    } catch (e) {
+      setState(() {
+        _resultText = "Error calculating bill: $e";
+      });
+    }
+  }
 
-//   Widget _buildPostItem(PostmeterlistModel post, int index) {
-//     // Alternate the background color
-//     final Color tileColor = index % 2 == 0 ? Colors.white : Colors.grey[200]!;
+  @override
+  void dispose() {
+    _usageController.dispose();
+    super.dispose();
+  }
 
-//     return Card(
-//       color: tileColor,
-//       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(
-//               post.postName,
-//               style: TextStyle(
-//                 fontSize: 18,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//             SizedBox(height: 8.0),
-//             Text(
-//               post.postAddress,
-//               style: TextStyle(fontSize: 16),
-//             ),
-//             SizedBox(height: 8.0),
-//             Text(
-//               "Meter Number: ${post.postMeterno}",
-//               style: TextStyle(fontSize: 16),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Postmeter List")),
-//       body: postMeterLists(),
-//     );
-//   }
-
-//   ListView postMeterLists() {
-//     return ListView.builder(
-//       controller: _scrollController,
-//       itemCount: _posts.length + 1, // add one for the loading indicator
-//       itemBuilder: (context, index) {
-//         if (index < _posts.length) {
-//           return _buildPostItem(_posts[index], index);
-//         } else {
-//           // Show a loading indicator at the bottom if more data is loading
-//           return _hasMore
-//               ? Padding(
-//                   padding: const EdgeInsets.all(8.0),
-//                   child: Center(child: CircularProgressIndicator()),
-//                 )
-//               : SizedBox.shrink();
-//         }
-//       },
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Test Billing Formula"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Text field to enter the usage value.
+            TextField(
+              controller: _usageController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Enter Usage",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            // Button to trigger the calculation.
+            ElevatedButton(
+              onPressed: _calculateBill,
+              child: Text("Calculate Bill"),
+            ),
+            SizedBox(height: 20),
+            // Text widget to display the result.
+            Text(
+              _resultText,
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

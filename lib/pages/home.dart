@@ -199,36 +199,41 @@ class _HomePageState extends State<HomePage> {
             //Print Bill
             Padding(
               padding: EdgeInsets.only(top: 20, right: 50, left: 50),
-              child: Container(
-                height: 100,
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: const Color.fromARGB(255, 28, 137, 227),
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/icons/print.svg',
-                        height: 50,
-                        width: 50,
-                        colorFilter: const ColorFilter.mode(
-                            Color.fromARGB(255, 245, 243, 243),
-                            BlendMode.srcIn),
-                      ),
-                      SizedBox(
-                        width: 15,
-                      ),
-                      Text(
-                        'Print Bill',
-                        style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      ),
-                    ],
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/sample');
+                },
+                child: Container(
+                  height: 100,
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: const Color.fromARGB(255, 28, 137, 227),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/print.svg',
+                          height: 50,
+                          width: 50,
+                          colorFilter: const ColorFilter.mode(
+                              Color.fromARGB(255, 245, 243, 243),
+                              BlendMode.srcIn),
+                        ),
+                        SizedBox(
+                          width: 15,
+                        ),
+                        Text(
+                          'Print Bill',
+                          style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
