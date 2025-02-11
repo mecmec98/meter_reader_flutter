@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 //comments
-class Consumercard extends StatelessWidget {
+class Consumercard extends StatefulWidget {
   const Consumercard({super.key});
 
+  @override
+  State<Consumercard> createState() => _ConsumercardState();
+}
+//usage = cardCurrreading - cardPrevreading
+class _ConsumercardState extends State<Consumercard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +128,7 @@ class Consumercard extends StatelessWidget {
             children: [
               Text('Current Bill'),
               Text(
-                '252.00',
+                '252.00', //result of bill_helper calculation
                 style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
@@ -151,9 +156,9 @@ class Consumercard extends StatelessWidget {
             //start Arrears
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Arrears'),
+              Text('Arrears'), 
               Text(
-                '252.00',
+                '252.00', //cardArrears
                 style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
@@ -168,7 +173,7 @@ class Consumercard extends StatelessWidget {
             children: [
               Text('Others'),
               Text(
-                '0.00',
+                '0.00', //cardOthers
                 style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
@@ -178,7 +183,7 @@ class Consumercard extends StatelessWidget {
             thickness: 0.5,
           ),
           Row(
-            //start b4duedate
+            //start b4duedate 
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -186,7 +191,7 @@ class Consumercard extends StatelessWidget {
                 style: TextStyle(color: Colors.blue),
               ),
               Text(
-                '504.00',
+                '504.00', //calculation after cardCurrbill + Arrears
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -200,11 +205,11 @@ class Consumercard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Penalty',
+                'Penalty', 
                 style: TextStyle(color: Colors.red),
               ),
               Text(
-                '0.00',
+                '0.00', //if it applies
                 style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
@@ -222,7 +227,7 @@ class Consumercard extends StatelessWidget {
                 style: TextStyle(color: Colors.green),
               ),
               Text(
-                '504.00',
+                '504.00', //5% increase from finalresult of bill_helper
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -252,7 +257,7 @@ class Consumercard extends StatelessWidget {
           SizedBox(
             height: 5,
           ),
-          TextField(
+          TextField( //use for  cardCurbill
             textAlign: TextAlign.center,
             decoration: InputDecoration(
                 hintText: '0',
@@ -280,7 +285,7 @@ class Consumercard extends StatelessWidget {
             readOnly: true,
             textAlign: TextAlign.center,
             decoration: InputDecoration(
-              hintText: '32',
+              hintText: '32', //cardPrevreading
               hintStyle:
                   TextStyle(color: const Color.fromARGB(255, 255, 250, 250)),
               filled: true,
@@ -307,7 +312,7 @@ class Consumercard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'JASON BATAL',
+            'JASON BATAL', //cardName
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w400,
@@ -315,7 +320,7 @@ class Consumercard extends StatelessWidget {
             ),
           ),
           Text(
-            '042-102-082',
+            '042-102-082', //cardAccno
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w400,
@@ -326,7 +331,7 @@ class Consumercard extends StatelessWidget {
             height: 5,
           ),
           Text(
-            'LINABO, DAPITAN CITY',
+            'LINABO, DAPITAN CITY', //cardAddress
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w400,
@@ -352,7 +357,7 @@ class Consumercard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        '123 23154',
+                        '123 23154', //cardMeterno
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w400,
@@ -372,7 +377,7 @@ class Consumercard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        'MET',
+                        'MET', //cardMeterbrand
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w400,
@@ -401,7 +406,7 @@ class Consumercard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        'RESIDENTIAL',
+                        'RESIDENTIAL', //cardClassification
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w400,
@@ -421,7 +426,7 @@ class Consumercard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        '1/2"',
+                        '1/2"', //cardMetersize
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w400,

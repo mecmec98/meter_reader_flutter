@@ -90,6 +90,7 @@ class DatabaseHelper {
         'CREADING',
         'ARREARS',
         'ARO',
+        'WMF',
       ],
       where: '_id=?',
       whereArgs: [id],
@@ -102,7 +103,6 @@ class DatabaseHelper {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'rates',
-      columns: ['LTYPE'],
       where: 'code=?',
       whereArgs: [classcode],
       limit: 1,

@@ -44,30 +44,30 @@ class CalculatebillHelper {
     // 5. Calculate the final bill based on the usage.
     if (usage <= 10) {
       // Usage less than or equal to 10: only the minimum charge applies.
-      finalValue = minCharge / 100;
+      finalValue = (minCharge / 100) + 25;
     } else if (usage <= 20) {
       // For usage 11 to 20:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * (usage - 10))
       int extraUnits = usage - 10; // For usage = 20, extraUnits = 10.
-      finalValue = minCharge / 100 + ((bulk1 / 100) * extraUnits);
+      finalValue = (minCharge / 100) + 25 + ((bulk1 / 100) * extraUnits);
     } else if (usage <= 30) {
       // For usage 21 to 30:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * (usage - 20))
       int extraUnits = usage - 20; // For usage = 30, extraUnits = 10.
       finalValue =
-          minCharge / 100 + ((bulk1 / 100) * 10) + ((bulk2 / 100) * extraUnits);
+          (minCharge / 100) + 25 + ((bulk1 / 100) * 10) + ((bulk2 / 100) * extraUnits);
     } else if (usage <= 40) {
       // For usage 31 to 40:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * 10) + ((BULK3$suffix/100) * (usage - 30))
       int extraUnits = usage - 30; // For usage = 40, extraUnits = 10.
-      finalValue = minCharge / 100 +
+      finalValue = (minCharge / 100) + 25 +
           ((bulk1 / 100) * 10) +
           ((bulk2 / 100) * 10) +
           ((bulk3 / 100) * extraUnits);
     } else {
       // If usage exceeds 40, you can extend this logic.
       // For now, we cap the calculation at 40.
-      finalValue = minCharge / 100 +
+      finalValue = (minCharge / 100) + 25 +
           ((bulk1 / 100) * 10) +
           ((bulk2 / 100) * 10) +
           ((bulk3 / 100) * 10);

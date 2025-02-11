@@ -38,7 +38,7 @@ class _TestBillingPageState extends State<TestBillingPage> {
       // Call the helper function to calculate the bill.
       double bill = await CalculatebillHelper.calculateBill(_csssz, usage);
       setState(() {
-        _resultText = "Calculated Bill: P ${bill.toStringAsFixed(2)}";
+        _resultText = "Calculated Bill: P ${bill.toStringAsFixed(2)} Note: +25.00 from WMF";
       });
     } catch (e) {
       setState(() {
