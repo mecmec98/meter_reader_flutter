@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Future<Map<String, dynamic>?>? _masterData;
+  //Future<Map<String, dynamic>?>? _masterData;
   // List<CategoryModel> categories = [];
 
   // void _getCategories() {
@@ -54,6 +54,7 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             height: 20,
           ),
+
           //Center(child: databaseConnectionSample())
         ],
       ),

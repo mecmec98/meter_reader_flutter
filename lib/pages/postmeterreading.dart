@@ -63,7 +63,11 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     final Color tileColor = index % 2 == 0 ? Colors.white : Colors.grey[200]!;
     return GestureDetector(
       onTap: () {
-       Navigator.pushNamed(context, '/consumercard');
+        Navigator.pushNamed(
+          context,
+          '/consumercard',
+          arguments: post.postID,
+        );
       },
       child: Card(
         color: tileColor,

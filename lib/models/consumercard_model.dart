@@ -6,11 +6,14 @@ class ConsumercardModel {
   String cardAddress;
   String cardMeterno;
   String cardMeterbrand;
+  String cardCodeRaw;
   String cardClassification; // Will hold the LTYPE value from the rates table.
   String cardMetersize;      // Will hold the dynamic MSIZE value from the rates table.
   int cardPrevreading;
   int cardCurrreading;
   double cardCurrbill;
+  double cardWmf;
+  double cardAvusage;
   double cardLessdisc;
   double cardArrears;
   double cardOthers;
@@ -24,11 +27,14 @@ class ConsumercardModel {
     required this.cardAddress,
     required this.cardMeterno,
     required this.cardMeterbrand,
+    required this.cardCodeRaw,
     required this.cardClassification,
     required this.cardMetersize,
     required this.cardPrevreading,
     required this.cardCurrreading,
     required this.cardCurrbill,
+    required this.cardWmf,
+    required this.cardAvusage,
     required this.cardLessdisc,
     required this.cardArrears,
     required this.cardOthers,
@@ -70,6 +76,7 @@ class ConsumercardModel {
     String msize = ratesData?["MSIZE$suffix"] ?? '';
 
     return ConsumercardModel(
+      cardCodeRaw: map['CLSSSZ'],
       cardName: map['NAME'] ?? '',
       // Construct account number as "ZB-CLSSSZ-ACC1" using the raw CLSSSZ value.
       cardAccno: '${map['ZB'] ?? ''}-$rawClsssz-${map['ACC1'] ?? ''}',
@@ -90,6 +97,11 @@ class ConsumercardModel {
       cardOthers: map['ARO'] != null
           ? (map['ARO'] as num).toDouble() / 100
           : 0.0,
+      cardWmf: map['WMF'] != null
+          ? (map['WMF'] as num).toDouble() / 100
+          : 0.0,
+      cardAvusage: map['AVE'] != null
+          ? (map['AVE'] as num).toDouble() : 0.0,
       cardTotalbdd: 0, // Set default; update if needed.
       cardPenalty: 0,  // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.

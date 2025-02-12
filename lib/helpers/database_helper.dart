@@ -91,6 +91,7 @@ class DatabaseHelper {
         'ARREARS',
         'ARO',
         'WMF',
+        'AVE',
       ],
       where: '_id=?',
       whereArgs: [id],

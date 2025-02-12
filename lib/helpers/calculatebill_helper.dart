@@ -18,12 +18,13 @@ class CalculatebillHelper {
     String bulk1Col = "BULK1$suffix"; // e.g., BULK12
     String bulk2Col = "BULK2$suffix"; // e.g., BULK22
     String bulk3Col = "BULK3$suffix"; // e.g., BULK32
+    String bulk4Col = "BULK4$suffix"; // e.g., BULK32
 
     // 4. Query the rates table for the row with CODE = codePrefix.
     final db = await DatabaseHelper().database;
     List<Map<String, dynamic>> result = await db.query(
       'rates',
-      columns: [minCol, bulk1Col, bulk2Col, bulk3Col],
+      columns: [minCol, bulk1Col, bulk2Col, bulk3Col, bulk4Col],
       where: 'CODE = ?',
       whereArgs: [codePrefix],
       limit: 1,
@@ -38,39 +39,41 @@ class CalculatebillHelper {
     double bulk1 = (rates[bulk1Col] as num).toDouble();
     double bulk2 = (rates[bulk2Col] as num).toDouble();
     double bulk3 = (rates[bulk3Col] as num).toDouble();
+    double bulk4 = (rates[bulk4Col] as num).toDouble();
 
     double finalValue = 0.0;
 
     // 5. Calculate the final bill based on the usage.
     if (usage <= 10) {
       // Usage less than or equal to 10: only the minimum charge applies.
-      finalValue = (minCharge / 100) + 25;
+      finalValue = (minCharge / 100);
     } else if (usage <= 20) {
       // For usage 11 to 20:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * (usage - 10))
       int extraUnits = usage - 10; // For usage = 20, extraUnits = 10.
-      finalValue = (minCharge / 100) + 25 + ((bulk1 / 100) * extraUnits);
+      finalValue = (minCharge / 100) + ((bulk1 / 100) * extraUnits);
     } else if (usage <= 30) {
       // For usage 21 to 30:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * (usage - 20))
       int extraUnits = usage - 20; // For usage = 30, extraUnits = 10.
       finalValue =
-          (minCharge / 100) + 25 + ((bulk1 / 100) * 10) + ((bulk2 / 100) * extraUnits);
+          (minCharge / 100) + ((bulk1 / 100) * 10) + ((bulk2 / 100) * extraUnits);
     } else if (usage <= 40) {
       // For usage 31 to 40:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * 10) + ((BULK3$suffix/100) * (usage - 30))
       int extraUnits = usage - 30; // For usage = 40, extraUnits = 10.
-      finalValue = (minCharge / 100) + 25 +
+      finalValue = (minCharge / 100) +
           ((bulk1 / 100) * 10) +
           ((bulk2 / 100) * 10) +
           ((bulk3 / 100) * extraUnits);
     } else {
       // If usage exceeds 40, you can extend this logic.
-      // For now, we cap the calculation at 40.
-      finalValue = (minCharge / 100) + 25 +
+      int extraUnits = usage - 40;
+      finalValue = (minCharge / 100) +
           ((bulk1 / 100) * 10) +
           ((bulk2 / 100) * 10) +
-          ((bulk3 / 100) * 10);
+          ((bulk3 / 100) * 10) +
+          ((bulk4 / 100) * extraUnits);
     }
 
     return finalValue;

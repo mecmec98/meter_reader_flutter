@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 //import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
+import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 
 class Consumercard extends StatefulWidget {
-  const Consumercard({super.key});
+  const Consumercard({Key? key}) : super(key: key);
 
   @override
   State<Consumercard> createState() => _ConsumercardState();
@@ -12,13 +13,58 @@ class Consumercard extends StatefulWidget {
 
 class _ConsumercardState extends State<Consumercard> {
   // Future that retrieves the consumer card from the database.
+  int? _cardId;
   Future<ConsumercardModel?>? _cardFuture;
+  double? _usage;
+  double? _calculatedBill;
+  double? _beforeDatecalculation;
+  double? _afterDatecalculation;
+
+  // Retrieve the card ID from the route arguments.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retrieve the passed argument. Make sure that when pushing this route,
+    // you pass an integer (e.g., Navigator.pushNamed(context, '/consumercard', arguments: 3)).
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is int) {
+      _cardId = args;
+      _cardFuture = getConsumercardByID(_cardId!);
+    } else {
+      // Optional: fallback if no valid argument is passed.
+      Navigator.pushNamed(context, '/');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     // For testing, we use card id 1.
-    _cardFuture = getConsumercardByID(1);
+  }
+
+  /// Calls the billing helper and updates the _calculatedBill state.
+  void _updateBill(ConsumercardModel card, double usage) async {
+    try {
+      // card.cardCodeRaw is used as the CSSSZ code.
+      double bill = await CalculatebillHelper.calculateBill(
+          card.cardCodeRaw, usage.toInt());
+      double totalBeforeDue =
+          bill + card.cardArrears + 0.0 + 0.0 + card.cardWmf;
+      double totalAfterDue = totalBeforeDue * 1.05;
+
+      setState(() {
+        _calculatedBill = bill;
+        _beforeDatecalculation = totalBeforeDue;
+        _afterDatecalculation = totalAfterDue;
+      });
+    } catch (e) {
+      print("Error calculating bill: $e");
+      setState(() {
+        _calculatedBill = null;
+        _beforeDatecalculation = null;
+        _afterDatecalculation = null;
+      });
+    }
   }
 
   @override
@@ -102,7 +148,7 @@ class _ConsumercardState extends State<Consumercard> {
             children: [
               // First Row: Meter No. and Meter Brand
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     children: [
@@ -149,7 +195,7 @@ class _ConsumercardState extends State<Consumercard> {
               const SizedBox(height: 10),
               // Second Row: Classification and Meter Size
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     children: [
@@ -217,10 +263,12 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           const SizedBox(height: 5),
           TextField(
+            //on input it would use a function that subtracts the card.cardCurrreading and card.cardPrevreading and take the value as _usage
             textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
             decoration: InputDecoration(
               // For testing, we display the current bill as a hint.
-              hintText: card.cardCurrbill.toString(),
+              hintText: card.cardCurrreading.toString(),
               hintStyle: const TextStyle(color: Colors.grey),
               filled: true,
               fillColor: Colors.white,
@@ -228,6 +276,23 @@ class _ConsumercardState extends State<Consumercard> {
                 borderRadius: BorderRadius.circular(5),
               ),
             ),
+            onChanged: (value) {
+              double? newReading = double.tryParse(value);
+              if (newReading == null || newReading <= card.cardPrevreading) {
+                setState(() {
+                  _usage = null;
+                  _calculatedBill = null;
+                  _beforeDatecalculation = null;
+                  _afterDatecalculation = null;
+                });
+              } else {
+                double usage = newReading - card.cardPrevreading;
+                setState(() {
+                  _usage = usage;
+                });
+                _updateBill(card, usage);
+              }
+            },
           ),
           const SizedBox(height: 12),
           const Text(
@@ -255,6 +320,32 @@ class _ConsumercardState extends State<Consumercard> {
               ),
             ),
           ),
+          SizedBox(
+            height: 5,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    card.cardAvusage.toStringAsFixed(2),
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+                  ),
+                  Text('Average Usage')
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    _usage != null ? _usage!.toStringAsFixed(2) : '0.00',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+                  ),
+                  Text('Current Usage')
+                ],
+              )
+            ],
+          )
         ],
       ),
     );
@@ -265,7 +356,7 @@ class _ConsumercardState extends State<Consumercard> {
   Widget particularsContainer(ConsumercardModel card) {
     return Container(
       width: 320,
-      padding: const EdgeInsets.only(left: 15, right: 15, top: 5, bottom: 5),
+      padding: const EdgeInsets.only(left: 15, right: 15, top: 10, bottom: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.white,
@@ -274,11 +365,13 @@ class _ConsumercardState extends State<Consumercard> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Current Bill'),
+            children: [
+              const Text('Current Bill'),
               Text(
-                '252.00', // Replace with calculation result if available.
-                style: TextStyle(fontWeight: FontWeight.w400),
+                _calculatedBill != null
+                    ? _calculatedBill!.toStringAsFixed(2)
+                    : '0.00',
+                style: const TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
           ),
@@ -318,27 +411,10 @@ class _ConsumercardState extends State<Consumercard> {
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
+              const Text('Water Maintenance Fee'),
               Text(
-                'Total Before Due Date',
-                style: TextStyle(color: Colors.blue),
-              ),
-              Text(
-                '504.00',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                'Penalty',
-                style: TextStyle(color: Colors.red),
-              ),
-              Text(
-                '0.00',
+                card.cardWmf.toStringAsFixed(2),
                 style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
@@ -346,13 +422,42 @@ class _ConsumercardState extends State<Consumercard> {
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total Before Due Date',
+                style: TextStyle(color: Colors.blue),
+              ),
+              Text(
+                // Use the stored value or default to 0.00 if null.
+                (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.grey, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               Text(
+                'Penalty after due Date',
+                style: TextStyle(color: Colors.red),
+              ),
+              Text(
+                '5%',
+                style: TextStyle(fontWeight: FontWeight.w400),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.grey, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
                 'Total After Due Date',
                 style: TextStyle(color: Colors.green),
               ),
               Text(
-                '504.00',
+                (_afterDatecalculation ?? 0.0).toStringAsFixed(2),
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -378,7 +483,7 @@ class _ConsumercardState extends State<Consumercard> {
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(
-                const EdgeInsets.only(top: 15, bottom: 15, left: 60, right: 60),
+                const EdgeInsets.only(top: 10, bottom: 6, left: 60, right: 60),
               ),
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
@@ -387,18 +492,18 @@ class _ConsumercardState extends State<Consumercard> {
               ),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 SvgPicture.asset(
                   'assets/icons/print.svg',
                   height: 20,
                   width: 20,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 const Text(
                   'Print',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ],
             ),
@@ -410,7 +515,7 @@ class _ConsumercardState extends State<Consumercard> {
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),
               padding: WidgetStateProperty.all<EdgeInsets>(
-                const EdgeInsets.only(top: 15, bottom: 15, left: 60, right: 60),
+                const EdgeInsets.only(top: 10, bottom: 6, left: 60, right: 60),
               ),
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
@@ -419,18 +524,18 @@ class _ConsumercardState extends State<Consumercard> {
               ),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 SvgPicture.asset(
                   'assets/icons/save.svg',
                   height: 20,
                   width: 20,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 const Text(
                   'Save',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ],
             ),
