@@ -10,6 +10,13 @@ class Postmeterreading extends StatefulWidget {
   State<Postmeterreading> createState() => _PostmeterreadingState();
 }
 
+class PostmetereadingtArguements {
+  final int posttID;
+  final int pageIndicator;
+
+  PostmetereadingtArguements({required this.posttID, required this.pageIndicator});
+}
+
 class _PostmeterreadingState extends State<Postmeterreading> {
   final ScrollController _scrollController = ScrollController();
   List<PostmeterlistModel> _posts = [];

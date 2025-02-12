@@ -26,8 +26,7 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Retrieve the passed argument. Make sure that when pushing this route,
-    // you pass an integer (e.g., Navigator.pushNamed(context, '/consumercard', arguments: 3)).
+
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is int) {
       _cardId = args;

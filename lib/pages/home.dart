@@ -273,13 +273,15 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.pushNamed(context, '/printface');
+          },
           child: Container(
             margin: EdgeInsets.all(10),
             width: 37,
             alignment: Alignment.center,
             child: SvgPicture.asset(
-              'assets/icons/person.svg',
+              'assets/icons/print.svg',
               height: 25,
               width: 25,
               colorFilter:

@@ -4,6 +4,7 @@ import 'package:meter_reader_flutter/pages/postmeterreading.dart';
 import 'package:meter_reader_flutter/pages/consumercard.dart';
 import 'package:meter_reader_flutter/pages/sample.dart';
 import 'package:meter_reader_flutter/pages/printbilllist.dart';
+import 'package:meter_reader_flutter/pages/printface.dart';
 //import 'package:sqflite/sqflite.dart';
 
 void main() {
@@ -23,7 +24,8 @@ class MyApp extends StatelessWidget {
         '/postmeterreading': (context) => Postmeterreading(),
         '/consumercard': (context) => Consumercard(),
         '/printbilllist': (context) => PrintbillList(),
-        '/sample': (context) => TestBillingPage()
+        '/sample': (context) => TestBillingPage(),
+        '/printface': (context) => Printface(),
       },
     );
   }
