@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:meter_reader_flutter/models/postmeterlist_model.dart';
+import 'package:meter_reader_flutter/models/printlist_model.dart';
 
 //import 'package:flutter/scheduler.dart';
 //import 'package:flutter/foundation.dart';
 
-class Postmeterreading extends StatefulWidget {
+class PrintbillList extends StatefulWidget {
   @override
-  State<Postmeterreading> createState() => _PostmeterreadingState();
+  State<PrintbillList> createState() => _PrintbillListState();
 }
 
-class _PostmeterreadingState extends State<Postmeterreading> {
+class _PrintbillListState extends State<PrintbillList> {
   final ScrollController _scrollController = ScrollController();
-  List<PostmeterlistModel> _posts = [];
+  List<PrintlistModel> _printl = [];
   bool _isLoading = false;
   int _offset = 0;
   final int _limit = 8;
@@ -37,16 +37,16 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       _isLoading = true;
     });
     // Fetch the next page
-    List<PostmeterlistModel> newPosts =
-        await PostmeterlistModel.getMasterModelList(
+    List<PrintlistModel> newPrintl =
+        await PrintlistModel.getMasterByIDforPrintlist(
             limit: _limit, offset: _offset);
 
     setState(() {
-      _posts.addAll(newPosts);
-      _offset += newPosts.length; // update offset
+      _printl.addAll(newPrintl);
+      _offset += newPrintl.length; // update offset
       _isLoading = false;
       // if fewer items were returned than the limit, there are no more items
-      if (newPosts.length < _limit) {
+      if (newPrintl.length < _limit) {
         _hasMore = false;
       }
     });
@@ -58,7 +58,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     super.dispose();
   }
 
-  Widget _buildPostItem(PostmeterlistModel post, int index) {
+  Widget _buildPrintlItem(PrintlistModel printl, int index) {
     // Alternate the background color
     final Color tileColor = index % 2 == 0 ? Colors.white : const Color.fromARGB(255, 212, 224, 250);
     return GestureDetector(
@@ -66,7 +66,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         Navigator.pushNamed(
           context,
           '/consumercard',
-          arguments: post.postID,
+          arguments: printl.printID,
         );
       },
       child: Card(
@@ -78,21 +78,21 @@ class _PostmeterreadingState extends State<Postmeterreading> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                post.postName,
+                printl.printName,
                 style: TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
-                post.postMeterno,
+                printl.printMeterno,
                 style: TextStyle(
                     color: Colors.blue,
                     fontSize: 16,
                     fontWeight: FontWeight.w400),
               ),
               Text(
-                post.postAddress,
+                printl.printAddress,
                 style: TextStyle(
                   color: Colors.blueGrey,
                   fontSize: 13,
@@ -109,7 +109,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: postAppbar(context),
+      appBar: printAppbar(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -118,21 +118,21 @@ class _PostmeterreadingState extends State<Postmeterreading> {
             height: 5.0,
           ),
           Expanded(
-            child: postMeterLists(),
+            child: printMeterLists(),
           ),
         ],
       ),
     );
   }
 
-  ListView postMeterLists() {
+  ListView printMeterLists() {
     return ListView.builder(
       shrinkWrap: true,
       controller: _scrollController,
-      itemCount: _posts.length + 1, // add one for the loading indicator
+      itemCount: _printl.length + 1, // add one for the loading indicator
       itemBuilder: (context, index) {
-        if (index < _posts.length) {
-          return _buildPostItem(_posts[index], index);
+        if (index < _printl.length) {
+          return _buildPrintlItem(_printl[index], index);
         } else {
           // Show a loading indicator at the bottom if more data is loading
           return _hasMore
@@ -176,10 +176,10 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     );
   }
 
-  AppBar postAppbar(BuildContext context) {
+  AppBar printAppbar(BuildContext context) {
     return AppBar(
       title: Text(
-        'Post Meter Reading',
+        'Print Bill',
         style: TextStyle(
           color: Colors.black,
           fontSize: 22,

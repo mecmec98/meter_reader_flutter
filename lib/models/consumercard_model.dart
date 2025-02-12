@@ -8,7 +8,8 @@ class ConsumercardModel {
   String cardMeterbrand;
   String cardCodeRaw;
   String cardClassification; // Will hold the LTYPE value from the rates table.
-  String cardMetersize;      // Will hold the dynamic MSIZE value from the rates table.
+  String
+      cardMetersize; // Will hold the dynamic MSIZE value from the rates table.
   int cardPrevreading;
   int cardCurrreading;
   double cardCurrbill;
@@ -20,6 +21,7 @@ class ConsumercardModel {
   double cardTotalbdd;
   double cardPenalty;
   double cardTotaladd;
+  double cardUsage;
 
   ConsumercardModel({
     required this.cardName,
@@ -41,6 +43,7 @@ class ConsumercardModel {
     required this.cardTotalbdd,
     required this.cardPenalty,
     required this.cardTotaladd,
+    required this.cardUsage,
   });
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
@@ -88,23 +91,20 @@ class ConsumercardModel {
       // Store the dynamically retrieved MSIZE value.
       cardMetersize: msize,
       cardPrevreading: map['PREADING'] is int ? map['PREADING'] as int : 0,
-      cardCurrreading: map['CREADING'] is int ? map['CREADING'] as int : 0,
+      cardCurrreading: map['CREADING'],
       cardCurrbill: 0, // Set default; update if needed.
       cardLessdisc: 0, // Set default; update if needed.
       cardArrears: map['ARREARS'] != null
           ? (map['ARREARS'] as num).toDouble() / 100
           : 0.0,
-      cardOthers: map['ARO'] != null
-          ? (map['ARO'] as num).toDouble() / 100
-          : 0.0,
-      cardWmf: map['WMF'] != null
-          ? (map['WMF'] as num).toDouble() / 100
-          : 0.0,
-      cardAvusage: map['AVE'] != null
-          ? (map['AVE'] as num).toDouble() : 0.0,
+      cardOthers:
+          map['ARO'] != null ? (map['ARO'] as num).toDouble() / 100 : 0.0,
+      cardWmf: map['WMF'] != null ? (map['WMF'] as num).toDouble() / 100 : 0.0,
+      cardAvusage: map['AVE'] != null ? (map['AVE'] as num).toDouble() : 0.0,
       cardTotalbdd: 0, // Set default; update if needed.
-      cardPenalty: 0,  // Set default; update if needed.
+      cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
+      cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
     );
   }
 }

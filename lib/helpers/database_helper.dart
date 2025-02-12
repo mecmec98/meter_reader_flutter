@@ -49,6 +49,7 @@ class DatabaseHelper {
     return await openDatabase(dbPath);
   }
 
+//used for testing
   Future<Map<String, dynamic>?> getMasterByID(int id) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
@@ -61,18 +62,37 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
+//for getting data for the Post Meter List
   Future<List<Map<String, dynamic>>> getMasterByIDforlist(
       {int limit = 8, int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: 'POSTED=?',
+      whereArgs: [0],
       limit: limit,
       offset: offset,
     );
     return result;
   }
 
+//for getting data for the Print Bill List
+  Future<List<Map<String, dynamic>>> getMasterByIDforPrintlist(
+      {int limit = 8, int offset = 0}) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: 'POSTED=?',
+      whereArgs: [1],
+      limit: limit,
+      offset: offset,
+    );
+    return result;
+  }
+
+//for populating the consumer data check consumercard_model.dart
   Future<Map<String, dynamic>?> getCardByID(int id) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
@@ -92,6 +112,7 @@ class DatabaseHelper {
         'ARO',
         'WMF',
         'AVE',
+        'USAGE'
       ],
       where: '_id=?',
       whereArgs: [id],
@@ -100,6 +121,7 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
+//getter for rates
   Future<Map<String, dynamic>?> getClassfromRates(int classcode) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
@@ -109,5 +131,17 @@ class DatabaseHelper {
       limit: 1,
     );
     return result.isNotEmpty ? result.first : null;
+  }
+
+//update for the master list
+  Future<int> updateMasterData(int id, Map<String, dynamic> updatedData) async {
+    print('hi I updated');
+    final db = await database;
+    return await db.update(
+      'master',
+      updatedData,
+      where: '_id = ?',
+      whereArgs: [id],
+    );
   }
 }

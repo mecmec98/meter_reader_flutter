@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-//import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 
@@ -14,11 +14,13 @@ class Consumercard extends StatefulWidget {
 class _ConsumercardState extends State<Consumercard> {
   // Future that retrieves the consumer card from the database.
   int? _cardId;
+  int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
   double? _usage;
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
+  bool _billUpdated = false; // CHANGED: Flag to ensure we update the bill only once
 
   // Retrieve the card ID from the route arguments.
   @override
@@ -39,7 +41,8 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void initState() {
     super.initState();
-    // For testing, we use card id 1.
+    // For testing, we previously used card id 1.
+    // Now, _cardFuture is set in didChangeDependencies.
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.
@@ -48,8 +51,7 @@ class _ConsumercardState extends State<Consumercard> {
       // card.cardCodeRaw is used as the CSSSZ code.
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
-      double totalBeforeDue =
-          bill + card.cardArrears + 0.0 + 0.0 + card.cardWmf;
+      double totalBeforeDue = bill + card.cardArrears + 0.0 + 0.0 + card.cardWmf;
       double totalAfterDue = totalBeforeDue * 1.05;
 
       setState(() {
@@ -83,6 +85,20 @@ class _ConsumercardState extends State<Consumercard> {
           } else {
             // Model loaded from the database.
             final card = snapshot.data!;
+   
+            // CHANGED: Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
+            if (!_billUpdated && card.cardUsage != 0) {
+              // Use a post-frame callback to avoid calling setState during build.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _updateBill(card, card.cardUsage);
+                // Mark that the update has been done and set _usage
+                setState(() {
+                  _usage = card.cardUsage;
+                  _billUpdated = true;
+                });
+              });
+            }
+
             return SingleChildScrollView(
               child: Column(
                 children: [
@@ -247,7 +263,6 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   /// Widget for the reading fields.
-  /// For example, current reading and previous reading.
   Widget readersField(ConsumercardModel card) {
     return Container(
       padding: const EdgeInsets.only(top: 5, bottom: 10, left: 40, right: 40),
@@ -263,11 +278,9 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           const SizedBox(height: 5),
           TextField(
-            //on input it would use a function that subtracts the card.cardCurrreading and card.cardPrevreading and take the value as _usage
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              // For testing, we display the current bill as a hint.
               hintText: card.cardCurrreading.toString(),
               hintStyle: const TextStyle(color: Colors.grey),
               filled: true,
@@ -288,6 +301,7 @@ class _ConsumercardState extends State<Consumercard> {
               } else {
                 double usage = newReading - card.cardPrevreading;
                 setState(() {
+                  _newReading = newReading.toInt();
                   _usage = usage;
                 });
                 _updateBill(card, usage);
@@ -320,9 +334,7 @@ class _ConsumercardState extends State<Consumercard> {
               ),
             ),
           ),
-          SizedBox(
-            height: 5,
-          ),
+          const SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -330,18 +342,18 @@ class _ConsumercardState extends State<Consumercard> {
                 children: [
                   Text(
                     card.cardAvusage.toStringAsFixed(2),
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
                   ),
-                  Text('Average Usage')
+                  const Text('Average Usage')
                 ],
               ),
               Column(
                 children: [
                   Text(
                     _usage != null ? _usage!.toStringAsFixed(2) : '0.00',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
                   ),
-                  Text('Current Usage')
+                  const Text('Current Usage')
                 ],
               )
             ],
@@ -352,11 +364,10 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   /// Widget for displaying billing particulars.
-  /// (You can later integrate a calculation from a billing helper.)
   Widget particularsContainer(ConsumercardModel card) {
     return Container(
       width: 320,
-      padding: const EdgeInsets.only(left: 15, right: 15, top: 10, bottom: 5),
+      padding: const EdgeInsets.only(left: 15, right: 15, top: 10, bottom: 15),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.white,
@@ -368,21 +379,8 @@ class _ConsumercardState extends State<Consumercard> {
             children: [
               const Text('Current Bill'),
               Text(
-                _calculatedBill != null
-                    ? _calculatedBill!.toStringAsFixed(2)
-                    : '0.00',
+                _calculatedBill != null ? _calculatedBill!.toStringAsFixed(2) : '0.00',
                 style: const TextStyle(fontWeight: FontWeight.w400),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Less Discount'),
-              Text(
-                '0.00',
-                style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ],
           ),
@@ -391,10 +389,7 @@ class _ConsumercardState extends State<Consumercard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Arrears'),
-              Text(
-                card.cardArrears.toStringAsFixed(2),
-                style: const TextStyle(fontWeight: FontWeight.w400),
-              ),
+              Text(card.cardArrears.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
@@ -402,10 +397,7 @@ class _ConsumercardState extends State<Consumercard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
               Text('Others'),
-              Text(
-                '0.00',
-                style: TextStyle(fontWeight: FontWeight.w400),
-              ),
+              Text('0.00', style: TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
@@ -413,56 +405,33 @@ class _ConsumercardState extends State<Consumercard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Water Maintenance Fee'),
-              Text(
-                card.cardWmf.toStringAsFixed(2),
-                style: TextStyle(fontWeight: FontWeight.w400),
-              ),
+              Text(card.cardWmf.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total Before Due Date',
-                style: TextStyle(color: Colors.blue),
-              ),
-              Text(
-                // Use the stored value or default to 0.00 if null.
-                (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
+              const Text('Total Before Due Date', style: TextStyle(color: Colors.blue)),
+              Text((_beforeDatecalculation ?? 0.0).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text(
-                'Penalty after due Date',
-                style: TextStyle(color: Colors.red),
-              ),
-              Text(
-                '5%',
-                style: TextStyle(fontWeight: FontWeight.w400),
-              ),
+              Text('Penalty after due Date', style: TextStyle(color: Colors.red)),
+              Text('5%', style: TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total After Due Date',
-                style: TextStyle(color: Colors.green),
-              ),
-              Text(
-                (_afterDatecalculation ?? 0.0).toStringAsFixed(2),
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              const Text('Total After Due Date', style: TextStyle(color: Colors.orange)),
+              Text((_afterDatecalculation ?? 0.0).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
-          const Divider(color: Colors.grey, thickness: 0.5),
         ],
       ),
     );
@@ -486,9 +455,7 @@ class _ConsumercardState extends State<Consumercard> {
                 const EdgeInsets.only(top: 10, bottom: 6, left: 60, right: 60),
               ),
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
               ),
             ),
             child: Column(
@@ -497,20 +464,57 @@ class _ConsumercardState extends State<Consumercard> {
                   'assets/icons/print.svg',
                   height: 20,
                   width: 20,
-                  colorFilter:
-                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 1),
-                const Text(
-                  'Print',
-                  style: TextStyle(color: Colors.white, fontSize: 11),
-                ),
+                const Text('Print', style: TextStyle(color: Colors.white, fontSize: 11)),
               ],
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: Implement Save action.
+            onPressed: () async {
+              print('I(Save) got pressed');
+              if (_cardId != null && _calculatedBill != null && _usage != null && _newReading !=null ) {
+                // CHANGED: Convert calculated bill to cents and then to int.
+                double dbBill = _calculatedBill! * 100;
+                int calculateBillInt = dbBill.toInt();
+                int usageInt = _usage!.toInt();
+                int isPosted = 1;
+                int? isNewReading = _newReading;
+
+                Map<String, dynamic> updatedData = {
+                  'AMOUNT': calculateBillInt,
+                  'USAGE': usageInt,
+                  'POSTED': isPosted,
+                  'CREADING' : isNewReading
+                };
+                try {
+                  int count = await DatabaseHelper().updateMasterData(_cardId!, updatedData);
+                  if (!mounted) return;
+                  if (count > 0) {
+                    // CHANGED: Fetch the updated record for testing
+                    Map<String, dynamic>? updatedRecord = await DatabaseHelper().getMasterByID(_cardId!);
+                    print("Updated record data: $updatedRecord");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Record updated successfully!')),
+                    );
+                    // CHANGED: Refresh the UI by reassigning _cardFuture.
+                    setState(() {
+                      _cardFuture = getConsumercardByID(_cardId!);
+                    });
+                    Navigator.pushNamed(context,'/postmeterreading');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Update failed.')),
+                    );
+                  }
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error saving the record: $e')),
+                  );
+                }
+              }
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),
@@ -518,9 +522,7 @@ class _ConsumercardState extends State<Consumercard> {
                 const EdgeInsets.only(top: 10, bottom: 6, left: 60, right: 60),
               ),
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
               ),
             ),
             child: Column(
@@ -529,14 +531,10 @@ class _ConsumercardState extends State<Consumercard> {
                   'assets/icons/save.svg',
                   height: 20,
                   width: 20,
-                  colorFilter:
-                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 1),
-                const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white, fontSize: 11),
-                ),
+                const Text('Save', style: TextStyle(color: Colors.white, fontSize: 11)),
               ],
             ),
           ),

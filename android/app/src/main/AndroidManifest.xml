@@ -1,4 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+   
+    <!-- Required for Android 12+ Bluetooth scanning without location access -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <!-- Required for connecting to Bluetooth devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Required if your app needs to advertise over Bluetooth -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <!-- Optionally, if your app also requires location permissions for other reasons -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+   
     <application
         android:label="meter_reader_flutter"
         android:name="${applicationName}"
