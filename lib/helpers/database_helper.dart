@@ -112,7 +112,8 @@ class DatabaseHelper {
         'ARO',
         'WMF',
         'AVE',
-        'USAGE'
+        'USAGE',
+        'AMOUNT'
       ],
       where: '_id=?',
       whereArgs: [id],

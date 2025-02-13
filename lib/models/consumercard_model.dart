@@ -92,7 +92,7 @@ class ConsumercardModel {
       cardMetersize: msize,
       cardPrevreading: map['PREADING'] is int ? map['PREADING'] as int : 0,
       cardCurrreading: map['CREADING'],
-      cardCurrbill: 0, // Set default; update if needed.
+      cardCurrbill: map['AMOUNT'] != null ? (map['AMOUNT'] as num).toDouble() / 100 : 0.0, // Set default; update if needed.
       cardLessdisc: 0, // Set default; update if needed.
       cardArrears: map['ARREARS'] != null
           ? (map['ARREARS'] as num).toDouble() / 100
