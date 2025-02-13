@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
+import 'package:intl/intl.dart';
 
 class Consumercard extends StatefulWidget {
   const Consumercard({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _ConsumercardState extends State<Consumercard> {
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
   bool _billUpdated = false; // CHANGED: Flag to ensure we update the bill only once
+  String? _formattedDate = DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
   // Retrieve the card ID from the route arguments.
   @override
@@ -31,6 +33,7 @@ class _ConsumercardState extends State<Consumercard> {
     if (args is int) {
       _cardId = args;
       _cardFuture = getConsumercardByID(_cardId!);
+      print(_formattedDate);
     } else {
       // Optional: fallback if no valid argument is passed.
       Navigator.pushNamed(context, '/');
@@ -421,6 +424,14 @@ class _ConsumercardState extends State<Consumercard> {
             children: const [
               Text('Penalty after due Date', style: TextStyle(color: Colors.red)),
               Text('5%', style: TextStyle(fontWeight: FontWeight.w400)),
+            ],
+          ),
+          const Divider(color: Colors.grey, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children:  [
+              const Text('Date Due', style: TextStyle(color: Colors.red)),
+              Text(_formattedDate ?? '' , style: TextStyle(fontWeight: FontWeight.w500, color: Colors.red)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
