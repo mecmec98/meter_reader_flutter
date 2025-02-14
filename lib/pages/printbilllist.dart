@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:meter_reader_flutter/models/printlist_model.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 //import 'package:flutter/scheduler.dart';
 //import 'package:flutter/foundation.dart';
@@ -17,6 +18,7 @@ class _PrintbillListState extends State<PrintbillList> {
   int _offset = 0;
   final int _limit = 8;
   bool _hasMore = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -26,7 +28,8 @@ class _PrintbillListState extends State<PrintbillList> {
       if (_scrollController.position.pixels >=
               _scrollController.position.maxScrollExtent - 200 &&
           !_isLoading &&
-          _hasMore) {
+          _hasMore &&
+          _searchQuery.isEmpty) {
         _loadData();
       }
     });
@@ -52,6 +55,40 @@ class _PrintbillListState extends State<PrintbillList> {
     });
   }
 
+  /// Search the database using the given query.
+  Future<void> _searchData(String query) async {
+    setState(() {
+      _searchQuery = query;
+    });
+
+    // If the search query is empty, reload the paginated data.
+    if (query.isEmpty) {
+      setState(() {
+        _printl.clear();
+        _offset = 0;
+        _hasMore = true;
+      });
+      await _loadData();
+    } else {
+      setState(() {
+        _isLoading = true;
+      });
+      // Query the database using the search function.
+      List<Map<String, dynamic>> results =
+          await DatabaseHelper().searchPostedMasterData(query);
+      // Convert results into your model.
+      // Assumes PostmeterlistModel.fromMap exists.
+      List<PrintlistModel> searchResults =
+          results.map((map) => PrintlistModel.fromMap(map)).toList();
+      setState(() {
+        _printl = searchResults;
+        _isLoading = false;
+        // Disable pagination while showing search results.
+        _hasMore = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -60,7 +97,9 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Widget _buildPrintlItem(PrintlistModel printl, int index) {
     // Alternate the background color
-    final Color tileColor = index % 2 == 0 ? Colors.white : const Color.fromARGB(255, 212, 224, 250);
+    final Color tileColor = index % 2 == 0
+        ? Colors.white
+        : const Color.fromARGB(255, 212, 224, 250);
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
@@ -148,7 +187,7 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Container searchBar() {
     return Container(
-      margin: EdgeInsets.only(top: 20,bottom: 15, left: 20, right: 20),
+      margin: EdgeInsets.only(top: 20, bottom: 15, left: 20, right: 20),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
           color: Color.fromARGB(255, 230, 223, 223).withValues(),
@@ -157,22 +196,26 @@ class _PrintbillListState extends State<PrintbillList> {
         )
       ]),
       child: TextField(
-          decoration: InputDecoration(
-        hintText: 'Search',
-        hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
-        filled: true,
-        fillColor: Colors.white,
-        prefixIcon: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: SvgPicture.asset(
-            'assets/icons/search.svg',
-            colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+        decoration: InputDecoration(
+          hintText: 'Search',
+          hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: SvgPicture.asset(
+              'assets/icons/search.svg',
+              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+            ),
           ),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(5),
+              borderSide: BorderSide.none),
         ),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(5),
-            borderSide: BorderSide.none),
-      )),
+        onChanged: (value) {
+          _searchData(value);
+        },
+      ),
     );
   }
 

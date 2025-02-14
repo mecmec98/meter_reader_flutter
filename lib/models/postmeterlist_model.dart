@@ -1,4 +1,3 @@
-//import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 class PostmeterlistModel {
@@ -6,7 +5,6 @@ class PostmeterlistModel {
   String postAddress;
   String postMeterno;
   int postID;
-
 
   PostmeterlistModel({
     required this.postName,
@@ -23,10 +21,12 @@ class PostmeterlistModel {
       postID: map['_id'],
     );
   }
-   // Static method to fetch a paginated list of models
-  static Future<List<PostmeterlistModel>> getMasterModelList({int limit = 8, int offset = 0}) async {
+  // Static method to fetch a paginated list of models
+  static Future<List<PostmeterlistModel>> getMasterModelList(
+      {int limit = 8, int offset = 0}) async {
     final dbHelper = DatabaseHelper();
-    final List<Map<String, dynamic>> maps = await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
+    final List<Map<String, dynamic>> maps =
+        await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
     return maps.map((map) => PostmeterlistModel.fromMap(map)).toList();
   }
 }

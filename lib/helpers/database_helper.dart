@@ -77,6 +77,30 @@ class DatabaseHelper {
     return result;
   }
 
+//for search function on Post Meter List
+  Future<List<Map<String, dynamic>>> searchMasterData(String query) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=?',
+      whereArgs: ['%$query%', '%$query%', '%$query%', 0],
+    );
+    return result;
+  }
+
+//for search function on Print List
+  Future<List<Map<String, dynamic>>> searchPostedMasterData(String query) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=?',
+      whereArgs: ['%$query%', '%$query%', '%$query%', 1],
+    );
+    return result;
+  }
+
 //for getting data for the Print Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintlist(
       {int limit = 8, int offset = 0}) async {

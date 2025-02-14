@@ -23,7 +23,6 @@ class _ConsumercardState extends State<Consumercard> {
   double? _afterDatecalculation;
   bool _billUpdated =
       false; 
-  bool _masterUpdateDone = false;
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -83,7 +82,6 @@ class _ConsumercardState extends State<Consumercard> {
           );
           setState(() {
             _cardFuture = getConsumercardByID(_cardId!);
-            _masterUpdateDone = true;
           });
           //Navigator.pushNamed(context, '/postmeterreading');
         } else {

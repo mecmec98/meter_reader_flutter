@@ -599,7 +599,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
       centerTitle: true,
       leading: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(context, '/printbilllist');
+          Navigator.pop(context);
         },
         child: Container(
           margin: const EdgeInsets.all(10),
