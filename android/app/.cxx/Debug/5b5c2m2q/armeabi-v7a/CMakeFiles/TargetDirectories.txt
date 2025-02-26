@@ -1,0 +1,2 @@
+D:/Projects/meter_reader_flutter/android/app/.cxx/Debug/5b5c2m2q/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Projects/meter_reader_flutter/android/app/.cxx/Debug/5b5c2m2q/armeabi-v7a/CMakeFiles/rebuild_cache.dir

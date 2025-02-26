@@ -166,6 +166,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       margin: const EdgeInsets.only(top: 20, bottom: 15, left: 20, right: 20),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
+          // ignore: deprecated_member_use
           color: const Color.fromARGB(255, 230, 223, 223).withOpacity(0.5),
           blurRadius: 8,
           spreadRadius: 0.0,

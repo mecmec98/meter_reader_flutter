@@ -1,89 +1,95 @@
 import 'package:flutter/material.dart';
-import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart'; // Adjust the import path as needed
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 
-class TestBillingPage extends StatefulWidget {
-  @override
-  // ignore: library_private_types_in_public_api
-  _TestBillingPageState createState() => _TestBillingPageState();
+void main() {
+  runApp(MyApp());
 }
 
-class _TestBillingPageState extends State<TestBillingPage> {
-  // Text editing controller to capture usage input.
-  final TextEditingController _usageController = TextEditingController();
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
 
-  // Variable to hold the calculated bill result.
-  String _resultText = '';
+class _MyAppState extends State<MyApp> {
+  BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
+  List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _selectedDevice;
+  bool _connected = false;
 
-  // For testing, we use a fixed CSSSZ value.
-  final String _csssz = "102";
+  @override
+  void initState() {
+    super.initState();
+    _initBluetooth();
+  }
 
-  // Method to perform the calculation.
-  Future<void> _calculateBill() async {
-    // Get the usage value from the text field.
-    final usageStr = _usageController.text;
-    if (usageStr.isEmpty) {
-      setState(() {
-        _resultText = "Please enter a usage value.";
-      });
-      return;
-    }
-    int? usage = int.tryParse(usageStr);
-    if (usage == null) {
-      setState(() {
-        _resultText = "Invalid usage value.";
-      });
-      return;
-    }
+  void _initBluetooth() async {
+    bool? isConnected = await bluetooth.isConnected;
+    List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
+    setState(() {
+      _devices = devices;
+      _connected = isConnected!;
+    });
+  }
 
-    try {
-      // Call the helper function to calculate the bill.
-      double bill = await CalculatebillHelper.calculateBill(_csssz, usage);
+  void _connectToDevice() async {
+    if (_selectedDevice != null) {
+      await bluetooth.connect(_selectedDevice!);
       setState(() {
-        _resultText = "Calculated Bill: P ${bill.toStringAsFixed(2)} Note: +25.00 from WMF";
-      });
-    } catch (e) {
-      setState(() {
-        _resultText = "Error calculating bill: $e";
+        _connected = true;
       });
     }
   }
 
-  @override
-  void dispose() {
-    _usageController.dispose();
-    super.dispose();
+  void _disconnectFromDevice() async {
+    await bluetooth.disconnect();
+    setState(() {
+      _connected = false;
+    });
+  }
+
+  void _printSampleReceipt() async {
+    if (_connected) {
+      bluetooth.printNewLine();
+      bluetooth.printCustom("Sample Receipt", 3, 1);
+      bluetooth.printNewLine();
+      bluetooth.printCustom("Hello World!", 1, 1);
+      bluetooth.printNewLine();
+      bluetooth.printQRcode("Sample QR Code", 200, 200, 1);
+      bluetooth.printNewLine();
+      bluetooth.paperCut();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Test Billing Formula"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Text field to enter the usage value.
-            TextField(
-              controller: _usageController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Enter Usage",
-                border: OutlineInputBorder(),
-              ),
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Bluetooth Printer Example'),
+        ),
+        body: Column(
+          children: <Widget>[
+            DropdownButton<BluetoothDevice>(
+              items: _devices
+                  .map((device) => DropdownMenuItem(
+                        value: device,
+                        child: Text(device.name!),
+                      ))
+                  .toList(),
+              onChanged: (device) {
+                setState(() {
+                  _selectedDevice = device;
+                });
+              },
+              value: _selectedDevice,
             ),
-            SizedBox(height: 20),
-            // Button to trigger the calculation.
             ElevatedButton(
-              onPressed: _calculateBill,
-              child: Text("Calculate Bill"),
+              onPressed: _connected ? _disconnectFromDevice : _connectToDevice,
+              child: Text(_connected ? 'Disconnect' : 'Connect'),
             ),
-            SizedBox(height: 20),
-            // Text widget to display the result.
-            Text(
-              _resultText,
-              style: TextStyle(fontSize: 18),
+            ElevatedButton(
+              onPressed: _connected ? _printSampleReceipt : null,
+              child: Text('Print Sample Receipt'),
             ),
           ],
         ),

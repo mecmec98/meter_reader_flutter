@@ -6,6 +6,7 @@ import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 
 class ConsumercardBill extends StatefulWidget {
+  // ignore: use_super_parameters
   const ConsumercardBill({Key? key}) : super(key: key);
 
   @override
@@ -533,6 +534,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
                     Map<String, dynamic>? updatedRecord =
                         await DatabaseHelper().getMasterByID(_cardId!);
                     print("Updated record data: $updatedRecord");
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                           content: Text('Record updated successfully!')),

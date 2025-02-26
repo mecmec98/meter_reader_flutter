@@ -161,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.only(top: 20, right: 50, left: 50),
                 child: GestureDetector(
                   onTap: () {
-                    //Navigator.pushNamed(context, '/consumercard');
+                    Navigator.pushNamed(context, '/sample');
                   },
                   child: Container(
                     height: 100,

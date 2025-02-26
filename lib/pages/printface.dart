@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:meter_reader_flutter/helpers/database_helper.dart';
-import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Adjust the import based on your project structure
+import 'package:meter_reader_flutter/models/consumercard_model.dart';
+//import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 class Printface extends StatefulWidget {
+  // ignore: use_super_parameters
   const Printface({Key? key}) : super(key: key);
 
   @override
