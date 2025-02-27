@@ -5,6 +5,7 @@ import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make su
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 
+//Card after postmeter list
 class Consumercard extends StatefulWidget {
   // ignore: use_super_parameters
   const Consumercard({Key? key}) : super(key: key);

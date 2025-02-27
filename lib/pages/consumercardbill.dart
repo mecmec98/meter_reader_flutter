@@ -5,6 +5,7 @@ import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make su
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 
+//Card after Printbilllist
 class ConsumercardBill extends StatefulWidget {
   // ignore: use_super_parameters
   const ConsumercardBill({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
   bool _billUpdated =
-      false; // CHANGED: Flag to ensure we update the bill only once
+      false;
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 //import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 //import 'package:path/path.dart';
@@ -18,23 +20,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  //Future<Map<String, dynamic>?>? _masterData;
-  // List<CategoryModel> categories = [];
+   BluePrinterHelper bluetoothHelper = BluePrinterHelper();
+  List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _selectedDevice;
+  bool _connected = false;
 
-  // void _getCategories() {
-  //   categories = CategoryModel.getCategories();
-  // }
+ 
 
   @override
   void initState() {
     super.initState();
     _fetchData();
-    // _getCategories();
+  
+  }
+
+   void _initBluetooth() async {
+    await bluetoothHelper.initBluetooth();
+    setState(() {
+      _devices = bluetoothHelper.devices;
+      _connected = bluetoothHelper.connected;
+    });
   }
 
   void _fetchData() {
     setState(() {
-      // _masterData = DatabaseHelper().getMasterByID(1);
     });
   }
 
@@ -43,6 +52,11 @@ class _HomePageState extends State<HomePage> {
     // _getCategories();
     return Scaffold(
       appBar: appBar(),
+      drawer: Drawer(
+        child: Column(
+
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -54,44 +68,11 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             height: 20,
           ),
-
-          //Center(child: databaseConnectionSample())
         ],
       ),
     );
   }
 
-  // Container databaseConnectionSample() {
-  //   return Container(
-  //     padding: EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey,
-  //       borderRadius: BorderRadius.circular(10),
-  //     ),
-  //     child: FutureBuilder<Map<String, dynamic>?>(
-  //       future: _masterData,
-  //       builder: (context, snapshot) {
-  //         if (snapshot.connectionState == ConnectionState.waiting) {
-  //           return Center(child: CircularProgressIndicator());
-  //         } else if (snapshot.hasError) {
-  //           return Text('Error: ${snapshot.error}');
-  //         } else if (!snapshot.hasData || snapshot.data == null) {
-  //           return Text('No data found');
-  //         } else {
-  //           final data = snapshot.data!;
-  //           return Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text('ACC: ${data['ACC1']}'),
-  //               Text('Name: ${data['NAME']}'),
-  //               Text('ADDRESS:${data['ADDRESS']}'),
-  //             ],
-  //           );
-  //         }
-  //       },
-  //     ),
-  //   );
-  // }
 
   Column menuButtons() {
     return Column(

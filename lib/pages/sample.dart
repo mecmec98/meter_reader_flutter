@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
+  BluePrinterHelper bluetoothHelper = BluePrinterHelper();
   List<BluetoothDevice> _devices = [];
   BluetoothDevice? _selectedDevice;
   bool _connected = false;
@@ -23,41 +24,31 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _initBluetooth() async {
-    bool? isConnected = await bluetooth.isConnected;
-    List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
+    await bluetoothHelper.initBluetooth();
     setState(() {
-      _devices = devices;
-      _connected = isConnected!;
+      _devices = bluetoothHelper.devices;
+      _connected = bluetoothHelper.connected;
     });
   }
 
   void _connectToDevice() async {
     if (_selectedDevice != null) {
-      await bluetooth.connect(_selectedDevice!);
+      await bluetoothHelper.connectToDevice(_selectedDevice!);
       setState(() {
-        _connected = true;
+        _connected = bluetoothHelper.connected;
       });
     }
   }
 
   void _disconnectFromDevice() async {
-    await bluetooth.disconnect();
+    await bluetoothHelper.disconnectFromDevice();
     setState(() {
-      _connected = false;
+      _connected = bluetoothHelper.connected;
     });
   }
 
   void _printSampleReceipt() async {
-    if (_connected) {
-      bluetooth.printNewLine();
-      bluetooth.printCustom("Sample Receipt", 3, 1);
-      bluetooth.printNewLine();
-      bluetooth.printCustom("Hello World!", 1, 1);
-      bluetooth.printNewLine();
-      bluetooth.printQRcode("Sample QR Code", 200, 200, 1);
-      bluetooth.printNewLine();
-      bluetooth.paperCut();
-    }
+    //await bluetoothHelper.printSampleReceipt();
   }
 
   @override
