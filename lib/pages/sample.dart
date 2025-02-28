@@ -8,10 +8,10 @@ void main() {
 
 class MyApp extends StatefulWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  MyAppState createState() => MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class MyAppState extends State<MyApp> {
   BluePrinterHelper bluetoothHelper = BluePrinterHelper();
   List<BluetoothDevice> _devices = [];
   BluetoothDevice? _selectedDevice;

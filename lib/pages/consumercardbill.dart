@@ -4,6 +4,8 @@ import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
 //Card after Printbilllist
 class ConsumercardBill extends StatefulWidget {
@@ -47,8 +49,10 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
   @override
   void initState() {
     super.initState();
-    // For testing, we previously used card id 1.
     // Now, _cardFuture is set in didChangeDependencies.
+  }
+   void _printSampleReceipt() async {
+    //await bluetoothHelper.printSampleReceipt();
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.

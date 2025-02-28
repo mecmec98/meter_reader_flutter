@@ -1,4 +1,4 @@
-import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
+//import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';

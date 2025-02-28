@@ -20,43 +20,74 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-   BluePrinterHelper bluetoothHelper = BluePrinterHelper();
+  BluePrinterHelper bluetoothHelper = BluePrinterHelper();
   List<BluetoothDevice> _devices = [];
   BluetoothDevice? _selectedDevice;
   bool _connected = false;
-
- 
+  bool isBluetoothOn = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
-  
   }
 
-   void _initBluetooth() async {
-    await bluetoothHelper.initBluetooth();
-    setState(() {
-      _devices = bluetoothHelper.devices;
-      _connected = bluetoothHelper.connected;
-    });
+  void _initBluetooth() async {
+    isBluetoothOn = (await bluetoothHelper.bluetooth.isOn)!;
+    if (!isBluetoothOn) {
+      _showBluetoothDialog();
+    } else {
+      await bluetoothHelper.initBluetooth();
+      setState(() {
+        _devices = bluetoothHelper.devices;
+        _connected = bluetoothHelper.connected;
+      });
+    }
   }
 
-  void _fetchData() {
+  void _showBluetoothDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Bluetooth Required"),
+          content: Text("Please turn on Bluetooth to proceed."),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _connectToDevice() async {
+    if (_selectedDevice != null) {
+      await bluetoothHelper
+          .connectToDevice(_selectedDevice!); // Connect to the selected device
+      setState(() {
+        _connected = bluetoothHelper.connected; // Update the connection status
+      });
+    }
+  }
+
+  void _disconnectFromDevice() async {
+    await bluetoothHelper.disconnectFromDevice(); // Disconnect from the device
     setState(() {
+      _connected = bluetoothHelper.connected; // Update the connection status
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // _getCategories();
     return Scaffold(
+      key: _scaffoldKey,
       appBar: appBar(),
-      drawer: Drawer(
-        child: Column(
-
-        ),
-      ),
+      endDrawer: drawerforPrinter(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -73,6 +104,49 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Drawer drawerforPrinter() {
+    return Drawer(
+      child: Column(
+        children: <Widget>[
+          DrawerHeader(
+            //decoration: BoxDecoration(color: Colors.blue),
+            child: Text(
+              'Connect Printer',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _initBluetooth,
+            child: Text("Scan Bluetooth Devices"),
+          ),
+          DropdownButton<BluetoothDevice>(
+            items: _devices
+                .map((device) => DropdownMenuItem(
+                      value: device,
+                      child: Text(device.name!), // Display device name
+                    ))
+                .toList(),
+            onChanged: (device) {
+              setState(() {
+                _selectedDevice = device; // Update the selected device
+              });
+              _connectToDevice(); // Connect to the selected device
+            },
+            value: _selectedDevice, // Set the selected device
+          ),
+          ElevatedButton(
+            onPressed: _connected
+                ? _disconnectFromDevice
+                : _connectToDevice, // Button to connect or disconnect
+            child: Text(_connected ? 'Disconnect' : 'Connect'), // Button text
+          ),
+          Text(
+            'Printer is ${_connected ? "Disconnected" : "Connected"}', // Display connection status
+          ),
+        ],
+      ),
+    );
+  }
 
   Column menuButtons() {
     return Column(
@@ -255,7 +329,7 @@ class _HomePageState extends State<HomePage> {
       actions: [
         GestureDetector(
           onTap: () {
-           // Navigator.pushNamed(context, '/printface');
+            _scaffoldKey.currentState?.openEndDrawer();
           },
           child: Container(
             margin: EdgeInsets.all(10),
@@ -266,7 +340,7 @@ class _HomePageState extends State<HomePage> {
               height: 25,
               width: 25,
               colorFilter:
-                  const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                  ColorFilter.mode(_connected ? Colors.green : Colors.black, BlendMode.srcIn),
             ),
           ),
         )
