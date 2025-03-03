@@ -12,6 +12,7 @@ class ConsumercardModel {
       cardMetersize; // Will hold the dynamic MSIZE value from the rates table.
   int cardPrevreading;
   int cardCurrreading;
+  int cardId;
   double cardCurrbill;
   double cardWmf;
   double cardAvusage;
@@ -34,6 +35,7 @@ class ConsumercardModel {
     required this.cardMetersize,
     required this.cardPrevreading,
     required this.cardCurrreading,
+    required this.cardId,
     required this.cardCurrbill,
     required this.cardWmf,
     required this.cardAvusage,
@@ -79,6 +81,7 @@ class ConsumercardModel {
     String msize = ratesData?["MSIZE$suffix"] ?? '';
 
     return ConsumercardModel(
+      cardId: map['_id'] is int ? map['PREADING'] as int : 0,
       cardCodeRaw: map['CLSSSZ'],
       cardName: map['NAME'] ?? '',
       // Construct account number as "ZB-CLSSSZ-ACC1" using the raw CLSSSZ value.

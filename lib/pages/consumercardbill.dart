@@ -17,6 +17,8 @@ class ConsumercardBill extends StatefulWidget {
 }
 
 class _ConsumercardBillState extends State<ConsumercardBill> {
+  BluePrinterHelper bluetoothHelper = BluePrinterHelper();
+  ConsumercardModel? _currentCard;
   // Future that retrieves the consumer card from the database.
   int? _cardId;
   int? _newReading;
@@ -25,8 +27,9 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
-  bool _billUpdated =
-      false;
+  bool _billUpdated = false;
+  String? _currentDate =
+      DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -51,8 +54,27 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
     super.initState();
     // Now, _cardFuture is set in didChangeDependencies.
   }
-   void _printSampleReceipt() async {
-    //await bluetoothHelper.printSampleReceipt();
+
+  void _printSampleReceipt(ConsumercardModel card) async {
+    await bluetoothHelper.printSampleReceipt(
+      _currentDate.toString(),
+      _formattedDate.toString(),
+      card.cardName,
+      card.cardAddress,
+      card.cardMeterno,
+      card.cardMeterbrand,
+      card.cardAccno,
+      (_newReading ?? card.cardCurrreading)
+          .toString(), // Use new reading if available
+      card.cardPrevreading.toString(),
+      (_usage ?? card.cardUsage).toString(), // Current usage from state
+      (_calculatedBill ?? card.cardCurrbill)
+          .toString(), // Calculated bill from state
+      card.cardWmf.toString(),
+      card.cardArrears.toString(),
+      (_calculatedBill ?? 0.0).toString(),
+    );
+    print('checked if print function passed');
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.
@@ -96,7 +118,13 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
           } else {
             // Model loaded from the database.
             final card = snapshot.data!;
-
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _currentCard?.cardId != card.cardId) {
+                setState(() {
+                  _currentCard = card;
+                });
+              }
+            });
             // CHANGED: Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
             if (!_billUpdated && card.cardUsage != 0) {
               // Use a post-frame callback to avoid calling setState during build.
@@ -479,11 +507,13 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
         children: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/printface',
-                arguments: _cardId,
-              );
+              if (_currentCard != null) {
+                _printSampleReceipt(_currentCard!);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No data to print.')),
+                );
+              }
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),

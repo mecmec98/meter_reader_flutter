@@ -2,7 +2,7 @@
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
-import 'package:flutter/services.dart' show rootBundle;
+//import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
 
 class BluePrinterHelper {
@@ -18,9 +18,12 @@ class BluePrinterHelper {
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
+    if (device == null) {
+      return;
+    }
+    selectedDevice = device;
     await bluetooth.connect(device);
     connected = true;
-    selectedDevice = device;
   }
 
   Future<void> disconnectFromDevice() async {
@@ -30,18 +33,18 @@ class BluePrinterHelper {
   }
 
   Future<void> printSampleReceipt(
-      String datePrinted,
-      String dateDue,
-      String name,
-      String address,
-      String meterNo,
-      String meterBrand,
-      String accNo,
-      String currReading,
-      String prevReading,
-      String usage,
-      String waterBill,
-      String watermf,
+      String datePrinted, //
+      String dateDue, //
+      String name, //
+      String address, //
+      String meterNo, //
+      String meterBrand, //
+      String accNo, //
+      String currReading, //
+      String prevReading, //
+      String usage, //
+      String waterBill, //
+      String watermf, //
       String balance,
       String totaldue) async {
     if (connected) {
@@ -88,7 +91,8 @@ class BluePrinterHelper {
         styles: PosStyles(align: PosAlign.center),
       );
       bytes += generator.text('For the Month of:'); //Current Month and year
-      bytes += generator.text('Date Printed: $datePrinted'); //Current day and time
+      bytes +=
+          generator.text('Date Printed: $datePrinted'); //Current day and time
       bytes += generator.text('Period Covered:'); //Bill covered
       bytes += generator.hr();
       bytes += generator.text(
@@ -201,14 +205,15 @@ class BluePrinterHelper {
       bytes += generator.reset();
       bytes += generator.text(dateDue);
       bytes += generator.hr();
-      bytes += generator.text(
-          'Please pay on time to avoid late penalties!');
+      bytes += generator.text('Please pay on time to avoid late penalties!');
 
       bytes += generator.feed(1);
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);
       bluetooth.writeBytes(byteList);
+    } else {
+      print('no printer connected');
     }
   }
 }
