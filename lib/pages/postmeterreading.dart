@@ -40,7 +40,8 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     });
     // Fetch the next page
     List<PostmeterlistModel> newPosts =
-        await PostmeterlistModel.getMasterModelList(limit: _limit, offset: _offset);
+        await PostmeterlistModel.getMasterModelList(
+            limit: _limit, offset: _offset);
 
     setState(() {
       _posts.addAll(newPosts);
@@ -92,6 +93,15 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     super.dispose();
   }
 
+  Future<void> _refreshList() async {
+    setState(() {
+      _posts.clear();
+      _offset = 0;
+      _hasMore = true;
+    });
+    await _loadData();
+  }
+
   Widget _buildPostItem(PostmeterlistModel post, int index) {
     // Alternate the background color.
     final Color tileColor = index % 2 == 0
@@ -104,6 +114,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
           '/consumercard',
           arguments: post.postID,
         );
+        _refreshList();
       },
       child: Card(
         color: tileColor,

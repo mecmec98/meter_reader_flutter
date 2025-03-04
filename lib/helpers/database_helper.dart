@@ -6,6 +6,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -33,7 +34,15 @@ class DatabaseHelper {
       return await openDatabase(':memory:');
     }
 
-    String dbPath = join(await getDatabasesPath(), 'MRADB.dbi');
+    Directory? downloadsDir = await getDownloadsDirectory();
+    if (downloadsDir == null) {
+      throw Exception('Downloads directory not found');
+    } else {
+      print('Downloads Category Found!');
+    }
+
+    //String dbPath = join(await getDatabasesPath(), 'MRADB.dbi');
+    String dbPath = join(downloadsDir.path, 'MRADB.dbi');
 
     bool exist = await databaseExists(dbPath);
 
@@ -92,7 +101,8 @@ class DatabaseHelper {
   }
 
 //for search function on Print List
-  Future<List<Map<String, dynamic>>> searchPostedMasterData(String query) async {
+  Future<List<Map<String, dynamic>>> searchPostedMasterData(
+      String query) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
