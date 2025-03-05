@@ -88,6 +88,7 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       appBar: appBar(),
       endDrawer: drawerforPrinter(),
+      drawer: drawrforUpload(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -99,6 +100,18 @@ class _HomePageState extends State<HomePage> {
           SizedBox(
             height: 20,
           ),
+        ],
+      ),
+    );
+  }
+
+  Drawer drawrforUpload() {
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            child: Text('Upload Data'),
+          )
         ],
       ),
     );
@@ -339,8 +352,8 @@ class _HomePageState extends State<HomePage> {
               'assets/icons/print.svg',
               height: 25,
               width: 25,
-              colorFilter:
-                  ColorFilter.mode(_connected ? Colors.green : Colors.black, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                  _connected ? Colors.green : Colors.black, BlendMode.srcIn),
             ),
           ),
         )

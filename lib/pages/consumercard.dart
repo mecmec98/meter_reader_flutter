@@ -28,6 +28,7 @@ class _ConsumercardState extends State<Consumercard> {
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
+
   // Retrieve the card ID from the route arguments.
   @override
   void didChangeDependencies() {
@@ -612,7 +613,7 @@ class _ConsumercardState extends State<Consumercard> {
       centerTitle: true,
       leading: GestureDetector(
         onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(context, true);
         },
         child: Container(
           margin: const EdgeInsets.all(10),

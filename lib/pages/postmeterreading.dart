@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:meter_reader_flutter/models/postmeterlist_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
+
 //PostmeterReading List
 class Postmeterreading extends StatefulWidget {
   @override
@@ -108,13 +109,18 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         ? Colors.white
         : const Color.fromARGB(255, 212, 224, 250);
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
+      onTap: () async {
+        // Navigate and wait for a result
+        final shouldRefresh = await Navigator.pushNamed(
           context,
           '/consumercard',
-          arguments: post.postID,
+          arguments: post.postID, // Pass data to the new screen
         );
-        _refreshList();
+        // Refresh list if needed
+        if (shouldRefresh == true) {
+          print('Im being Refresh');
+          _refreshList();
+        }
       },
       child: Card(
         color: tileColor,

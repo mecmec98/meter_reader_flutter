@@ -2,10 +2,10 @@
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
-//import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/material.dart';
 import 'dart:typed_data';
 
-class BluePrinterHelper {
+class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
   BluetoothDevice? selectedDevice;
@@ -15,21 +15,25 @@ class BluePrinterHelper {
     bool? isConnected = await bluetooth.isConnected;
     devices = await bluetooth.getBondedDevices();
     connected = isConnected!;
+    notifyListeners();
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
+    // ignore: unnecessary_null_comparison
     if (device == null) {
       return;
     }
     selectedDevice = device;
     await bluetooth.connect(device);
     connected = true;
+    notifyListeners();
   }
 
   Future<void> disconnectFromDevice() async {
     await bluetooth.disconnect();
     connected = false;
     selectedDevice = null;
+    notifyListeners();
   }
 
   Future<void> printSampleReceipt(
