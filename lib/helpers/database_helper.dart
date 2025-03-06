@@ -113,6 +113,20 @@ class DatabaseHelper {
     return result;
   }
 
+  //for search function on Print List
+  Future<List<Map<String, dynamic>>> searchPrintedMasterData(
+      String query) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where:
+          '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=? AND BILL_STAT=?',
+      whereArgs: ['%$query%', '%$query%', '%$query%', 1, 2],
+    );
+    return result;
+  }
+
 //for getting data for the Print Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintlist(
       {int limit = 8, int offset = 0}) async {
@@ -122,6 +136,21 @@ class DatabaseHelper {
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
       where: 'POSTED=?',
       whereArgs: [1],
+      limit: limit,
+      offset: offset,
+    );
+    return result;
+  }
+
+  //for getting data for the already Printed Bill List
+  Future<List<Map<String, dynamic>>> getMasterByIDforPrintedlist(
+      {int limit = 8, int offset = 0}) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: 'POSTED=? AND BILL_STAT=?',
+      whereArgs: [1, 2],
       limit: limit,
       offset: offset,
     );
@@ -149,7 +178,9 @@ class DatabaseHelper {
         'WMF',
         'AVE',
         'USAGE',
-        'AMOUNT'
+        'AMOUNT',
+        'SCDISC',
+        'WITHSCDISC',
       ],
       where: '_id=?',
       whereArgs: [id],
@@ -172,7 +203,7 @@ class DatabaseHelper {
 
 //update for the master list
   Future<int> updateMasterData(int id, Map<String, dynamic> updatedData) async {
-    print('hi I updated');
+    //print('hi I updated');
     final db = await database;
     return await db.update(
       'master',
@@ -180,5 +211,17 @@ class DatabaseHelper {
       where: '_id = ?',
       whereArgs: [id],
     );
+  }
+
+  //get data from prefs
+  Future<Map<String, dynamic>?> getPrefsData() async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'prefs',
+      where: '_id=?',
+      whereArgs: [1],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
   }
 }

@@ -13,6 +13,9 @@ class ConsumercardModel {
   int cardPrevreading;
   int cardCurrreading;
   int cardId;
+  int cardwithSeniorDisc;
+  
+  double cardSeniorDiscValue;  
   double cardCurrbill;
   double cardWmf;
   double cardAvusage;
@@ -33,9 +36,13 @@ class ConsumercardModel {
     required this.cardCodeRaw,
     required this.cardClassification,
     required this.cardMetersize,
+
     required this.cardPrevreading,
     required this.cardCurrreading,
     required this.cardId,
+    required this.cardwithSeniorDisc,
+
+    required this.cardSeniorDiscValue,
     required this.cardCurrbill,
     required this.cardWmf,
     required this.cardAvusage,
@@ -93,8 +100,12 @@ class ConsumercardModel {
       cardClassification: ltype,
       // Store the dynamically retrieved MSIZE value.
       cardMetersize: msize,
+
       cardPrevreading: map['PREADING'] is int ? map['PREADING'] as int : 0,
       cardCurrreading: map['CREADING'],
+      cardwithSeniorDisc: map['WITHSCDISC'] is int ? map['WITHSCDISC'] as int : 0,
+      
+      cardSeniorDiscValue: map['SCDISC'] != null ? (map['SCDISC'] as num).toDouble() / 100 : 0.0,
       cardCurrbill: map['AMOUNT'] != null ? (map['AMOUNT'] as num).toDouble() / 100 : 0.0, // Set default; update if needed.
       cardLessdisc: 0, // Set default; update if needed.
       cardArrears: map['ARREARS'] != null

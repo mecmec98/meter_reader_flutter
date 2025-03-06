@@ -245,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                           SvgPicture.asset(
                             'assets/icons/edit.svg',
                             height: 50,
-                            width: 50,
+                            width: 50,  
                             colorFilter: const ColorFilter.mode(
                                 Color.fromARGB(255, 245, 243, 243),
                                 BlendMode.srcIn),

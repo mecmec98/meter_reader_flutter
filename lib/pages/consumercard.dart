@@ -23,11 +23,9 @@ class _ConsumercardState extends State<Consumercard> {
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
-  bool _billUpdated =
-      false; 
+  bool _billUpdated = false;
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
-
 
   // Retrieve the card ID from the route arguments.
   @override
@@ -48,7 +46,6 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void initState() {
     super.initState();
-    // For testing, we previously used card id 1.
     // Now, _cardFuture is set in didChangeDependencies.
   }
 
@@ -144,7 +141,7 @@ class _ConsumercardState extends State<Consumercard> {
             // Model loaded from the database.
             final card = snapshot.data!;
 
-            // CHANGED: Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
+            // Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
             if (!_billUpdated && card.cardUsage != 0) {
               // Use a post-frame callback to avoid calling setState during build.
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -471,7 +468,18 @@ class _ConsumercardState extends State<Consumercard> {
               Text(card.cardWmf.toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w400)),
             ],
-          ),
+          ), //Will only show if card.cardwithSeniorDisc == 1
+          if (card.cardwithSeniorDisc == 1) ...[
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('With Senior Citezen Discount'),
+                Text(card.cardSeniorDiscValue.toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+          ],
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -613,7 +621,7 @@ class _ConsumercardState extends State<Consumercard> {
       centerTitle: true,
       leading: GestureDetector(
         onTap: () {
-              Navigator.pop(context, true);
+          Navigator.pop(context, true);
         },
         child: Container(
           margin: const EdgeInsets.all(10),
