@@ -1,12 +1,14 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+//import 'package:flutter/foundation.dart';
+// import 'package:flutter/material.dart';
+//import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 // ignore: unnecessary_import
 import 'package:sqflite/sqflite.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -24,68 +26,84 @@ class DatabaseHelper {
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
+
+
+  Future<Database?> _initDatabase() async {
+
+    if (Platform.isAndroid){
+      print(Platform);
+      await Permission.storage.request();
+    }
+    print('Initiating Databse');
     // On Linux in debug mode, initialize the ffi database factory.
-    if (Platform.isLinux && kDebugMode) {
-      print("Debug mode on Linux detected. Initializing sqflite ffi.");
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-      print("Using an in-memory database on Linux.");
-      return await openDatabase(':memory:');
-    }
-
-    Directory? downloadsDir = await getDownloadsDirectory();
-    if (downloadsDir == null) {
-      throw Exception('Downloads directory not found');
-    } else {
-      print('Downloads Category Found!');
-    }
-
-    //String dbPath = join(await getDatabasesPath(), 'MRADB.dbi');
-    String dbPath = join(downloadsDir.path, 'MRADB.dbi');
-
-    bool exist = await databaseExists(dbPath);
-
-    if (!exist) {
-      try {
-        await Directory(dirname(dbPath)).create(recursive: true);
-        ByteData data = await rootBundle.load('assets/database/MRADB.dbi');
-        List<int> bytes =
-            data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-        await File(dbPath).writeAsBytes(bytes, flush: true);
-      } catch (e) {
-        print('Error copying database: $e');
+    // if (Platform.isLinux && kDebugMode) {
+    //   print("Debug mode on Linux detected. Initializing sqflite ffi.");
+    //   sqfliteFfiInit();
+    //   databaseFactory = databaseFactoryFfi;
+    //   print("Using an in-memory database on Linux.");
+    //   return await openDatabase(':memory:');
+    // }
+    try {
+      List<Directory>? downloadsDir = await getExternalStorageDirectories(type: StorageDirectory.downloads);
+      print('Downloads Directory $downloadsDir');
+      if (downloadsDir == null) {
+        throw Exception('Downloads directory not found');
       }
+      //String dbPath = join(await getDatabasesPath(), 'MRADB.dbi');
+      final dbPath = join((downloadsDir as Directory).path, 'MRADB.dbi');
+      // if (!await Directory(downloadsDir.path).exists()){
+      //   await Directory(downloadsDir.path).create(recursive: true);
+      // }
+      return await openDatabase(dbPath);
+    } catch (e) {
+      print('Error: $e');
+      return null;
     }
-    return await openDatabase(dbPath);
+  }
+
+  Future closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null; // Optionally set it to null after closing
+    }
   }
 
 //used for testing
   Future<Map<String, dynamic>?> getMasterByID(int id) async {
-    final db = await database;
-    List<Map<String, dynamic>> result = await db.query(
-      'master',
-      columns: ['ACC1', 'ADDRESS', 'NAME'],
-      where: '_id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    return result.isNotEmpty ? result.first : null;
+    try {
+      final db = await database;
+      List<Map<String, dynamic>> result = await db.query(
+        'master',
+        columns: ['ACC1', 'ADDRESS', 'NAME'],
+        where: '_id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      return result.isNotEmpty ? result.first : null;
+    } catch (e) {
+      print('Error $e');
+      return null;
+    }
   }
 
 //for getting data for the Post Meter List
-  Future<List<Map<String, dynamic>>> getMasterByIDforlist(
+  Future<List<Map<String, dynamic>>?> getMasterByIDforlist(
       {int limit = 8, int offset = 0}) async {
-    final db = await database;
-    List<Map<String, dynamic>> result = await db.query(
-      'master',
-      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
-      where: 'POSTED=?',
-      whereArgs: [0],
-      limit: limit,
-      offset: offset,
-    );
-    return result;
+    try {
+      final db = await database;
+      List<Map<String, dynamic>> result = await db.query(
+        'master',
+        columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+        where: 'POSTED=?',
+        whereArgs: [0],
+        limit: limit,
+        offset: offset,
+      );
+      return result;
+    } catch (e) {
+      print('Erro $e');
+      return null;
+    }
   }
 
 //for search function on Post Meter List

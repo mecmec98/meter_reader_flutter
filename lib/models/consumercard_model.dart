@@ -10,12 +10,13 @@ class ConsumercardModel {
   String cardClassification; // Will hold the LTYPE value from the rates table.
   String
       cardMetersize; // Will hold the dynamic MSIZE value from the rates table.
+
   int cardPrevreading;
   int cardCurrreading;
   int cardId;
   int cardwithSeniorDisc;
-  
-  double cardSeniorDiscValue;  
+
+  double cardSeniorDiscValue;
   double cardCurrbill;
   double cardWmf;
   double cardAvusage;
@@ -27,6 +28,9 @@ class ConsumercardModel {
   double cardTotaladd;
   double cardUsage;
 
+  String prefsDatedue;
+  String prefsCutdate;
+
   ConsumercardModel({
     required this.cardName,
     required this.cardAccno,
@@ -36,12 +40,10 @@ class ConsumercardModel {
     required this.cardCodeRaw,
     required this.cardClassification,
     required this.cardMetersize,
-
     required this.cardPrevreading,
     required this.cardCurrreading,
     required this.cardId,
     required this.cardwithSeniorDisc,
-
     required this.cardSeniorDiscValue,
     required this.cardCurrbill,
     required this.cardWmf,
@@ -53,6 +55,9 @@ class ConsumercardModel {
     required this.cardPenalty,
     required this.cardTotaladd,
     required this.cardUsage,
+    
+    required this.prefsCutdate,
+    required this.prefsDatedue,
   });
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
@@ -63,7 +68,7 @@ class ConsumercardModel {
   ///   - The first two digits (e.g., "10" from "102") are used as the CODE.
   ///   - The last digit (e.g., "2") is used to determine the dynamic column (MSIZE2).
   static Future<ConsumercardModel> createFromMapWithRates(
-      Map<String, dynamic> map) async {
+      Map<String, dynamic> map, Map<String, dynamic> prefsMap) async {
     // Retrieve the raw CLSSSZ value.
     String rawClsssz = map['CLSSSZ'] ?? '';
 
@@ -103,10 +108,14 @@ class ConsumercardModel {
 
       cardPrevreading: map['PREADING'] is int ? map['PREADING'] as int : 0,
       cardCurrreading: map['CREADING'],
-      cardwithSeniorDisc: map['WITHSCDISC'] is int ? map['WITHSCDISC'] as int : 0,
-      
-      cardSeniorDiscValue: map['SCDISC'] != null ? (map['SCDISC'] as num).toDouble() / 100 : 0.0,
-      cardCurrbill: map['AMOUNT'] != null ? (map['AMOUNT'] as num).toDouble() / 100 : 0.0, // Set default; update if needed.
+      cardwithSeniorDisc:
+          map['WITHSCDISC'] is int ? map['WITHSCDISC'] as int : 0,
+
+      cardSeniorDiscValue:
+          map['SCDISC'] != null ? (map['SCDISC'] as num).toDouble() / 100 : 0.0,
+      cardCurrbill: map['AMOUNT'] != null
+          ? (map['AMOUNT'] as num).toDouble() / 100
+          : 0.0, // Set default; update if needed.
       cardLessdisc: 0, // Set default; update if needed.
       cardArrears: map['ARREARS'] != null
           ? (map['ARREARS'] as num).toDouble() / 100
@@ -119,18 +128,22 @@ class ConsumercardModel {
       cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
+
+      prefsCutdate: prefsMap['cutdate'] ?? '',
+      prefsDatedue: prefsMap['datedue'] ?? '',
     );
   }
 }
-
 /// Retrieves a ConsumercardModel by its ID.
+
 Future<ConsumercardModel?> getConsumercardByID(int id) async {
   // Retrieve the card map from the database.
   final Map<String, dynamic>? cardMap = await DatabaseHelper().getCardByID(id);
-
-  if (cardMap != null) {
+  //Also Retrieve the prefs map from the database:
+  final Map<String, dynamic>? prefsMap = await DatabaseHelper().getPrefsData();
+  if (cardMap != null && prefsMap != null) {
     // Use the asynchronous factory method to create the model, including rate data.
-    return ConsumercardModel.createFromMapWithRates(cardMap);
+    return ConsumercardModel.createFromMapWithRates(cardMap, prefsMap);
   } else {
     return null;
   }

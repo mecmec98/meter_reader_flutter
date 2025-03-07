@@ -19,10 +19,13 @@ class _ConsumercardState extends State<Consumercard> {
   int? _cardId;
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
+
   double? _usage;
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
+  double? _calculatedSCDisc;
+
   bool _billUpdated = false;
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
@@ -105,14 +108,21 @@ class _ConsumercardState extends State<Consumercard> {
       // card.cardCodeRaw is used as the CSSSZ code.
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
+      double scDisc;
+      if (card.cardwithSeniorDisc == 1) {
+        scDisc = bill * 0.05;
+      } else {
+        scDisc = 0;
+      }
       double totalBeforeDue =
-          bill + card.cardArrears + 0.0 + 0.0 + card.cardWmf;
+          (bill - scDisc) + card.cardArrears + 0.0 + card.cardWmf;
       double totalAfterDue = totalBeforeDue * 1.05;
 
       setState(() {
         _calculatedBill = bill;
         _beforeDatecalculation = totalBeforeDue;
         _afterDatecalculation = totalAfterDue;
+        _calculatedSCDisc = scDisc;
       });
     } catch (e) {
       print("Error calculating bill: $e");
@@ -120,6 +130,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill = null;
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
+        _calculatedSCDisc = null;
       });
     }
   }
@@ -503,10 +514,10 @@ class _ConsumercardState extends State<Consumercard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Date Due', style: TextStyle(color: Colors.red)),
-              Text(_formattedDate ?? '',
+              const Text('Date Due', style: TextStyle(color: Colors.orange)),
+              Text(card.prefsDatedue,
                   style: TextStyle(
-                      fontWeight: FontWeight.w500, color: Colors.red)),
+                      fontWeight: FontWeight.w500, color: Colors.orange)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
@@ -517,6 +528,16 @@ class _ConsumercardState extends State<Consumercard> {
                   style: TextStyle(color: Colors.orange)),
               Text((_afterDatecalculation ?? 0.0).toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],  
+          ),
+          const Divider(color: Colors.grey, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Disconnection Date',
+                  style: TextStyle(color: Colors.red)),
+              Text(card.prefsCutdate,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
             ],
           ),
         ],

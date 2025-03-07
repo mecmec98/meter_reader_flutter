@@ -22,11 +22,16 @@ class PostmeterlistModel {
     );
   }
   // Static method to fetch a paginated list of models
-  static Future<List<PostmeterlistModel>> getMasterModelList(
+  static Future<List<PostmeterlistModel>?> getMasterModelList(
       {int limit = 8, int offset = 0}) async {
-    final dbHelper = DatabaseHelper();
-    final List<Map<String, dynamic>> maps =
-        await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
-    return maps.map((map) => PostmeterlistModel.fromMap(map)).toList();
+    try {
+      final dbHelper = DatabaseHelper();
+      final List<Map<String, dynamic>>? maps =
+          await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
+      return maps!.map((map) => PostmeterlistModel.fromMap(map)).toList();
+    } catch (e) {
+      print('Error: $e');
+      return null;
+    }
   }
 }

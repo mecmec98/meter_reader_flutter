@@ -3,7 +3,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:meter_reader_flutter/models/postmeterlist_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
-
 //PostmeterReading List
 class Postmeterreading extends StatefulWidget {
   @override
@@ -40,18 +39,22 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       _isLoading = true;
     });
     // Fetch the next page
-    List<PostmeterlistModel> newPosts =
-        await PostmeterlistModel.getMasterModelList(
-            limit: _limit, offset: _offset);
+    try {
+      List<PostmeterlistModel>? newPosts =
+          await PostmeterlistModel.getMasterModelList(
+              limit: _limit, offset: _offset);
 
-    setState(() {
-      _posts.addAll(newPosts);
-      _offset += newPosts.length; // update offset
-      _isLoading = false;
-      if (newPosts.length < _limit) {
-        _hasMore = false;
-      }
-    });
+      setState(() {
+        _posts.addAll(newPosts!);
+        _offset += newPosts.length; // update offset
+        _isLoading = false;
+        if (newPosts.length < _limit) {
+          _hasMore = false;
+        }
+      });
+    } catch (e) {
+      print('Error: $e');
+    }
   }
 
   /// Search the database using the given query.
