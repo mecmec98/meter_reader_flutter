@@ -68,7 +68,7 @@ class DatabaseManagementScreenState extends State<DatabaseManagementScreen> {
               itemCount: _data.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(_data[index]['orgname'] ?? ''),
+                  title: Text(_data[index]['cutdate'] ?? ''),
                   subtitle: Text('ID: ${_data[index]['_id']}'),
                 );
               },

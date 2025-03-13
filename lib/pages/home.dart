@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
+import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 //import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 //import 'package:path/path.dart';
@@ -88,7 +89,7 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       appBar: appBar(),
       endDrawer: drawerforPrinter(),
-      drawer: drawrforUpload(),
+      drawer: Databasedrawer(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,17 +106,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Drawer drawrforUpload() {
-    return Drawer(
-      child: Column(
-        children: [
-          DrawerHeader(
-            child: Text('Upload Data'),
-          )
-        ],
-      ),
-    );
-  }
 
   Drawer drawerforPrinter() {
     return Drawer(

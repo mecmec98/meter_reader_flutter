@@ -1,24 +1,20 @@
 import 'dart:io';
-//import 'package:flutter/foundation.dart';
-// import 'package:flutter/material.dart';
-//import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 // ignore: unnecessary_import
 import 'package:sqflite/sqflite.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
 
-  factory DatabaseHelper() {
-    return _instance;
-  }
-  DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
 
+  final String _dbName = 'MRADB.dbi';
   static Database? _database;
+
+  DatabaseHelper._internal();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -26,45 +22,50 @@ class DatabaseHelper {
     return _database!;
   }
 
-
-
   Future<Database?> _initDatabase() async {
-
-    if (Platform.isAndroid){
-      print(Platform);
-      await Permission.storage.request();
-    }
     print('Initiating Databse');
-    // On Linux in debug mode, initialize the ffi database factory.
-    // if (Platform.isLinux && kDebugMode) {
-    //   print("Debug mode on Linux detected. Initializing sqflite ffi.");
-    //   sqfliteFfiInit();
-    //   databaseFactory = databaseFactoryFfi;
-    //   print("Using an in-memory database on Linux.");
-    //   return await openDatabase(':memory:');
-    // }
     try {
-      List<Directory>? downloadsDir = await getExternalStorageDirectories(type: StorageDirectory.downloads);
-      print('Downloads Directory $downloadsDir');
-      if (downloadsDir == null) {
-        throw Exception('Downloads directory not found');
+      if (_database != null && _database!.isOpen) {
+        _database?.close();
       }
-      //String dbPath = join(await getDatabasesPath(), 'MRADB.dbi');
-      final dbPath = join((downloadsDir as Directory).path, 'MRADB.dbi');
-      // if (!await Directory(downloadsDir.path).exists()){
-      //   await Directory(downloadsDir.path).create(recursive: true);
-      // }
-      return await openDatabase(dbPath);
+      Directory documentsDirectory = await getApplicationCacheDirectory();
+      String path = join(documentsDirectory.path, _dbName);
+
+      bool exist = await databaseExists(path);
+      if (!exist) {
+        await Directory(dirname(path)).create(recursive: true);
+      }
+      return await openDatabase(path);
     } catch (e) {
       print('Error: $e');
-      return null;
+      throw Exception('Failed to initialize the database: $e');
     }
   }
 
-  Future closeDatabase() async {
-    if (_database != null) {
-      await _database!.close();
-      _database = null; // Optionally set it to null after closing
+  Future<bool> importNewDatabase(String sourcePath) async {
+    try {
+      Directory documentsDirectory = await getApplicationDocumentsDirectory();
+      String destPath = join(documentsDirectory.path, _dbName);
+
+      // Close existing database connection
+      if (_database != null) {
+        await _database!.close();
+        _database = null;
+      }
+
+      // Delete old database
+      await deleteDatabase(destPath);
+
+      // Copy new database
+      File sourceFile = File(sourcePath);
+      await sourceFile.copy(destPath);
+
+      // Reinitialize database
+      _database = await _initDatabase();
+      return true;
+    } catch (e) {
+      print('Error replacing database: $e');
+      return false;
     }
   }
 
