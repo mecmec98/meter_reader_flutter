@@ -10,9 +10,9 @@ class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
 
   factory DatabaseHelper() => _instance;
-
   final String _dbName = 'MRADB.dbi';
   static Database? _database;
+
 
   DatabaseHelper._internal();
 
@@ -28,7 +28,7 @@ class DatabaseHelper {
       if (_database != null && _database!.isOpen) {
         _database?.close();
       }
-      Directory documentsDirectory = await getApplicationCacheDirectory();
+      Directory documentsDirectory = await getApplicationDocumentsDirectory();
       String path = join(documentsDirectory.path, _dbName);
 
       bool exist = await databaseExists(path);

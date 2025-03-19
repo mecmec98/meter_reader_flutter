@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
+  } 
 
   Column menuButtons() {
     return Column(
@@ -317,7 +317,9 @@ class _HomePageState extends State<HomePage> {
       ),
       centerTitle: true,
       leading: GestureDetector(
-        onTap: () {},
+        onTap: () {
+           _scaffoldKey.currentState?.openDrawer();
+        },
         child: Container(
           margin: EdgeInsets.all(10),
           alignment: Alignment.center,

@@ -62,13 +62,16 @@ class _ConsumercardState extends State<Consumercard> {
       int calculateBillInt = dbBill.toInt();
       int usageInt = _usage!.toInt();
       int isPosted = 1;
+      int billStatus = 1;
       int? isNewReading = _newReading;
-
+      String dateUpdated = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       Map<String, dynamic> updatedData = {
         'AMOUNT': calculateBillInt,
         'USAGE': usageInt,
         'POSTED': isPosted,
+        'BILL_STAT': billStatus,
         'CREADING': isNewReading,
+        'MCRDGDT': dateUpdated,
       };
 
       try {
@@ -528,7 +531,7 @@ class _ConsumercardState extends State<Consumercard> {
                   style: TextStyle(color: Colors.orange)),
               Text((_afterDatecalculation ?? 0.0).toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],  
+            ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
@@ -537,7 +540,8 @@ class _ConsumercardState extends State<Consumercard> {
               const Text('Disconnection Date',
                   style: TextStyle(color: Colors.red)),
               Text(card.prefsCutdate,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.red)),
             ],
           ),
         ],
