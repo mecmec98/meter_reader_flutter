@@ -52,19 +52,26 @@ class _ConsumercardState extends State<Consumercard> {
     // Now, _cardFuture is set in didChangeDependencies.
   }
 
-  Future<void> updateMasterRecord() async {
+  Future<void> updateMasterRecord(int billStatind) async {
     if (_cardId != null &&
         _calculatedBill != null &&
         _usage != null &&
-        _newReading != null) {
+        _newReading != null &&
+        _calculatedSCDisc !=null) {
       // Convert calculated bill to cents and then to int.
+     
       double dbBill = _calculatedBill! * 100;
+      double scDisc = _calculatedSCDisc! * 100;
+
+      int finalSCdisc = scDisc.toInt();
       int calculateBillInt = dbBill.toInt();
       int usageInt = _usage!.toInt();
+
       int isPosted = 1;
-      int billStatus = 1;
+      int billStatus = billStatind; //indicator just 1 if only saved, 2 if saved and printed
       int? isNewReading = _newReading;
-      String dateUpdated = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      String dateUpdated =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       Map<String, dynamic> updatedData = {
         'AMOUNT': calculateBillInt,
         'USAGE': usageInt,
@@ -72,6 +79,7 @@ class _ConsumercardState extends State<Consumercard> {
         'BILL_STAT': billStatus,
         'CREADING': isNewReading,
         'MCRDGDT': dateUpdated,
+        'SCDISC': finalSCdisc,
       };
 
       try {
@@ -115,7 +123,7 @@ class _ConsumercardState extends State<Consumercard> {
       if (card.cardwithSeniorDisc == 1) {
         scDisc = bill * 0.05;
       } else {
-        scDisc = 0;
+        scDisc = 0.00;
       }
       double totalBeforeDue =
           (bill - scDisc) + card.cardArrears + 0.0 + card.cardWmf;
@@ -488,8 +496,11 @@ class _ConsumercardState extends State<Consumercard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('With Senior Citezen Discount'),
-                Text(card.cardSeniorDiscValue.toStringAsFixed(2),
+                const Text('Senior Citezen Discount'),
+                Text(
+                    _calculatedSCDisc != null
+                        ? _calculatedSCDisc!.toStringAsFixed(2)
+                        : '0.00', 
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),
@@ -564,7 +575,8 @@ class _ConsumercardState extends State<Consumercard> {
                   const SnackBar(content: Text('No Current Reading yet.')),
                 );
               } else {
-                await updateMasterRecord();
+                int billStatprinted = 2;
+                await updateMasterRecord(billStatprinted);
                 if (!mounted) return;
                 Navigator.pushNamed(
                   context,
@@ -600,7 +612,8 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await updateMasterRecord();
+              int billstateSaved = 1;
+              await updateMasterRecord(billstateSaved);
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),
