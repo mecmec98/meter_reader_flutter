@@ -57,9 +57,9 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill != null &&
         _usage != null &&
         _newReading != null &&
-        _calculatedSCDisc !=null) {
+        _calculatedSCDisc != null) {
       // Convert calculated bill to cents and then to int.
-     
+
       double dbBill = _calculatedBill! * 100;
       double scDisc = _calculatedSCDisc! * 100;
 
@@ -68,7 +68,8 @@ class _ConsumercardState extends State<Consumercard> {
       int usageInt = _usage!.toInt();
 
       int isPosted = 1;
-      int billStatus = billStatind; //indicator just 1 if only saved, 2 if saved and printed
+      int billStatus =
+          billStatind; //indicator just 1 if only saved, 2 if saved and printed
       int? isNewReading = _newReading;
       String dateUpdated =
           DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -191,7 +192,7 @@ class _ConsumercardState extends State<Consumercard> {
           }
         },
       ),
-      bottomNavigationBar: bottomButtons(),
+      bottomNavigationBar: SafeArea(child: bottomButtons()),
     );
   }
 
@@ -496,11 +497,14 @@ class _ConsumercardState extends State<Consumercard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Senior Citezen Discount'),
+                const Text(
+                  'Senior Citezen Discount',
+                  style: TextStyle(color: Colors.green),
+                ),
                 Text(
                     _calculatedSCDisc != null
                         ? _calculatedSCDisc!.toStringAsFixed(2)
-                        : '0.00', 
+                        : '0.00',
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),
