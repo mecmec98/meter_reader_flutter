@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 // ignore: depend_on_referenced_packages
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider/path_provider.dart';
+//import 'package:share_plus/share_plus.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -12,7 +13,6 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
   final String _dbName = 'MRADB.dbi';
   static Database? _database;
-
 
   DatabaseHelper._internal();
 
@@ -22,14 +22,21 @@ class DatabaseHelper {
     return _database!;
   }
 
+//getting the database path
+  Future<String> getDatabasePath() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    return join(
+        documentsDirectory.path, _dbName); // Returns the full database path
+  }
+
   Future<Database?> _initDatabase() async {
     print('Initiating Databse');
     try {
       if (_database != null && _database!.isOpen) {
         _database?.close();
       }
-      Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String path = join(documentsDirectory.path, _dbName);
+
+      String path = await getDatabasePath();
 
       bool exist = await databaseExists(path);
       if (!exist) {
@@ -68,6 +75,28 @@ class DatabaseHelper {
       return false;
     }
   }
+
+//for database export
+  Future<bool> exportDatabase() async {
+     try {
+      // Get the database file path
+      String sourcePath = await getDatabasePath();
+      File sourceFile = File(sourcePath);
+
+      // Get the Downloads directory path
+      Directory downloadsDirectory = Directory('/storage/emulated/0/Download');
+      String destPath = join(downloadsDirectory.path, 'MRADB.dbo');
+
+      // Copy the database file to the Downloads directory
+      await sourceFile.copy(destPath);
+
+      print('Database exported to $destPath');
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+}
 
 //used for testing
   Future<Map<String, dynamic>?> getMasterByID(int id) async {

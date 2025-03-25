@@ -21,6 +21,7 @@ dependencies:
   path: ^1.9.0
   permission_handler: ^11.4.0
   external_path: ^2.2.0
+  share_plus: ^10.1.4
   
   cupertino_icons: ^1.0.8
   esc_pos_utils: ^1.1.0

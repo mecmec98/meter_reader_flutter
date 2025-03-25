@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 //import 'package:path/path.dart';
 //import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,8 +13,11 @@ class Databasedrawer extends StatefulWidget {
 class _DatabasedrawerState extends State<Databasedrawer> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   String _currentDate = 'Loading...'; // Initial placeholder
+  // ignore: unused_field
   bool _isLoading = true;
   bool _dataimportSuccess = false;
+  // ignore: unused_field
+  bool _dataexportSuccess = false;
 
   @override
   void initState() {
@@ -51,18 +55,42 @@ class _DatabasedrawerState extends State<Databasedrawer> {
       allowMultiple: false,
     );
 
-    if (result != null) {
+    if (result != null && result.files.single.name == 'MRADB.dbi' ) {
       bool success =
           await _dbHelper.importNewDatabase(result.files.single.path!);
       if (success) {
+        setState(() {
+          _dataimportSuccess = true;
+        });
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Database imported successfully!')),
-      );
+          SnackBar(content: Text('Database imported successfully!')),
+        );
         await _fetchDate();
       } else {
-        print('no database selected');
+        setState(() {
+          _dataimportSuccess = false;
+        });
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to import database')),
+        );
       }
+    }
+  }
+
+  Future<void> _exportDatabase() async {
+    bool success = await _dbHelper.exportDatabase();
+    if (success) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Database exported to Downloads folder!')),
+      );
+    } else {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export database')),
+      );
     }
   }
 
@@ -71,17 +99,155 @@ class _DatabasedrawerState extends State<Databasedrawer> {
     return Drawer(
       child: Column(
         children: [
-          DrawerHeader(
+          Container(
+            padding: EdgeInsets.only(top: 50, bottom: 40),
             child: Text(
               'Database Settings',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
             ),
           ),
-          Text('Current Bill Database Version Date'),
-          Text(_currentDate), //here
-          ElevatedButton(
-            onPressed: _importDatabase,
-            child: Text('Import Database'),
+          Text(
+            'Current Bill Database Version Date',
+            style: TextStyle(
+                color: Colors.black, fontWeight: FontWeight.w600, fontSize: 15),
+          ),
+          Container(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text(
+                _currentDate,
+                style: TextStyle(fontWeight: FontWeight.w500),
+              )),
+          ElevatedButton.icon(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Importing New Database'),
+                    content: Text(
+                        'Importing a new database will replace the current one, Are you sure?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          await _importDatabase();
+                          // ignore: use_build_context_synchronously
+                          Navigator.of(context).pop();
+                        },
+                        style: ButtonStyle(
+                          backgroundColor:
+                              WidgetStateProperty.all(Colors.green),
+                        ),
+                        child: Text(
+                          'Yes',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          // ignore: use_build_context_synchronously
+                          Navigator.of(context).pop();
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.all(Colors.red),
+                        ),
+                        child: Text(
+                          'No',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }, //_importDatabase,
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.green),
+            ),
+            icon: SvgPicture.asset(
+              'assets/icons/import-database.svg',
+              height: 20,
+              width: 20,
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+            label: Text(
+              'Import Database',
+              style:
+                  TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+          ),
+          if (_dataimportSuccess) ...[
+            Text(
+              '',
+              style:
+                  TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+            )
+          ],
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Export Database'),
+                        content: Text(
+                            'Exporting the Database will replace any previously exported database (MRADB.dbo) in your Public Downloads folder'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () async {
+                              await _exportDatabase();
+                              // ignore: use_build_context_synchronously
+                              Navigator.of(context).pop();
+                            },
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  WidgetStateProperty.all(Colors.green),
+                            ),
+                            child: Text(
+                              'Yes',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              // ignore: use_build_context_synchronously
+                              Navigator.of(context).pop();
+                            },
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  WidgetStateProperty.all(Colors.red),
+                            ),
+                            child: Text(
+                              'No',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      );
+                    });
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.blue),
+              ),
+              icon: SvgPicture.asset(
+                'assets/icons/export-database.svg',
+                height: 20,
+                width: 20,
+                colorFilter:
+                    const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              label: Text(
+                'Export Database',
+                style:
+                    TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ),
+          ),
+          Text(
+            'Databases Exported to Public Downloads Folder',
+            style: TextStyle(color: Colors.grey, fontSize: 8),
           ),
         ],
       ),

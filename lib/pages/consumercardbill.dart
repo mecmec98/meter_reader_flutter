@@ -462,7 +462,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
               Text((_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
-          ),
+          ),  
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
