@@ -1,5 +1,6 @@
 //import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
-
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +9,13 @@ import 'dart:typed_data';
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
-  BluetoothDevice? selectedDevice;
-  bool connected = false;
+  bool connected = true;
+  BluetoothDevice? _selectedDevice;
+  BluetoothDevice? get selectedDevice => _selectedDevice;
+  set selectedDevice(BluetoothDevice? device) {
+    _selectedDevice = device;
+    notifyListeners();
+  }
 
   Future<void> initBluetooth() async {
     bool? isConnected = await bluetooth.isConnected;
@@ -49,15 +55,31 @@ class BluePrinterHelper extends ChangeNotifier {
       String usage, //
       String waterBill, //
       String watermf, //
-      String balance,
-      String totaldue) async {
-    if (connected) {
+      double balance,
+      String totaldue,
+      String discDate) async {
+    bool? selfisConnected = await bluetooth.isConnected;
+    if (selfisConnected!) {
+      DateTime now = DateTime.now();
+      String monthInWords =
+          DateFormat.MMMM().format(now); // Get the month in words
+      String year = DateFormat.y().format(now); // Get the year in numbers
+
+      String arrearsOrAdvance = '';
+      if (balance < 0){
+        arrearsOrAdvance = 'Advance';
+      }else{
+        arrearsOrAdvance = 'Arrears';
+      }
+
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm58, profile);
 
       List<int> bytes = [];
 
       // Print header
+      
+      bytes += generator.feed(2);
       bytes += generator.text(
         'Dapitan City Water District',
         styles: PosStyles(
@@ -94,13 +116,13 @@ class BluePrinterHelper extends ChangeNotifier {
         'BILLING STATEMENT',
         styles: PosStyles(align: PosAlign.center),
       );
-      bytes += generator.text('For the Month of:'); //Current Month and year
+      bytes += generator.text('For the Month of: $monthInWords - $year'); //Current Month and year
       bytes +=
-          generator.text('Date Printed: $datePrinted'); //Current day and time
+          generator.text('Date Printed:$datePrinted'); //Current day and time
       bytes += generator.text('Period Covered:'); //Bill covered
       bytes += generator.hr();
       bytes += generator.text(
-        '101-102-179-D',
+        accNo,
         styles: PosStyles(height: PosTextSize.size2, width: PosTextSize.size2),
       );
       bytes += generator.hr();
@@ -157,12 +179,12 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.row([
         PosColumn(
           text: 'WATER BILL',
-          width: 9,
+          width: 8,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
           text: waterBill,
-          width: 3,
+          width: 4,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
@@ -170,25 +192,25 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.row([
         PosColumn(
           text: 'W.M.F.',
-          width: 9,
+          width: 8,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
           text: watermf,
-          width: 3,
+          width: 4,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'Advancec/Arrears',
-          width: 9,
+          text: arrearsOrAdvance,
+          width: 8,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
-          text: balance,
-          width: 3,
+          text: balance.toString(),
+          width: 4,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
@@ -196,18 +218,43 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.row([
         PosColumn(
           text: 'TOTAL DUE',
-          width: 9,
+          width: 8,
           styles: PosStyles(height: PosTextSize.size2, bold: true),
         ),
         PosColumn(
           text: totaldue,
-          width: 3,
+          width: 4,
           styles: PosStyles(
               height: PosTextSize.size2, bold: true, align: PosAlign.right),
         ),
       ]);
+      bytes += generator.row([
+        PosColumn(
+          text: 'DATE DUE',
+          width: 7,
+          styles: PosStyles(height: PosTextSize.size1, bold: true),
+        ),
+        PosColumn(
+          text: dateDue,
+          width: 5,
+          styles: PosStyles(
+              height: PosTextSize.size1, bold: true, align: PosAlign.right),
+        ),
+      ]);
+      bytes += generator.row([
+        PosColumn(
+          text: 'DISC DATE',
+          width: 7,
+          styles: PosStyles(height: PosTextSize.size1, bold: true),
+        ),
+        PosColumn(
+          text: discDate,
+          width: 5,
+          styles: PosStyles(
+              height: PosTextSize.size1, bold: true, align: PosAlign.right),
+        ),
+      ]);
       bytes += generator.reset();
-      bytes += generator.text(dateDue);
       bytes += generator.hr();
       bytes += generator.text('Please pay on time to avoid late penalties!');
 

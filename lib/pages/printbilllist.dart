@@ -104,7 +104,7 @@ class _PrintbillListState extends State<PrintbillList> {
       onTap: () {
         Navigator.pushNamed(
           context,
-          '/consumercardbill',
+          '/consumercard',
           arguments: printl.printID,
         );
       },

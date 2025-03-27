@@ -4,10 +4,9 @@ import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
-//Card after Printbilllist
+//Card after postmeter list
 class ConsumercardBill extends StatefulWidget {
   // ignore: use_super_parameters
   const ConsumercardBill({Key? key}) : super(key: key);
@@ -19,17 +18,20 @@ class ConsumercardBill extends StatefulWidget {
 class _ConsumercardBillState extends State<ConsumercardBill> {
   BluePrinterHelper bluetoothHelper = BluePrinterHelper();
   ConsumercardModel? _currentCard;
-  // Future that retrieves the consumer card from the database.
+
   int? _cardId;
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
+
   double? _usage;
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
-  bool _billUpdated = false;
+  double? _calculatedSCDisc;
   String? _currentDate =
       DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
+
+  bool _billUpdated = false;
   String? _formattedDate =
       DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -55,10 +57,72 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
     // Now, _cardFuture is set in didChangeDependencies.
   }
 
-  void _printSampleReceipt(ConsumercardModel card) async {
+  Future<void> updateMasterRecord(int billStatind) async {
+    if (_cardId != null &&
+        _calculatedBill != null &&
+        _usage != null &&
+        _newReading != null &&
+        _calculatedSCDisc != null) {
+      // Convert calculated bill to cents and then to int.
+
+      double dbBill = _calculatedBill! * 100;
+      double scDisc = _calculatedSCDisc! * 100;
+
+      int finalSCdisc = scDisc.toInt();
+      int calculateBillInt = dbBill.toInt();
+      int usageInt = _usage!.toInt();
+
+      int isPosted = 1;
+      int billStatus =
+          billStatind; //indicator just 1 if only saved, 2 if saved and printed
+      int? isNewReading = _newReading;
+      String dateUpdated =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      Map<String, dynamic> updatedData = {
+        'AMOUNT': calculateBillInt,
+        'USAGE': usageInt,
+        'POSTED': isPosted,
+        'BILL_STAT': billStatus,
+        'CREADING': isNewReading,
+        'MCRDGDT': dateUpdated,
+        'SCDISC': finalSCdisc,
+      };
+
+      try {
+        int count =
+            await DatabaseHelper().updateMasterData(_cardId!, updatedData);
+        if (!mounted) return;
+        if (count > 0) {
+          // Optionally fetch the updated record for debugging.
+          Map<String, dynamic>? updatedRecord =
+              await DatabaseHelper().getMasterByID(_cardId!);
+          print("Updated record data: $updatedRecord");
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Record updated successfully!')),
+          );
+          setState(() {
+            _cardFuture = getConsumercardByID(_cardId!);
+          });
+          //Navigator.pushNamed(context, '/postmeterreading');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Update failed.')),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving the record: $e')),
+        );
+      }
+    }
+  }
+
+  void _printReceipt(ConsumercardModel card) async {
     await bluetoothHelper.printSampleReceipt(
       _currentDate.toString(),
-      _formattedDate.toString(),
+      card.prefsDatedue.toString(),
       card.cardName,
       card.cardAddress,
       card.cardMeterno,
@@ -71,8 +135,9 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
       (_calculatedBill ?? card.cardCurrbill)
           .toString(), // Calculated bill from state
       card.cardWmf.toString(),
-      card.cardArrears.toString(),
-      (_calculatedBill ?? 0.0).toString(),
+      card.cardArrears,
+      (_beforeDatecalculation ?? 0.0).toString(),
+      card.prefsCutdate.toString()
     );
     print('checked if print function passed');
   }
@@ -83,14 +148,21 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
       // card.cardCodeRaw is used as the CSSSZ code.
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
+      double scDisc;
+      if (card.cardwithSeniorDisc == 1) {
+        scDisc = bill * 0.05;
+      } else {
+        scDisc = 0.00;
+      }
       double totalBeforeDue =
-          bill + card.cardArrears + 0.0 + 0.0 + card.cardWmf;
+          (bill - scDisc) + card.cardArrears + 0.0 + card.cardWmf;
       double totalAfterDue = totalBeforeDue * 1.05;
 
       setState(() {
         _calculatedBill = bill;
         _beforeDatecalculation = totalBeforeDue;
         _afterDatecalculation = totalAfterDue;
+        _calculatedSCDisc = scDisc;
       });
     } catch (e) {
       print("Error calculating bill: $e");
@@ -98,6 +170,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
         _calculatedBill = null;
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
+        _calculatedSCDisc = null;
       });
     }
   }
@@ -118,14 +191,14 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
           } else {
             // Model loaded from the database.
             final card = snapshot.data!;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted && _currentCard?.cardId != card.cardId) {
                 setState(() {
                   _currentCard = card;
                 });
               }
             });
-            // CHANGED: Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
+            // Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
             if (!_billUpdated && card.cardUsage != 0) {
               // Use a post-frame callback to avoid calling setState during build.
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -153,7 +226,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
           }
         },
       ),
-      bottomNavigationBar: bottomButtons(),
+      bottomNavigationBar: SafeArea(child: bottomButtons()),
     );
   }
 
@@ -452,7 +525,24 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
               Text(card.cardWmf.toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w400)),
             ],
-          ),
+          ), //Will only show if card.cardwithSeniorDisc == 1
+          if (card.cardwithSeniorDisc == 1) ...[
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Senior Citezen Discount',
+                  style: TextStyle(color: Colors.green),
+                ),
+                Text(
+                    _calculatedSCDisc != null
+                        ? _calculatedSCDisc!.toStringAsFixed(2)
+                        : '0.00',
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+          ],
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -462,7 +552,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
               Text((_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
-          ),  
+          ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -476,10 +566,10 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Date Due', style: TextStyle(color: Colors.red)),
-              Text(_formattedDate ?? '',
+              const Text('Date Due', style: TextStyle(color: Colors.orange)),
+              Text(card.prefsDatedue,
                   style: TextStyle(
-                      fontWeight: FontWeight.w500, color: Colors.red)),
+                      fontWeight: FontWeight.w500, color: Colors.orange)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
@@ -490,6 +580,17 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
                   style: TextStyle(color: Colors.orange)),
               Text((_afterDatecalculation ?? 0.0).toStringAsFixed(2),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const Divider(color: Colors.grey, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Disconnection Date',
+                  style: TextStyle(color: Colors.red)),
+              Text(card.prefsCutdate,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.red)),
             ],
           ),
         ],
@@ -506,12 +607,18 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed: () {
-              if (_currentCard != null) {
-                _printSampleReceipt(_currentCard!);
-              } else {
+            onPressed: () async {
+              if (_calculatedBill == 0.00) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No data to print.')),
+                  const SnackBar(content: Text('No Current Reading yet.')),
+                );
+              } else {
+                int billStatprinted = 2;
+                await updateMasterRecord(billStatprinted);
+                if (!mounted) return;
+                 _printReceipt(_currentCard!);
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bill Printing')),
                 );
               }
             },
@@ -542,55 +649,8 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
           ),
           ElevatedButton(
             onPressed: () async {
-              print('I(Save) got pressed');
-              if (_cardId != null &&
-                  _calculatedBill != null &&
-                  _usage != null &&
-                  _newReading != null) {
-                // CHANGED: Convert calculated bill to cents and then to int.
-                double dbBill = _calculatedBill! * 100;
-                int calculateBillInt = dbBill.toInt();
-                int usageInt = _usage!.toInt();
-                int isPosted = 1;
-                int? isNewReading = _newReading;
-
-                Map<String, dynamic> updatedData = {
-                  'AMOUNT': calculateBillInt,
-                  'USAGE': usageInt,
-                  'POSTED': isPosted,
-                  'CREADING': isNewReading
-                };
-                try {
-                  int count = await DatabaseHelper()
-                      .updateMasterData(_cardId!, updatedData);
-                  if (!mounted) return;
-                  if (count > 0) {
-                    // CHANGED: Fetch the updated record for testing
-                    Map<String, dynamic>? updatedRecord =
-                        await DatabaseHelper().getMasterByID(_cardId!);
-                    print("Updated record data: $updatedRecord");
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Record updated successfully!')),
-                    );
-                    // CHANGED: Refresh the UI by reassigning _cardFuture.
-                    setState(() {
-                      _cardFuture = getConsumercardByID(_cardId!);
-                    });
-                    //Navigator.pushNamed(context, '/postmeterreading');
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Update failed.')),
-                    );
-                  }
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error saving the record: $e')),
-                  );
-                }
-              }
+              int billstateSaved = 1;
+              await updateMasterRecord(billstateSaved);
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),
@@ -636,7 +696,7 @@ class _ConsumercardBillState extends State<ConsumercardBill> {
       centerTitle: true,
       leading: GestureDetector(
         onTap: () {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         },
         child: Container(
           margin: const EdgeInsets.all(10),

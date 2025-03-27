@@ -4,6 +4,7 @@ import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
+import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
 //Card after postmeter list
 class Consumercard extends StatefulWidget {
@@ -15,7 +16,9 @@ class Consumercard extends StatefulWidget {
 }
 
 class _ConsumercardState extends State<Consumercard> {
-  // Future that retrieves the consumer card from the database.
+  BluePrinterHelper bluetoothHelper = BluePrinterHelper();
+  ConsumercardModel? _currentCard;
+
   int? _cardId;
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
@@ -25,6 +28,8 @@ class _ConsumercardState extends State<Consumercard> {
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
   double? _calculatedSCDisc;
+  String? _currentDate =
+      DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
 
   bool _billUpdated = false;
   String? _formattedDate =
@@ -114,6 +119,29 @@ class _ConsumercardState extends State<Consumercard> {
     }
   }
 
+  void _printReceipt(ConsumercardModel card) async {
+    await bluetoothHelper.printSampleReceipt(
+      _currentDate.toString(),
+      card.prefsDatedue.toString(),
+      card.cardName,
+      card.cardAddress,
+      card.cardMeterno,
+      card.cardMeterbrand,
+      card.cardAccno,
+      (_newReading ?? card.cardCurrreading)
+          .toString(), // Use new reading if available
+      card.cardPrevreading.toString(),
+      (_usage ?? card.cardUsage).toStringAsFixed(2), // Current usage from state
+      (_calculatedBill ?? card.cardCurrbill)
+          .toStringAsFixed(2), // Calculated bill from state
+      card.cardWmf.toStringAsFixed(2),
+      card.cardArrears,
+      (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+      card.prefsCutdate.toString()
+    );
+    print('checked if print function passed');
+  }
+
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
     try {
@@ -163,7 +191,13 @@ class _ConsumercardState extends State<Consumercard> {
           } else {
             // Model loaded from the database.
             final card = snapshot.data!;
-
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _currentCard?.cardId != card.cardId) {
+                setState(() {
+                  _currentCard = card;
+                });
+              }
+            });
             // Automatically update bill if card.cardUsage is not 0 and _usage hasn't been set.
             if (!_billUpdated && card.cardUsage != 0) {
               // Use a post-frame callback to avoid calling setState during build.
@@ -582,10 +616,9 @@ class _ConsumercardState extends State<Consumercard> {
                 int billStatprinted = 2;
                 await updateMasterRecord(billStatprinted);
                 if (!mounted) return;
-                Navigator.pushNamed(
-                  context,
-                  '/printface',
-                  arguments: _cardId,
+                 _printReceipt(_currentCard!);
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bill Printing')),
                 );
               }
             },

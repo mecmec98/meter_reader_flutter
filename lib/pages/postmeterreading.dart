@@ -121,7 +121,6 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         );
         // Refresh list if needed
         if (shouldRefresh == true) {
-          print('Im being Refresh');
           _refreshList();
         }
       },
