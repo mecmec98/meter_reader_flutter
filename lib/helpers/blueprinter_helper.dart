@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
-import 'package:flutter/material.dart';
+//import 'package:flutter/material.dart';
 import 'dart:typed_data';
 
 class BluePrinterHelper extends ChangeNotifier {
@@ -57,7 +57,10 @@ class BluePrinterHelper extends ChangeNotifier {
       String watermf, //
       double balance,
       String totaldue,
-      String discDate) async {
+      String discDate,
+      String lastReading,
+      String billdate,
+      String averageUsage) async {
     bool? selfisConnected = await bluetooth.isConnected;
     if (selfisConnected!) {
       DateTime now = DateTime.now();
@@ -66,11 +69,17 @@ class BluePrinterHelper extends ChangeNotifier {
       String year = DateFormat.y().format(now); // Get the year in numbers
 
       String arrearsOrAdvance = '';
-      if (balance < 0){
+      if (balance < 0) {
         arrearsOrAdvance = 'Advance';
-      }else{
+      } else {
         arrearsOrAdvance = 'Arrears';
       }
+
+      print(lastReading);
+      String dateString = lastReading;
+      DateFormat inputFormat = DateFormat("MM/dd/yyyy");
+      DateTime date = inputFormat.parse(dateString);
+      String periodDate = DateFormat('MM/dd').format(date);
 
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm58, profile);
@@ -78,7 +87,7 @@ class BluePrinterHelper extends ChangeNotifier {
       List<int> bytes = [];
 
       // Print header
-      
+
       bytes += generator.feed(2);
       bytes += generator.text(
         'Dapitan City Water District',
@@ -116,10 +125,12 @@ class BluePrinterHelper extends ChangeNotifier {
         'BILLING STATEMENT',
         styles: PosStyles(align: PosAlign.center),
       );
-      bytes += generator.text('For the Month of: $monthInWords - $year'); //Current Month and year
+      bytes += generator.text(
+          'For the Month of: $monthInWords-$year'); //Current Month and year
       bytes +=
           generator.text('Date Printed:$datePrinted'); //Current day and time
-      bytes += generator.text('Period Covered:'); //Bill covered
+      bytes +=
+          generator.text('Period Covered:$periodDate-$billdate'); //Bill covered
       bytes += generator.hr();
       bytes += generator.text(
         accNo,
@@ -164,7 +175,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'USAGE',
+          text: 'CURR USAGE',
           width: 9,
           styles: PosStyles(height: PosTextSize.size2),
         ),
@@ -172,6 +183,19 @@ class BluePrinterHelper extends ChangeNotifier {
           text: usage,
           width: 3,
           styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+        ),
+      ]);
+      bytes += generator.reset();
+      bytes += generator.row([
+        PosColumn(
+          text: 'AVE USAGE',
+          styles: PosStyles(height: PosTextSize.size2, bold: true),
+          width: 9,
+        ),
+        PosColumn(
+          text: averageUsage,
+          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right) ,
+          width: 3,
         ),
       ]);
       bytes += generator.reset();
@@ -243,7 +267,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'DISC DATE',
+          text: 'CUT DATE',
           width: 7,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),

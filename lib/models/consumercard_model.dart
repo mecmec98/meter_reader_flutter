@@ -27,9 +27,11 @@ class ConsumercardModel {
   double cardPenalty;
   double cardTotaladd;
   double cardUsage;
+  String cardprevReadingDate;
 
   String prefsDatedue;
   String prefsCutdate;
+  String prefsBilldate;
 
   ConsumercardModel({
     required this.cardName,
@@ -55,9 +57,11 @@ class ConsumercardModel {
     required this.cardPenalty,
     required this.cardTotaladd,
     required this.cardUsage,
+    required this.cardprevReadingDate,
     
     required this.prefsCutdate,
     required this.prefsDatedue,
+    required this.prefsBilldate,
   });
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
@@ -128,9 +132,11 @@ class ConsumercardModel {
       cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
+      cardprevReadingDate: map['MPRDGDT'] ?? '',
 
       prefsCutdate: prefsMap['cutdate'] ?? '',
       prefsDatedue: prefsMap['datedue'] ?? '',
+      prefsBilldate: prefsMap['billdate'] ?? '',
     );
   }
 }

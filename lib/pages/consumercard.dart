@@ -39,7 +39,6 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is int) {
       _cardId = args;
@@ -131,13 +130,16 @@ class _ConsumercardState extends State<Consumercard> {
       (_newReading ?? card.cardCurrreading)
           .toString(), // Use new reading if available
       card.cardPrevreading.toString(),
-      (_usage ?? card.cardUsage).toStringAsFixed(2), // Current usage from state
+      (_usage ?? card.cardUsage).toString(), // Current usage from state
       (_calculatedBill ?? card.cardCurrbill)
           .toStringAsFixed(2), // Calculated bill from state
       card.cardWmf.toStringAsFixed(2),
       card.cardArrears,
       (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
-      card.prefsCutdate.toString()
+      card.prefsCutdate.toString(),
+      card.cardprevReadingDate,
+      card.prefsBilldate,
+      card.cardAvusage.toString()
     );
     print('checked if print function passed');
   }
@@ -215,7 +217,7 @@ class _ConsumercardState extends State<Consumercard> {
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-                  Center(child: userInformationCard(card)),
+                  Center(child: consomerInformationCard(card)),
                   const SizedBox(height: 2),
                   Center(child: readersField(card)),
                   const SizedBox(height: 2),
@@ -231,7 +233,7 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   /// Widget that displays the user information card.
-  Widget userInformationCard(ConsumercardModel card) {
+  Widget consomerInformationCard(ConsumercardModel card) {
     return Container(
       width: 350,
       padding: const EdgeInsets.only(bottom: 10),
@@ -613,8 +615,8 @@ class _ConsumercardState extends State<Consumercard> {
                   const SnackBar(content: Text('No Current Reading yet.')),
                 );
               } else {
-                int billStatprinted = 2;
-                await updateMasterRecord(billStatprinted);
+                int billStatePrinted = 2;
+                await updateMasterRecord(billStatePrinted);
                 if (!mounted) return;
                  _printReceipt(_currentCard!);
                  ScaffoldMessenger.of(context).showSnackBar(
@@ -649,8 +651,8 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           ElevatedButton(
             onPressed: () async {
-              int billstateSaved = 1;
-              await updateMasterRecord(billstateSaved);
+              int billStateSaved = 1;
+              await updateMasterRecord(billStateSaved);
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),

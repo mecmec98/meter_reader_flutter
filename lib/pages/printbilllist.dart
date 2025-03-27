@@ -3,9 +3,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:meter_reader_flutter/models/printlist_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
-//import 'package:flutter/scheduler.dart';
-//import 'package:flutter/foundation.dart';
-
 class PrintbillList extends StatefulWidget {
   @override
   State<PrintbillList> createState() => _PrintbillListState();
@@ -95,18 +92,32 @@ class _PrintbillListState extends State<PrintbillList> {
     super.dispose();
   }
 
+  Future<void> _refreshList() async {
+    setState(() {
+      _printl.clear();
+      _offset = 0;
+      _hasMore = true;
+    });
+    await _loadData();
+  }
+
   Widget _buildPrintlItem(PrintlistModel printl, int index) {
     // Alternate the background color
     final Color tileColor = index % 2 == 0
         ? Colors.white
         : const Color.fromARGB(255, 212, 224, 250);
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
+      onTap: () async {
+        // Navigate and wait for a result
+        final shouldRefresh = await Navigator.pushNamed(
           context,
           '/consumercard',
           arguments: printl.printID,
         );
+        // Refresh list if needed
+        if (shouldRefresh == true) {
+          _refreshList();
+        }
       },
       child: Card(
         color: tileColor,

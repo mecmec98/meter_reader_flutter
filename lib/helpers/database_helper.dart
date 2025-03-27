@@ -229,6 +229,7 @@ class DatabaseHelper {
         'AMOUNT',
         'SCDISC',
         'WITHSCDISC',
+        'MPRDGDT'
       ],
       where: '_id=?',
       whereArgs: [id],
