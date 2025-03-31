@@ -60,7 +60,8 @@ class BluePrinterHelper extends ChangeNotifier {
       String discDate,
       String lastReading,
       String billdate,
-      String averageUsage) async {
+      String averageUsage,
+      String otherFees) async {
     bool? selfisConnected = await bluetooth.isConnected;
     if (selfisConnected!) {
       DateTime now = DateTime.now();

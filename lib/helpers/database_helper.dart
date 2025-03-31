@@ -210,27 +210,6 @@ class DatabaseHelper {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
-      columns: [
-        'NAME',
-        'ADDRESS',
-        'MNO',
-        '_id',
-        'ACC1',
-        'ZB',
-        'CLSSSZ',
-        'BRAND',
-        'PREADING',
-        'CREADING',
-        'ARREARS',
-        'ARO',
-        'WMF',
-        'AVE',
-        'USAGE',
-        'AMOUNT',
-        'SCDISC',
-        'WITHSCDISC',
-        'MPRDGDT'
-      ],
       where: '_id=?',
       whereArgs: [id],
       limit: 1,

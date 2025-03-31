@@ -28,6 +28,7 @@ class _ConsumercardState extends State<Consumercard> {
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
   double? _calculatedSCDisc;
+  String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
   String? _currentDate =
       DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
 
@@ -70,6 +71,7 @@ class _ConsumercardState extends State<Consumercard> {
       int finalSCdisc = scDisc.toInt();
       int calculateBillInt = dbBill.toInt();
       int usageInt = _usage!.toInt();
+      int penalty = 0;
 
       int isPosted = 1;
       int billStatus =
@@ -85,6 +87,7 @@ class _ConsumercardState extends State<Consumercard> {
         'CREADING': isNewReading,
         'MCRDGDT': dateUpdated,
         'SCDISC': finalSCdisc,
+        'PEN': penalty,
       };
 
       try {
@@ -120,27 +123,27 @@ class _ConsumercardState extends State<Consumercard> {
 
   void _printReceipt(ConsumercardModel card) async {
     await bluetoothHelper.printSampleReceipt(
-      _currentDate.toString(),
-      card.prefsDatedue.toString(),
-      card.cardName,
-      card.cardAddress,
-      card.cardMeterno,
-      card.cardMeterbrand,
-      card.cardAccno,
-      (_newReading ?? card.cardCurrreading)
-          .toString(), // Use new reading if available
-      card.cardPrevreading.toString(),
-      (_usage ?? card.cardUsage).toString(), // Current usage from state
-      (_calculatedBill ?? card.cardCurrbill)
-          .toStringAsFixed(2), // Calculated bill from state
-      card.cardWmf.toStringAsFixed(2),
-      card.cardArrears,
-      (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
-      card.prefsCutdate.toString(),
-      card.cardprevReadingDate,
-      card.prefsBilldate,
-      card.cardAvusage.toString()
-    );
+        _currentDate.toString(),
+        card.prefsDatedue.toString(),
+        card.cardName,
+        card.cardAddress,
+        card.cardMeterno,
+        card.cardMeterbrand,
+        card.cardAccno,
+        (_newReading ?? card.cardCurrreading)
+            .toString(), // Use new reading if available
+        card.cardPrevreading.toString(),
+        (_usage ?? card.cardUsage).toString(), // Current usage from state
+        (_calculatedBill ?? card.cardCurrbill)
+            .toStringAsFixed(2), // Calculated bill from state
+        card.cardWmf.toStringAsFixed(2),
+        card.cardArrears,
+        (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+        card.prefsCutdate.toString(),
+        card.cardprevReadingDate,
+        card.prefsBilldate,
+        card.cardAvusage.toString(),
+        card.cardOthers.toStringAsFixed(2));
     print('checked if print function passed');
   }
 
@@ -151,13 +154,13 @@ class _ConsumercardState extends State<Consumercard> {
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
       double scDisc;
-      if (card.cardwithSeniorDisc == 1) {
+      if (card.cardwithSeniorDisc == 1 && _usage! < 30) {
         scDisc = bill * 0.05;
       } else {
         scDisc = 0.00;
       }
       double totalBeforeDue =
-          (bill - scDisc) + card.cardArrears + 0.0 + card.cardWmf;
+          (bill - scDisc) + card.cardArrears + card.cardOthers + card.cardWmf;
       double totalAfterDue = totalBeforeDue * 1.05;
 
       setState(() {
@@ -193,7 +196,7 @@ class _ConsumercardState extends State<Consumercard> {
           } else {
             // Model loaded from the database.
             final card = snapshot.data!;
-             WidgetsBinding.instance.addPostFrameCallback((_) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted && _currentCard?.cardId != card.cardId) {
                 setState(() {
                   _currentCard = card;
@@ -514,9 +517,10 @@ class _ConsumercardState extends State<Consumercard> {
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Others'),
-              Text('0.00', style: TextStyle(fontWeight: FontWeight.w400)),
+            children: [
+              const Text('Others'),
+              Text(card.cardOthers.toStringAsFixed(2),
+                  style: TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),
@@ -618,8 +622,8 @@ class _ConsumercardState extends State<Consumercard> {
                 int billStatePrinted = 2;
                 await updateMasterRecord(billStatePrinted);
                 if (!mounted) return;
-                 _printReceipt(_currentCard!);
-                 ScaffoldMessenger.of(context).showSnackBar(
+                _printReceipt(_currentCard!);
+                ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Bill Printing')),
                 );
               }
