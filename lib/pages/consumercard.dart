@@ -17,6 +17,7 @@ class Consumercard extends StatefulWidget {
 
 class _ConsumercardState extends State<Consumercard> {
   BluePrinterHelper bluetoothHelper = BluePrinterHelper();
+  
   ConsumercardModel? _currentCard;
 
   int? _cardId;
@@ -54,7 +55,7 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void initState() {
     super.initState();
-    // Now, _cardFuture is set in didChangeDependencies.
+    
   }
 
   Future<void> updateMasterRecord(int billStatind) async {
@@ -216,17 +217,19 @@ class _ConsumercardState extends State<Consumercard> {
               });
             }
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  Center(child: consomerInformationCard(card)),
-                  const SizedBox(height: 2),
-                  Center(child: readersField(card)),
-                  const SizedBox(height: 2),
-                  Center(child: particularsContainer(card)),
-                ],
-              ),
+            return Column(
+              children: [
+                const SizedBox(height: 10),
+                Center(child: consomerInformationCard(card)),
+                const SizedBox(height: 2),
+                Center(child: readersField(card)),
+                const SizedBox(height: 2),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Center(child: particularsContainer(card)),
+                  ),
+                ),
+              ],
             );
           }
         },
@@ -258,12 +261,12 @@ class _ConsumercardState extends State<Consumercard> {
           Text(
             card.cardAccno,
             style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
               color: Colors.blue,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 3),
           // Address
           Text(
             card.cardAddress,
@@ -277,102 +280,109 @@ class _ConsumercardState extends State<Consumercard> {
           const Divider(color: Colors.grey, thickness: 0.5),
           const SizedBox(height: 10),
           // Additional information rows
-          Column(
-            children: [
-              // First Row: Meter No. and Meter Brand
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    children: [
-                      Text(
-                        card.cardMeterno,
-                        style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.blue,
+          Padding(
+            padding: const EdgeInsets.only(left: 15, right: 15),
+            child: Column(
+              children: [
+                // First Row: Meter No. and Meter Brand
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.cardMeterno,
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.blue,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Meter no.',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: Color.fromARGB(255, 47, 48, 49),
+                        const Text(
+                          'Meter no.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: Color.fromARGB(255, 47, 48, 49),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        card.cardMeterbrand,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.blue,
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          card.cardMeterbrand,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.blue,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Meter Brand',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: Color.fromARGB(255, 47, 48, 49),
+                        const Text(
+                          'Meter Brand',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: Color.fromARGB(255, 47, 48, 49),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // Second Row: Classification and Meter Size
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    children: [
-                      Text(
-                        card.cardClassification, // LTYPE from rates
-                        style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.blue,
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Second Row: Classification and Meter Size
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.cardClassification, // LTYPE from rates
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.blue,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Classification',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: Color.fromARGB(255, 47, 48, 49),
+                        const Text(
+                          'Classification',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: Color.fromARGB(255, 47, 48, 49),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        card.cardMetersize, // MSIZE value from rates (dynamic)
-                        style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.blue,
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          card.cardMetersize, // MSIZE value from rates (dynamic)
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.blue,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Meter Size',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: Color.fromARGB(255, 47, 48, 49),
+                        const Text(
+                          'Meter Size',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color: Color.fromARGB(255, 47, 48, 49),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -389,21 +399,23 @@ class _ConsumercardState extends State<Consumercard> {
             'Current Reading',
             style: TextStyle(
               color: Colors.black,
-              fontWeight: FontWeight.w400,
-              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
           ),
           const SizedBox(height: 5),
           TextField(
             textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 20),
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               hintText: card.cardCurrreading.toString(),
-              hintStyle: const TextStyle(color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey, fontSize: 20, fontWeight: FontWeight.w600),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(5),
+                borderSide: BorderSide(color: Colors.blue)
               ),
             ),
             onChanged: (value) {
@@ -430,8 +442,8 @@ class _ConsumercardState extends State<Consumercard> {
             'Previous Reading',
             style: TextStyle(
               color: Colors.black,
-              fontWeight: FontWeight.w400,
-              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
           ),
           const SizedBox(height: 5),
@@ -441,8 +453,9 @@ class _ConsumercardState extends State<Consumercard> {
             decoration: InputDecoration(
               hintText: card.cardPrevreading.toString(),
               hintStyle: const TextStyle(
-                color: Color.fromARGB(255, 255, 250, 250),
-              ),
+                  color: Color.fromARGB(255, 255, 250, 250),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 20),
               filled: true,
               fillColor: Colors.blue,
               border: OutlineInputBorder(
@@ -613,7 +626,9 @@ class _ConsumercardState extends State<Consumercard> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed: () async {
+            onPressed: bluetoothHelper.connected
+            ? () async {
+              print(bluetoothHelper.connected);
               if (_calculatedBill == 0.00) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('No Current Reading yet.')),
@@ -627,7 +642,8 @@ class _ConsumercardState extends State<Consumercard> {
                   const SnackBar(content: Text('Bill Printing')),
                 );
               }
-            },
+            }
+            : null,
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(

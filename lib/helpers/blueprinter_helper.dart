@@ -9,7 +9,8 @@ import 'dart:typed_data';
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
-  bool connected = true;
+  // ignore: unused_field
+  bool connected = false;
   BluetoothDevice? _selectedDevice;
   BluetoothDevice? get selectedDevice => _selectedDevice;
   set selectedDevice(BluetoothDevice? device) {
@@ -21,6 +22,7 @@ class BluePrinterHelper extends ChangeNotifier {
     bool? isConnected = await bluetooth.isConnected;
     devices = await bluetooth.getBondedDevices();
     connected = isConnected!;
+    print('is it connected? $connected');
     notifyListeners();
   }
 
@@ -31,7 +33,7 @@ class BluePrinterHelper extends ChangeNotifier {
     }
     selectedDevice = device;
     await bluetooth.connect(device);
-    connected = true;
+    connected = bluetooth.isConnected as bool;
     notifyListeners();
   }
 

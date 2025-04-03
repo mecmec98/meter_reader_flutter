@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/pages/home.dart';
 import 'package:meter_reader_flutter/pages/postmeterreading.dart';
 import 'package:meter_reader_flutter/pages/consumercard.dart';
-//import 'package:meter_reader_flutter/pages/consumercardbill.dart';
 import 'package:meter_reader_flutter/pages/printbilllist.dart';
 import 'package:meter_reader_flutter/pages/printface.dart';
 
@@ -44,3 +43,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
