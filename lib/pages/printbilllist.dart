@@ -139,7 +139,7 @@ class _PrintbillListState extends State<PrintbillList> {
                 style: TextStyle(
                     color: Color.fromARGB(255, 33, 89, 243),
                     fontSize: 19,
-                    fontWeight: FontWeight.w400),
+                    fontWeight: FontWeight.w500),
               ),
               Text(
                 printl.printAddress,
