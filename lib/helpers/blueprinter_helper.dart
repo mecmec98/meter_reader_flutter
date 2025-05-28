@@ -283,7 +283,8 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.reset();
       bytes += generator.hr();
-      bytes += generator.text('Please pay on time to avoid late penalties!');
+      bytes += generator.text('Thank you for your prompt payment.');
+      bytes += generator.text('Failure to pay your bill 3 days after the due date your service connection will be disconnected automitacally without further notice.');
 
       bytes += generator.feed(1);
       bytes += generator.cut();

@@ -110,7 +110,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     // Alternate the background color.
     final Color tileColor = index % 2 == 0
         ? Colors.white
-        : const Color.fromARGB(255, 212, 224, 250);
+        : const Color.fromARGB(255, 233, 239, 252);
     return GestureDetector(
       onTap: () async {
         // Navigate and wait for a result
@@ -128,23 +128,23 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         color: tileColor,
         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 post.postName,
                 style: const TextStyle(
-                  fontSize: 19,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 post.postMeterno,
                 style: const TextStyle(
-                    color: Colors.blue,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400),
+                    color: Color.fromARGB(255, 33, 89, 243),
+                    fontSize: 19,
+                    fontWeight: FontWeight.w500),
               ),
               Text(
                 post.postAddress,
@@ -172,7 +172,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         } else {
           return _hasMore
               ? const Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: EdgeInsets.all(5.0),
                   child: Center(child: CircularProgressIndicator()),
                 )
               : const SizedBox.shrink();
@@ -183,7 +183,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
 
   Container searchBar() {
     return Container(
-      margin: const EdgeInsets.only(top: 20, bottom: 15, left: 20, right: 20),
+      margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
           // ignore: deprecated_member_use
@@ -253,7 +253,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           searchBar(),
-          const SizedBox(height: 5.0),
+          const SizedBox(height: 2.0),
           Expanded(child: postMeterLists()),
         ],
       ),

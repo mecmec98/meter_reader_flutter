@@ -235,7 +235,7 @@ class DatabaseHelper {
     final db = await database;
     return await db.update(
       'master',
-      updatedData,
+      updatedData, 
       where: '_id = ?',
       whereArgs: [id],
     );

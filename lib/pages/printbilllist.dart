@@ -16,7 +16,7 @@ class _PrintbillListState extends State<PrintbillList> {
   final int _limit = 8;
   bool _hasMore = true;
   String _searchQuery = '';
-
+ 
   @override
   void initState() {
     super.initState();
@@ -105,7 +105,7 @@ class _PrintbillListState extends State<PrintbillList> {
     // Alternate the background color
     final Color tileColor = index % 2 == 0
         ? Colors.white
-        : const Color.fromARGB(255, 212, 224, 250);
+   : const Color.fromARGB(255, 233, 239, 252);
     return GestureDetector(
       onTap: () async {
         // Navigate and wait for a result
@@ -123,22 +123,22 @@ class _PrintbillListState extends State<PrintbillList> {
         color: tileColor,
         margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 printl.printName,
                 style: TextStyle(
-                  fontSize: 19,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 printl.printMeterno,
                 style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 16,
+                    color: Color.fromARGB(255, 33, 89, 243),
+                    fontSize: 19,
                     fontWeight: FontWeight.w400),
               ),
               Text(
@@ -187,7 +187,7 @@ class _PrintbillListState extends State<PrintbillList> {
           // Show a loading indicator at the bottom if more data is loading
           return _hasMore
               ? Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(5.0),
                   child: Center(child: CircularProgressIndicator()),
                 )
               : SizedBox.shrink();
@@ -198,7 +198,7 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Container searchBar() {
     return Container(
-      margin: EdgeInsets.only(top: 20, bottom: 15, left: 20, right: 20),
+       margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
           color: Color.fromARGB(255, 230, 223, 223).withValues(),
@@ -206,13 +206,13 @@ class _PrintbillListState extends State<PrintbillList> {
           spreadRadius: 0.0,
         )
       ]),
-      child: TextField(
+      child: TextField( 
         decoration: InputDecoration(
           hintText: 'Search',
           hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: Padding(
+          prefixIcon: Padding( 
             padding: const EdgeInsets.all(10.0),
             child: SvgPicture.asset(
               'assets/icons/search.svg',
