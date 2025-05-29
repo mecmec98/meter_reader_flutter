@@ -19,7 +19,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _initBluetooth();
+    // Run bluetooth init after frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initBluetooth();
+    });
   }
 
   void _initBluetooth() async {
@@ -79,7 +82,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: <Widget>[
           Container(
-            padding: EdgeInsets.only(top: 60),
+            padding: const EdgeInsets.only(top: 60),
             child: Text(
               'Connect Printer',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
@@ -131,7 +134,7 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
+         Padding(
           padding: const EdgeInsets.only(left: 10.0, right: 10.0),
           child: Text(
             '',
@@ -142,7 +145,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        SizedBox(
+        const SizedBox(
           height: 1,
         ),
         Column(
@@ -150,14 +153,14 @@ class _HomePageState extends State<HomePage> {
           children: [
             //Post Meter Reading
             Padding(
-              padding: EdgeInsets.only(top: 1, right: 50, left: 50),
+              padding: const EdgeInsets.only(top: 1, right: 50, left: 50),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/postmeterreading');
                 },
                 child: Container(
                   height: 100,
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     color: const Color.fromARGB(255, 28, 85, 227),
@@ -174,10 +177,10 @@ class _HomePageState extends State<HomePage> {
                               Color.fromARGB(255, 245, 243, 243),
                               BlendMode.srcIn),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 5,
                         ),
-                        Text(
+                        const Text(
                           'Post Meter Reading',
                           style: TextStyle(
                               fontSize: 22,
@@ -192,14 +195,14 @@ class _HomePageState extends State<HomePage> {
             ),
             //Edit Meter Reading
             Padding(
-                padding: EdgeInsets.only(top: 20, right: 50, left: 50),
+                padding: const EdgeInsets.only(top: 20, right: 50, left: 50),
                 child: GestureDetector(
                   onTap: () {
                     // Navigator.pushNamed(context, '/sample');
                   },
                   child: Container(
                     height: 100,
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       color: const Color.fromARGB(255, 28, 117, 227),
@@ -216,10 +219,10 @@ class _HomePageState extends State<HomePage> {
                                 Color.fromARGB(255, 245, 243, 243),
                                 BlendMode.srcIn),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 5,
                           ),
-                          Text(
+                          const Text(
                             'Edit Meter Reading',
                             style: TextStyle(
                                 fontSize: 22,
@@ -233,14 +236,14 @@ class _HomePageState extends State<HomePage> {
                 )),
             //Print Bill
             Padding(
-              padding: EdgeInsets.only(top: 20, right: 50, left: 50),
+              padding: const EdgeInsets.only(top: 20, right: 50, left: 50),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/printbilllist');
                 },
                 child: Container(
                   height: 100,
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     color: const Color.fromARGB(255, 28, 137, 227),
@@ -257,10 +260,10 @@ class _HomePageState extends State<HomePage> {
                               Color.fromARGB(255, 245, 243, 243),
                               BlendMode.srcIn),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 15,
                         ),
-                        Text(
+                        const Text(
                           'Print Bill',
                           style: TextStyle(
                               fontSize: 22,
@@ -281,9 +284,6 @@ class _HomePageState extends State<HomePage> {
 
   AppBar appBar(BuildContext context) {
     final bluetoothHelper = context.watch<BluePrinterHelper>();
-   // Add debug print
-    print('AppBar rebuild - Bluetooth connected state: ${bluetoothHelper.connected}');
-    
     return AppBar(
       title: const Text(
         'Home',
