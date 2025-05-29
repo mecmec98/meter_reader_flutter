@@ -172,7 +172,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         } else {
           return _hasMore
               ? const Padding(
-                  padding: EdgeInsets.all(5.0),
+                  padding:EdgeInsets.all(5.0),
                   child: Center(child: CircularProgressIndicator()),
                 )
               : const SizedBox.shrink();

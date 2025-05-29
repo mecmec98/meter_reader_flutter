@@ -18,7 +18,7 @@
 </queries>
    
     <application
-        android:label="meter_reader_flutter"
+        android:label="DapCWD Meter Reader"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">

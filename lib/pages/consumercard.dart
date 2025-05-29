@@ -5,6 +5,7 @@ import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make su
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
+import 'package:provider/provider.dart';
 
 //Card after postmeter list
 class Consumercard extends StatefulWidget {
@@ -16,7 +17,6 @@ class Consumercard extends StatefulWidget {
 }
 
 class _ConsumercardState extends State<Consumercard> {
-  BluePrinterHelper bluetoothHelper = BluePrinterHelper();
   
   ConsumercardModel? _currentCard;
 
@@ -45,7 +45,6 @@ class _ConsumercardState extends State<Consumercard> {
     if (args is int) {
       _cardId = args;
       _cardFuture = getConsumercardByID(_cardId!);
-      print(_formattedDate);
     } else {
       // Optional: fallback if no valid argument is passed.
       Navigator.pushNamed(context, '/');
@@ -54,7 +53,6 @@ class _ConsumercardState extends State<Consumercard> {
 
   @override
   void initState() {
-           print(bluetoothHelper.connected);
     super.initState();
     
   }
@@ -124,6 +122,7 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   void _printReceipt(ConsumercardModel card) async {
+   final bluetoothHelper = context.read<BluePrinterHelper>();
      print('checker');
     await bluetoothHelper.printSampleReceipt(
         _currentDate.toString(),
@@ -621,6 +620,9 @@ class _ConsumercardState extends State<Consumercard> {
 
   /// Widget for bottom navigation buttons.
   Widget bottomButtons() {
+    final bluetoothHelper = context.watch<BluePrinterHelper>();
+    print(bluetoothHelper.connected);
+
     return Container(
       height: 70,
       padding: const EdgeInsets.all(8),

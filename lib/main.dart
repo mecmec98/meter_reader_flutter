@@ -10,7 +10,7 @@ import 'package:meter_reader_flutter/pages/printface.dart';
 
 import 'package:provider/provider.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+//import 'package:flutter_svg/flutter_svg.dart';
 
 
 
