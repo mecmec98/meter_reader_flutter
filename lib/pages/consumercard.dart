@@ -54,6 +54,7 @@ class _ConsumercardState extends State<Consumercard> {
 
   @override
   void initState() {
+           print(bluetoothHelper.connected);
     super.initState();
     
   }
@@ -123,6 +124,7 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   void _printReceipt(ConsumercardModel card) async {
+     print('checker');
     await bluetoothHelper.printSampleReceipt(
         _currentDate.toString(),
         card.prefsDatedue.toString(),
@@ -628,8 +630,8 @@ class _ConsumercardState extends State<Consumercard> {
           ElevatedButton(
             onPressed: bluetoothHelper.connected
             ? () async {
-              print(bluetoothHelper.connected);
-              if (_calculatedBill == 0.00) {
+            
+              if (_calculatedBill == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('No Current Reading yet.')),
                 );
@@ -637,6 +639,7 @@ class _ConsumercardState extends State<Consumercard> {
                 int billStatePrinted = 2;
                 await updateMasterRecord(billStatePrinted);
                 if (!mounted) return;
+                 print('checker');
                 _printReceipt(_currentCard!);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Bill Printing')),

@@ -9,8 +9,13 @@ import 'dart:typed_data';
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
-  // ignore: unused_field
-  bool connected = false;
+  bool _connected = false;
+  bool get connected => _connected;
+  set connected(bool value) {
+    _connected = value;
+    notifyListeners();
+  }
+
   BluetoothDevice? _selectedDevice;
   BluetoothDevice? get selectedDevice => _selectedDevice;
   set selectedDevice(BluetoothDevice? device) {
@@ -19,25 +24,28 @@ class BluePrinterHelper extends ChangeNotifier {
   }
 
   Future<void> initBluetooth() async {
-    bool? isConnected = await bluetooth.isConnected;
     devices = await bluetooth.getBondedDevices();
-    connected = isConnected!;
-    print('is it connected? $connected');
     notifyListeners();
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
     // ignore: unnecessary_null_comparison
-    if (device == null) {
-      return;
+    if (device == null) return;
+       try {
+      selectedDevice = device;
+      await bluetooth.connect(device);
+      connected = true;
+      notifyListeners();
+      print(connected);
+      print('Connected successfully');
+    } catch (e) {
+      connected = false;
+      print('Connection failed: $e');
     }
-    selectedDevice = device;
-    await bluetooth.connect(device);
-    connected = bluetooth.isConnected as bool;
-    notifyListeners();
   }
 
   Future<void> disconnectFromDevice() async {
+    if (!connected || selectedDevice == null) return;
     await bluetooth.disconnect();
     connected = false;
     selectedDevice = null;
@@ -64,8 +72,8 @@ class BluePrinterHelper extends ChangeNotifier {
       String billdate,
       String averageUsage,
       String otherFees) async {
-    bool? selfisConnected = await bluetooth.isConnected;
-    if (selfisConnected!) {
+
+    if (connected) {
       DateTime now = DateTime.now();
       String monthInWords =
           DateFormat.MMMM().format(now); // Get the month in words
@@ -197,7 +205,7 @@ class BluePrinterHelper extends ChangeNotifier {
         ),
         PosColumn(
           text: averageUsage,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right) ,
+          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
           width: 3,
         ),
       ]);
@@ -283,10 +291,11 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.reset();
       bytes += generator.hr();
-      bytes += generator.text('Thank you for your prompt payment.');
-      bytes += generator.text('Failure to pay your bill 3 days after the due date your service connection will be disconnected automitacally without further notice.');
-
-      bytes += generator.feed(1);
+      bytes += generator.text('   Thank you for your prompt       payment.',
+          styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+          'Failure to pay your bill 3 days after the due-date your service connection will be disconnected immediately without further     notice.',
+          styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);

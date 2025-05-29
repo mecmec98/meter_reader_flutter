@@ -24,12 +24,15 @@ class _HomePageState extends State<HomePage> {
 
   void _initBluetooth() async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
+
+       print (bluetoothHelper.connected);
     isBluetoothOn = (await bluetoothHelper.bluetooth.isOn)!;
 
     if (!isBluetoothOn) {
       _showBluetoothDialog();
     } else {
       await bluetoothHelper.initBluetooth();
+        print (bluetoothHelper.connected);
     }
   }
 
@@ -278,7 +281,9 @@ class _HomePageState extends State<HomePage> {
 
   AppBar appBar(BuildContext context) {
     final bluetoothHelper = context.watch<BluePrinterHelper>();
-
+   // Add debug print
+    print('AppBar rebuild - Bluetooth connected state: ${bluetoothHelper.connected}');
+    
     return AppBar(
       title: const Text(
         'Home',
