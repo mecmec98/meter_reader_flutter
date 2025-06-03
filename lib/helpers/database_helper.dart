@@ -205,6 +205,21 @@ class DatabaseHelper {
     return result;
   }
 
+   //for getting data for the saved only Printed Bill List
+  Future<List<Map<String, dynamic>>> getMasterByIDforSavedlist(
+      {int limit = 8, int offset = 0}) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
+      where: 'POSTED=? AND BILL_STAT=?',
+      whereArgs: [1, 1],
+      limit: limit,
+      offset: offset,
+    );
+    return result;
+  }
+
 //for populating the consumer data check consumercard_model.dart
   Future<Map<String, dynamic>?> getCardByID(int id) async {
     final db = await database;

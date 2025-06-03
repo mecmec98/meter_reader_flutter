@@ -278,7 +278,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'CUT DATE',
+          text: 'DISC DATE',
           width: 7,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
@@ -294,7 +294,7 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(
-          'Failure to pay your bill 3 days after the due-date your service connection will be disconnected immediately without further     notice.',
+          'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
 
