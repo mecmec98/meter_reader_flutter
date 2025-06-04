@@ -28,14 +28,14 @@ class _HomePageState extends State<HomePage> {
   void _initBluetooth() async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
 
-       print (bluetoothHelper.connected);
+    print(bluetoothHelper.connected);
     isBluetoothOn = (await bluetoothHelper.bluetooth.isOn)!;
 
     if (!isBluetoothOn) {
       _showBluetoothDialog();
     } else {
       await bluetoothHelper.initBluetooth();
-        print (bluetoothHelper.connected);
+      print(bluetoothHelper.connected);
     }
   }
 
@@ -88,6 +88,20 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
             ),
           ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await bluetoothHelper.initBluetooth();
+            },
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.blue),
+            ),
+            icon: const Icon(Icons.bluetooth, color: Colors.white),
+            label: const Text(
+              'Refresh Devices',
+              style:
+                  TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+          ),
           const Text('Select Bluetooth Device'),
           DropdownButton<BluetoothDevice>(
             items: bluetoothHelper.devices
@@ -108,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                 ? () async {
                     await bluetoothHelper.disconnectFromDevice();
                   }
-                : () async { 
+                : () async {
                     if (bluetoothHelper.selectedDevice != null) {
                       await bluetoothHelper
                           .connectToDevice(bluetoothHelper.selectedDevice!);
@@ -134,7 +148,7 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Padding(
+        Padding(
           padding: const EdgeInsets.only(left: 10.0, right: 10.0),
           child: Text(
             '',
