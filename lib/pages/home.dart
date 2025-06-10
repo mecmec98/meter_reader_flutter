@@ -22,6 +22,7 @@ class _HomePageState extends State<HomePage> {
     // Run bluetooth init after frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initBluetooth();
+      //helloword
     });
   }
 
