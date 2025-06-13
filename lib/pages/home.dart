@@ -145,6 +145,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+// Adjust for less wider screens sizes
   Column menuButtons() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
