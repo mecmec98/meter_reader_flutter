@@ -6,6 +6,9 @@ import 'package:esc_pos_utils/esc_pos_utils.dart';
 //import 'package:flutter/material.dart';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:image/image.dart' as img;
+
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
@@ -31,7 +34,7 @@ class BluePrinterHelper extends ChangeNotifier {
   Future<void> connectToDevice(BluetoothDevice device) async {
     // ignore: unnecessary_null_comparison
     if (device == null) return;
-       try {
+    try {
       selectedDevice = device;
       await bluetooth.connect(device);
       connected = true;
@@ -53,26 +56,27 @@ class BluePrinterHelper extends ChangeNotifier {
   }
 
   Future<void> printSampleReceipt(
-      String datePrinted, //
-      String dateDue, //
-      String name, //
-      String address, //
-      String meterNo, //
-      String meterBrand, //
-      String accNo, //
-      String currReading, //
-      String prevReading, //
-      String usage, //
-      String waterBill, //
-      String watermf, //
-      double balance,
-      String totaldue,
-      String discDate,
-      String lastReading,
-      String billdate,
-      String averageUsage,
-      String otherFees) async {
-
+    String datePrinted, //
+    String dateDue, //
+    String name, //
+    String address, //
+    String meterNo, //
+    String meterBrand, //
+    String accNo, //
+    String currReading, //
+    String prevReading, //
+    String usage, //
+    String waterBill, //
+    String watermf, //
+    double balance,
+    String totaldue,
+    String discDate,
+    String lastReading,
+    String billdate,
+    String averageUsage,
+    String otherFees,
+    String cardRefNo,
+  ) async {
     if (connected) {
       DateTime now = DateTime.now();
       String monthInWords =
@@ -86,11 +90,8 @@ class BluePrinterHelper extends ChangeNotifier {
         arrearsOrAdvance = 'Arrears';
       }
 
-      print(lastReading);
-      String dateString = lastReading;
-      DateFormat inputFormat = DateFormat("MM/dd/yyyy");
-      DateTime date = inputFormat.parse(dateString);
-      String periodDate = DateFormat('MM/dd').format(date);
+      // Trim the last 5 characters from lastReading
+      String trimmedPrev = lastReading.substring(0, lastReading.length - 5);
 
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm58, profile);
@@ -98,8 +99,18 @@ class BluePrinterHelper extends ChangeNotifier {
       List<int> bytes = [];
 
       // Print header
-
       bytes += generator.feed(2);
+      try {
+        final ByteData data =
+            await rootBundle.load('assets/icons/receiptlogo.png'); // path in your assets
+        final Uint8List imageBytes = data.buffer.asUint8List();
+        final img.Image? logo = img.decodeImage(imageBytes);
+        if (logo != null) {
+          bytes += generator.image(logo, align: PosAlign.center);
+        }
+      } catch (e) {
+        print('Error loading logo: $e');
+      }
       bytes += generator.text(
         'Dapitan City Water District',
         styles: PosStyles(
@@ -136,12 +147,14 @@ class BluePrinterHelper extends ChangeNotifier {
         'BILLING STATEMENT',
         styles: PosStyles(align: PosAlign.center),
       );
+      //refno
+      bytes += generator.text('Bill Num: $cardRefNo');
       bytes += generator.text(
           'For the Month of: $monthInWords-$year'); //Current Month and year
       bytes +=
           generator.text('Date Printed:$datePrinted'); //Current day and time
-      bytes +=
-          generator.text('Period Covered:$periodDate-$billdate'); //Bill covered
+      bytes += generator
+          .text('Period Covered:$trimmedPrev-$billdate'); //Bill covered
       bytes += generator.hr();
       bytes += generator.text(
         accNo,
@@ -265,7 +278,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'DATE DUE',
+          text: 'DUE DATE',
           width: 7,
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
@@ -291,10 +304,12 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.reset();
       bytes += generator.hr();
-      bytes += generator.text('   Thank you for your prompt       payment.',
-          styles: PosStyles(align: PosAlign.center));
+      bytes +=
+          generator.text('N O T I C E', styles: PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(
           'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
+          styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
 

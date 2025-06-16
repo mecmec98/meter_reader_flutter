@@ -15,8 +15,8 @@ class ConsumercardModel {
   int cardCurrreading;
   int cardId;
   int cardwithSeniorDisc;
-
   double cardSeniorDiscValue;
+
   double cardCurrbill;
   double cardWmf;
   double cardAvusage;
@@ -28,6 +28,7 @@ class ConsumercardModel {
   double cardTotaladd;
   double cardUsage;
   String cardprevReadingDate;
+  String cardRefNo;
 
   String prefsDatedue;
   String prefsCutdate;
@@ -42,11 +43,13 @@ class ConsumercardModel {
     required this.cardCodeRaw,
     required this.cardClassification,
     required this.cardMetersize,
+
     required this.cardPrevreading,
     required this.cardCurrreading,
     required this.cardId,
     required this.cardwithSeniorDisc,
     required this.cardSeniorDiscValue,
+
     required this.cardCurrbill,
     required this.cardWmf,
     required this.cardAvusage,
@@ -58,6 +61,7 @@ class ConsumercardModel {
     required this.cardTotaladd,
     required this.cardUsage,
     required this.cardprevReadingDate,
+    required this.cardRefNo,
     
     required this.prefsCutdate,
     required this.prefsDatedue,
@@ -133,6 +137,7 @@ class ConsumercardModel {
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
       cardprevReadingDate: map['MPRDGDT'] ?? '',
+      cardRefNo: (map['REFNO'] ?? 0).toString(),
 
       prefsCutdate: prefsMap['cutdate'] ?? '',
       prefsDatedue: prefsMap['datedue'] ?? '',

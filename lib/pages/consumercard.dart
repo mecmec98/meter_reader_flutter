@@ -145,7 +145,8 @@ class _ConsumercardState extends State<Consumercard> {
         card.cardprevReadingDate,
         card.prefsBilldate,
         card.cardAvusage.toString(),
-        card.cardOthers.toStringAsFixed(2));
+        card.cardOthers.toStringAsFixed(2),
+        card.cardRefNo);
     print('checked if print function passed');
   }
 
