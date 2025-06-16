@@ -347,7 +347,7 @@ class BluePrinterHelper extends ChangeNotifier {
       Uint8List byteList = Uint8List.fromList(bytes);
       bluetooth.writeBytes(byteList);
     } else {
-      print('no printer connected');
+      //print('no printer connected');
     }
   }
 }

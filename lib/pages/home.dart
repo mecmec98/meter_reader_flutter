@@ -29,14 +29,14 @@ class _HomePageState extends State<HomePage> {
   void _initBluetooth() async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
 
-    print(bluetoothHelper.connected);
+    //print(bluetoothHelper.connected);
     isBluetoothOn = (await bluetoothHelper.bluetooth.isOn)!;
 
     if (!isBluetoothOn) {
       _showBluetoothDialog();
     } else {
       await bluetoothHelper.initBluetooth();
-      print(bluetoothHelper.connected);
+      //print(bluetoothHelper.connected);
     }
   }
 
