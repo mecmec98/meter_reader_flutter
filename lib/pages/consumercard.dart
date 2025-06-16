@@ -17,7 +17,6 @@ class Consumercard extends StatefulWidget {
 }
 
 class _ConsumercardState extends State<Consumercard> {
-  
   ConsumercardModel? _currentCard;
 
   int? _cardId;
@@ -54,10 +53,15 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void initState() {
     super.initState();
-    
   }
 
   Future<void> updateMasterRecord(int billStatind) async {
+    // Ensure _newReading is set to card.cardCurrreading if null or 0
+    if (_newReading == null) {
+      if (_currentCard != null) {
+        _newReading = _currentCard!.cardCurrreading;
+      }
+    }
     if (_cardId != null &&
         _calculatedBill != null &&
         _usage != null &&
@@ -98,7 +102,7 @@ class _ConsumercardState extends State<Consumercard> {
           // Optionally fetch the updated record for debugging.
           Map<String, dynamic>? updatedRecord =
               await DatabaseHelper().getMasterByID(_cardId!);
-          print("Updated record data: $updatedRecord");
+          //print("Updated record data: $updatedRecord");
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Record updated successfully!')),
@@ -106,6 +110,7 @@ class _ConsumercardState extends State<Consumercard> {
           setState(() {
             _cardFuture = getConsumercardByID(_cardId!);
           });
+          _currentCard = await getConsumercardByID(_cardId!);
           //Navigator.pushNamed(context, '/postmeterreading');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -122,8 +127,7 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   void _printReceipt(ConsumercardModel card) async {
-   final bluetoothHelper = context.read<BluePrinterHelper>();
-     print('checker');
+    final bluetoothHelper = context.read<BluePrinterHelper>();
     await bluetoothHelper.printSampleReceipt(
         _currentDate.toString(),
         card.prefsDatedue.toString(),
@@ -146,8 +150,9 @@ class _ConsumercardState extends State<Consumercard> {
         card.prefsBilldate,
         card.cardAvusage.toString(),
         card.cardOthers.toStringAsFixed(2),
-        card.cardRefNo);
-    print('checked if print function passed');
+        card.cardRefNo,
+        card.prefsReadername,
+        card.cardwithSeniorDisc);
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.
@@ -408,17 +413,20 @@ class _ConsumercardState extends State<Consumercard> {
           const SizedBox(height: 5),
           TextField(
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 20),
+            style: TextStyle(
+                color: Colors.black, fontWeight: FontWeight.w600, fontSize: 20),
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               hintText: card.cardCurrreading.toString(),
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 20, fontWeight: FontWeight.w600),
+              hintStyle: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide: BorderSide(color: Colors.blue)
-              ),
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(color: Colors.blue)),
             ),
             onChanged: (value) {
               double? newReading = double.tryParse(value);
@@ -553,7 +561,7 @@ class _ConsumercardState extends State<Consumercard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Senior Citezen Discount',
+                  'Senior Citizen Discount',
                   style: TextStyle(color: Colors.green),
                 ),
                 Text(
@@ -622,7 +630,7 @@ class _ConsumercardState extends State<Consumercard> {
   /// Widget for bottom navigation buttons.
   Widget bottomButtons() {
     final bluetoothHelper = context.watch<BluePrinterHelper>();
-    print(bluetoothHelper.connected);
+    //print(bluetoothHelper.connected);
 
     return Container(
       height: 70,
@@ -632,24 +640,29 @@ class _ConsumercardState extends State<Consumercard> {
         children: [
           ElevatedButton(
             onPressed: bluetoothHelper.connected
-            ? () async {
-            
-              if (_calculatedBill == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No Current Reading yet.')),
-                );
-              } else {
-                int billStatePrinted = 2;
-                await updateMasterRecord(billStatePrinted);
-                if (!mounted) return;
-                 print('checker');
-                _printReceipt(_currentCard!);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Bill Printing')),
-                );
-              }
-            }
-            : null,
+                ? () async {
+                    if (_calculatedBill == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('No Current Reading yet.')),
+                      );
+                    } else {
+                      int billStatePrinted = 2;
+                      await updateMasterRecord(billStatePrinted);
+                      if (!mounted) return;
+                     
+                      _printReceipt(_currentCard!);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Bill Printing')),
+                      );
+                    }
+                  }
+                : () {
+                    // Add your false response here
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Printer not connected!')),
+                    );
+                  },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(
@@ -714,7 +727,7 @@ class _ConsumercardState extends State<Consumercard> {
   AppBar cardAppBar(BuildContext context) {
     return AppBar(
       title: const Text(
-        'Post Meter Reading',
+        'Water Consumer',
         style: TextStyle(
           color: Colors.black,
           fontSize: 22,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:meter_reader_flutter/models/editlist_model.dart';
+import 'package:meter_reader_flutter/models/printlist_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 class PrintbillList extends StatefulWidget {
@@ -10,7 +10,7 @@ class PrintbillList extends StatefulWidget {
 
 class _PrintbillListState extends State<PrintbillList> {
   final ScrollController _scrollController = ScrollController();
-  List<EditlistModel> _printl = [];
+  List<PrintlistModel> _printl = [];
   bool _isLoading = false;
   int _offset = 0;
   final int _limit = 8;
@@ -37,8 +37,8 @@ class _PrintbillListState extends State<PrintbillList> {
       _isLoading = true;
     });
     // Fetch the next page
-    List<EditlistModel> newPrintl =
-        await EditlistModel.getMasterByIDforEditlist(
+    List<PrintlistModel> newPrintl =
+        await PrintlistModel.getMasterByIDforPrintedlist(
             limit: _limit, offset: _offset);
 
     setState(() {
@@ -75,8 +75,8 @@ class _PrintbillListState extends State<PrintbillList> {
           await DatabaseHelper().searchPostedMasterData(query);
       // Convert results into your model.
       // Assumes PostmeterlistModel.fromMap exists.
-      List<EditlistModel> searchResults =
-          results.map((map) => EditlistModel.fromMap(map)).toList();
+      List<PrintlistModel> searchResults =
+          results.map((map) => PrintlistModel.fromMap(map)).toList();
       setState(() {
         _printl = searchResults;
         _isLoading = false;
@@ -101,7 +101,7 @@ class _PrintbillListState extends State<PrintbillList> {
     await _loadData();
   }
 
-  Widget _buildPrintlItem(EditlistModel  printl, int index) {
+  Widget _buildPrintlItem(PrintlistModel  printl, int index) {
     // Alternate the background color
     final Color tileColor = index % 2 == 0
         ? Colors.white
@@ -201,7 +201,7 @@ class _PrintbillListState extends State<PrintbillList> {
        margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
-          color: Color.fromARGB(255, 230, 223, 223).withValues(),
+          color: Color.fromARGB(255, 230, 223, 223),
           blurRadius: 8,
           spreadRadius: 0.0,
         )

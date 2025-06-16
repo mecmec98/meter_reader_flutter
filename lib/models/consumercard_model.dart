@@ -33,6 +33,7 @@ class ConsumercardModel {
   String prefsDatedue;
   String prefsCutdate;
   String prefsBilldate;
+  String prefsReadername;
 
   ConsumercardModel({
     required this.cardName,
@@ -66,6 +67,8 @@ class ConsumercardModel {
     required this.prefsCutdate,
     required this.prefsDatedue,
     required this.prefsBilldate,
+    required this.prefsReadername,
+
   });
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
@@ -142,6 +145,7 @@ class ConsumercardModel {
       prefsCutdate: prefsMap['cutdate'] ?? '',
       prefsDatedue: prefsMap['datedue'] ?? '',
       prefsBilldate: prefsMap['billdate'] ?? '',
+      prefsReadername: prefsMap['meterreader'] ?? '',
     );
   }
 }

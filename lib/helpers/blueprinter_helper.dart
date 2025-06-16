@@ -76,6 +76,8 @@ class BluePrinterHelper extends ChangeNotifier {
     String averageUsage,
     String otherFees,
     String cardRefNo,
+    String prefsReadername, 
+    int cardwithSeniorDisc,
   ) async {
     if (connected) {
       DateTime now = DateTime.now();
@@ -90,6 +92,17 @@ class BluePrinterHelper extends ChangeNotifier {
         arrearsOrAdvance = 'Arrears';
       }
 
+     //calculate scdiscount
+     String finalSCdisc = "";
+     if (cardwithSeniorDisc == 1) {
+        double scdiscount = (double.parse(waterBill) * 0.05);
+        finalSCdisc = scdiscount.toStringAsFixed(2);
+      }
+
+      //Trim the reader name to first initial and last name
+      List<String> parts = prefsReadername.trim().split(' ');
+      String readertrimmed = '${parts[0][0]} ${parts[1]}';
+
       // Trim the last 5 characters from lastReading
       String trimmedPrev = lastReading.substring(0, lastReading.length - 5);
 
@@ -101,8 +114,8 @@ class BluePrinterHelper extends ChangeNotifier {
       // Print header
       bytes += generator.feed(2);
       try {
-        final ByteData data =
-            await rootBundle.load('assets/icons/receiptlogo.png'); // path in your assets
+        final ByteData data = await rootBundle
+            .load('assets/icons/receiptlogo.png'); // path in your assets
         final Uint8List imageBytes = data.buffer.asUint8List();
         final img.Image? logo = img.decodeImage(imageBytes);
         if (logo != null) {
@@ -147,7 +160,7 @@ class BluePrinterHelper extends ChangeNotifier {
         'BILLING STATEMENT',
         styles: PosStyles(align: PosAlign.center),
       );
-      //refno
+      bytes += generator.text('Meter Reader: $readertrimmed');
       bytes += generator.text('Bill Num: $cardRefNo');
       bytes += generator.text(
           'For the Month of: $monthInWords-$year'); //Current Month and year
@@ -237,6 +250,22 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+         //show up if senior citizen discount is applied
+      if (cardwithSeniorDisc == 1) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'SC DISCOUNT',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: '-$finalSCdisc',
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      } 
       bytes += generator.row([
         PosColumn(
           text: 'W.M.F.',
@@ -250,6 +279,7 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+   
       bytes += generator.row([
         PosColumn(
           text: arrearsOrAdvance,
@@ -304,8 +334,9 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.reset();
       bytes += generator.hr();
-      bytes +=
-          generator.text('N O T I C E', styles: PosStyles(align: PosAlign.center, bold: true));
+      //messages
+      bytes += generator.text('N O T I C E',
+          styles: PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(
           'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
           styles: PosStyles(align: PosAlign.center));

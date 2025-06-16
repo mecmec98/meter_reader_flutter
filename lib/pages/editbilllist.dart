@@ -159,7 +159,7 @@ class _PrintEditListState extends State<PrintEditList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: printAppbar(context),
+      appBar: editAppbar(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -168,14 +168,14 @@ class _PrintEditListState extends State<PrintEditList> {
             height: 5.0,
           ),
           Expanded(
-            child: printMeterLists(),
+            child: editmetterlist(),
           ),
         ],
       ),
     );
   }
 
-  ListView printMeterLists() {
+  ListView editmetterlist() {
     return ListView.builder(
       shrinkWrap: true,
       controller: _scrollController,
@@ -201,7 +201,7 @@ class _PrintEditListState extends State<PrintEditList> {
        margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
-          color: Color.fromARGB(255, 230, 223, 223).withValues(),
+          color: Color.fromARGB(255, 230, 223, 223),
           blurRadius: 8,
           spreadRadius: 0.0,
         )
@@ -230,10 +230,10 @@ class _PrintEditListState extends State<PrintEditList> {
     );
   }
 
-  AppBar printAppbar(BuildContext context) {
+  AppBar editAppbar(BuildContext context) {
     return AppBar(
       title: Text(
-        'Print Bill',
+        'Edit Meter Reading',
         style: TextStyle(
           color: Colors.black,
           fontSize: 22,
