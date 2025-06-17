@@ -33,8 +33,8 @@ class _ConsumercardState extends State<Consumercard> {
       DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
 
   bool _billUpdated = false;
-  String? _formattedDate =
-      DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
+  //String? _formattedDate =
+  //    DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
   // Retrieve the card ID from the route arguments.
   @override
@@ -100,9 +100,10 @@ class _ConsumercardState extends State<Consumercard> {
         if (!mounted) return;
         if (count > 0) {
           // Optionally fetch the updated record for debugging.
-          Map<String, dynamic>? updatedRecord =
-              await DatabaseHelper().getMasterByID(_cardId!);
+          //Map<String, dynamic>? updatedRecord =
+          //  await DatabaseHelper().getMasterByID(_cardId!);
           //print("Updated record data: $updatedRecord");
+
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Record updated successfully!')),
@@ -126,9 +127,9 @@ class _ConsumercardState extends State<Consumercard> {
     }
   }
 
-  void _printReceipt(ConsumercardModel card) async {
+  Future<void> _printReceipt(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
-    await bluetoothHelper.printSampleReceipt(
+    await bluetoothHelper.printReceipt(
         _currentDate.toString(),
         card.prefsDatedue.toString(),
         card.cardName,
@@ -152,7 +153,8 @@ class _ConsumercardState extends State<Consumercard> {
         card.cardOthers.toStringAsFixed(2),
         card.cardRefNo,
         card.prefsReadername,
-        card.cardwithSeniorDisc);
+        card.cardwithSeniorDisc,
+        card.cardOthers.toStringAsFixed(2),);
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.
@@ -188,6 +190,7 @@ class _ConsumercardState extends State<Consumercard> {
     }
   }
 
+  //Builds the widget tree for the Consumercard page.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -629,9 +632,6 @@ class _ConsumercardState extends State<Consumercard> {
 
   /// Widget for bottom navigation buttons.
   Widget bottomButtons() {
-    final bluetoothHelper = context.watch<BluePrinterHelper>();
-    //print(bluetoothHelper.connected);
-
     return Container(
       height: 70,
       padding: const EdgeInsets.all(8),
@@ -639,30 +639,41 @@ class _ConsumercardState extends State<Consumercard> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed: bluetoothHelper.connected
-                ? () async {
-                    if (_calculatedBill == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('No Current Reading yet.')),
-                      );
-                    } else {
-                      int billStatePrinted = 2;
-                      await updateMasterRecord(billStatePrinted);
-                      if (!mounted) return;
-                     
-                      _printReceipt(_currentCard!);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Bill Printing')),
-                      );
-                    }
-                  }
-                : () {
-                    // Add your false response here
+            onPressed: () async {
+              final bluetoothHelper = context.read<BluePrinterHelper>();
+              if (bluetoothHelper.connected == true &&
+                  await bluetoothHelper.bluetooth.isConnected == true) {
+                if (_calculatedBill == null) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No Current Reading yet.')),
+                  );
+                } else {
+                  int billStatePrinted = 2;
+                  await updateMasterRecord(billStatePrinted);
+
+                  try {
+                    await _printReceipt(_currentCard!);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Printer not connected!')),
+                      const SnackBar(content: Text('Bill Printing')),
                     );
-                  },
+                  } catch (e) {
+                    bluetoothHelper.connected = false;
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Printer disconnected during print!')),
+                    );
+                  }
+                }
+              } else {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Printer not connected!')),
+                );
+              }
+            },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(

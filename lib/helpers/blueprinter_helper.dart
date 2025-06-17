@@ -19,6 +19,15 @@ class BluePrinterHelper extends ChangeNotifier {
     notifyListeners();
   }
 
+  void listenForDisconnects() {
+    bluetooth.onStateChanged().listen((state) {
+      if (state == BlueThermalPrinter.DISCONNECTED) {
+        connected = false;
+        notifyListeners();
+      }
+    });
+  }
+
   BluetoothDevice? _selectedDevice;
   BluetoothDevice? get selectedDevice => _selectedDevice;
   set selectedDevice(BluetoothDevice? device) {
@@ -38,6 +47,7 @@ class BluePrinterHelper extends ChangeNotifier {
       selectedDevice = device;
       await bluetooth.connect(device);
       connected = true;
+      listenForDisconnects();
       notifyListeners();
       print(connected);
       print('Connected successfully');
@@ -55,7 +65,7 @@ class BluePrinterHelper extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> printSampleReceipt(
+  Future<void> printReceipt(
     String datePrinted, //
     String dateDue, //
     String name, //
@@ -76,277 +86,306 @@ class BluePrinterHelper extends ChangeNotifier {
     String averageUsage,
     String otherFees,
     String cardRefNo,
-    String prefsReadername, 
+    String prefsReadername,
     int cardwithSeniorDisc,
+    String cardOthers,
   ) async {
-    if (connected) {
-      DateTime now = DateTime.now();
-      String monthInWords =
-          DateFormat.MMMM().format(now); // Get the month in words
-      String year = DateFormat.y().format(now); // Get the year in numbers
-
-      String arrearsOrAdvance = '';
-      if (balance < 0) {
-        arrearsOrAdvance = 'Advance';
-      } else {
-        arrearsOrAdvance = 'Arrears';
-      }
-
-     //calculate scdiscount
-     String finalSCdisc = "";
-     if (cardwithSeniorDisc == 1) {
-        double scdiscount = (double.parse(waterBill) * 0.05);
-        finalSCdisc = scdiscount.toStringAsFixed(2);
-      }
-
-      //Trim the reader name to first initial and last name
-      List<String> parts = prefsReadername.trim().split(' ');
-      String readertrimmed = '${parts[0][0]} ${parts[1]}';
-
-      // Trim the last 5 characters from lastReading
-      String trimmedPrev = lastReading.substring(0, lastReading.length - 5);
-
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm58, profile);
-
-      List<int> bytes = [];
-
-      // Print header
-      bytes += generator.feed(2);
+    if (connected && (await bluetooth.isConnected == true)) {
+      //recheck if bluetooth is connected
       try {
-        final ByteData data = await rootBundle
-            .load('assets/icons/receiptlogo.png'); // path in your assets
-        final Uint8List imageBytes = data.buffer.asUint8List();
-        final img.Image? logo = img.decodeImage(imageBytes);
-        if (logo != null) {
-          bytes += generator.image(logo, align: PosAlign.center);
+        DateTime now = DateTime.now();
+        String monthInWords =
+            DateFormat.MMMM().format(now); // Get the month in words
+        String year = DateFormat.y().format(now); // Get the year in numbers
+
+        String arrearsOrAdvance = '';
+        if (balance < 0) {
+          arrearsOrAdvance = 'Advance';
+        } else {
+          arrearsOrAdvance = 'Arrears';
         }
-      } catch (e) {
-        print('Error loading logo: $e');
-      }
-      bytes += generator.text(
-        'Dapitan City Water District',
-        styles: PosStyles(
-          align: PosAlign.center,
-          height: PosTextSize.size1,
-          width: PosTextSize.size1,
-          bold: true,
-        ),
-      );
 
-      // Print smaller font text
-      bytes += generator.text(
-        'National Highway Polo, Dapitan City',
-        styles: PosStyles(
-          align: PosAlign.center,
-          fontType: PosFontType.fontB, // Explicitly set Font B
-        ),
-      );
+        //calculate scdiscount
+        String finalSCdisc = "";
+        if (cardwithSeniorDisc == 1) {
+          double scdiscount = (double.parse(waterBill) * 0.05);
+          finalSCdisc = scdiscount.toStringAsFixed(2);
+        }
 
-      bytes += generator.text(
-        'HOTLINE NO. 0948-4616-970',
-        styles: PosStyles(align: PosAlign.center),
-      );
+        //Trim the reader name to first initial and last name
+        List<String> parts = prefsReadername.trim().split(' ');
+        String readertrimmed = '${parts[0][0]} ${parts[1]}';
 
-      bytes += generator.text(
-        'NON-VAT-REG. TIN 553-002',
-        styles: PosStyles(align: PosAlign.center),
-      );
+        // Trim the last 5 characters from lastReading
+        String trimmedPrev = lastReading.substring(0, lastReading.length - 5);
 
-      bytes += generator.reset();
-      bytes += generator.hr();
+        final profile = await CapabilityProfile.load();
+        final generator = Generator(PaperSize.mm58, profile);
 
-      bytes += generator.text(
-        'BILLING STATEMENT',
-        styles: PosStyles(align: PosAlign.center),
-      );
-      bytes += generator.text('Meter Reader: $readertrimmed');
-      bytes += generator.text('Bill Num: $cardRefNo');
-      bytes += generator.text(
-          'For the Month of: $monthInWords-$year'); //Current Month and year
-      bytes +=
-          generator.text('Date Printed:$datePrinted'); //Current day and time
-      bytes += generator
-          .text('Period Covered:$trimmedPrev-$billdate'); //Bill covered
-      bytes += generator.hr();
-      bytes += generator.text(
-        accNo,
-        styles: PosStyles(height: PosTextSize.size2, width: PosTextSize.size2),
-      );
-      bytes += generator.hr();
-      bytes += generator.text(name);
-      bytes += generator.text(
-        address,
-        styles: PosStyles(
-          fontType: PosFontType.fontB, // Explicitly set Font B
-        ),
-      );
-      bytes += generator.reset();
-      bytes += generator.text('Meter #: $meterNo');
-      bytes += generator.text('Meter Brand: $meterBrand');
-      bytes += generator.reset();
-      bytes += generator.hr();
-      bytes += generator.row([
-        PosColumn(
-          text: 'CURR READING',
-          width: 9,
-          styles: PosStyles(height: PosTextSize.size2),
-        ),
-        PosColumn(
-          text: currReading,
-          width: 3,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.row([
-        PosColumn(
-          text: 'PREV READING',
-          width: 9,
-          styles: PosStyles(height: PosTextSize.size2),
-        ),
-        PosColumn(
-          text: prevReading,
-          width: 3,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.row([
-        PosColumn(
-          text: 'CURR USAGE',
-          width: 9,
-          styles: PosStyles(height: PosTextSize.size2),
-        ),
-        PosColumn(
-          text: usage,
-          width: 3,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.reset();
-      bytes += generator.row([
-        PosColumn(
-          text: 'AVE USAGE',
-          styles: PosStyles(height: PosTextSize.size2, bold: true),
-          width: 9,
-        ),
-        PosColumn(
-          text: averageUsage,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-          width: 3,
-        ),
-      ]);
-      bytes += generator.reset();
-      bytes += generator.hr();
-      bytes += generator.row([
-        PosColumn(
-          text: 'WATER BILL',
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: waterBill,
-          width: 4,
+        List<int> bytes = [];
+
+        // Print header
+        bytes += generator.feed(2);
+        try {
+          final ByteData data = await rootBundle
+              .load('assets/icons/receiptlogo.png'); // path in your assets
+          final Uint8List imageBytes = data.buffer.asUint8List();
+          final img.Image? logo = img.decodeImage(imageBytes);
+          if (logo != null) {
+            bytes += generator.image(logo, align: PosAlign.center);
+          }
+        } catch (e) {
+          print('Error loading logo: $e');
+        }
+        bytes += generator.text(
+          'Dapitan City Water District',
           styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
-         //show up if senior citizen discount is applied
-      if (cardwithSeniorDisc == 1) {
+            align: PosAlign.center,
+            height: PosTextSize.size1,
+            width: PosTextSize.size1,
+            bold: true,
+          ),
+        );
+
+        // Print smaller font text
+        bytes += generator.text(
+          'National Highway Polo, Dapitan City',
+          styles: PosStyles(
+            align: PosAlign.center,
+            fontType: PosFontType.fontB, // Explicitly set Font B
+          ),
+        );
+
+        bytes += generator.text(
+          'HOTLINE NO. 0948-4616-970',
+          styles: PosStyles(align: PosAlign.center),
+        );
+
+        bytes += generator.text(
+          'NON-VAT-REG. TIN 553-002',
+          styles: PosStyles(align: PosAlign.center),
+        );
+
+        bytes += generator.reset();
+        bytes += generator.hr();
+
+        bytes += generator.text(
+          'BILLING STATEMENT',
+          styles: PosStyles(align: PosAlign.center),
+        );
+        bytes += generator.text('Meter Reader: $readertrimmed');
+        bytes += generator.text('Bill Num: $cardRefNo');
+        bytes += generator.text(
+            'For the Month of: $monthInWords-$year'); //Current Month and year
+        bytes +=
+            generator.text('Date Printed:$datePrinted'); //Current day and time
+        bytes += generator
+            .text('Period Covered:$trimmedPrev-$billdate'); //Bill covered
+        bytes += generator.hr();
+        bytes += generator.text(
+          accNo,
+          styles:
+              PosStyles(height: PosTextSize.size2, width: PosTextSize.size2),
+        );
+        bytes += generator.hr();
+        bytes += generator.text(name);
+        bytes += generator.text(
+          address,
+          styles: PosStyles(
+            fontType: PosFontType.fontB, // Explicitly set Font B
+          ),
+        );
+        bytes += generator.reset();
+        bytes += generator.text('Meter #: $meterNo');
+        bytes += generator.text('Meter Brand: $meterBrand');
+        bytes += generator.reset();
+        bytes += generator.hr();
         bytes += generator.row([
           PosColumn(
-            text: 'SC DISCOUNT',
+            text: 'CURR READING',
+            width: 9,
+            styles: PosStyles(height: PosTextSize.size2),
+          ),
+          PosColumn(
+            text: currReading,
+            width: 3,
+            styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'PREV READING',
+            width: 9,
+            styles: PosStyles(height: PosTextSize.size2),
+          ),
+          PosColumn(
+            text: prevReading,
+            width: 3,
+            styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'CURR USAGE',
+            width: 9,
+            styles: PosStyles(height: PosTextSize.size2),
+          ),
+          PosColumn(
+            text: usage,
+            width: 3,
+            styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.reset();
+        bytes += generator.row([
+          PosColumn(
+            text: 'AVE USAGE',
+            styles: PosStyles(height: PosTextSize.size2, bold: true),
+            width: 9,
+          ),
+          PosColumn(
+            text: averageUsage,
+            styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+            width: 3,
+          ),
+        ]);
+        bytes += generator.reset();
+        bytes += generator.hr();
+        bytes += generator.row([
+          PosColumn(
+            text: 'WATER BILL',
             width: 8,
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
-            text: '-$finalSCdisc',
+            text: waterBill,
             width: 4,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
           ),
         ]);
-      } 
-      bytes += generator.row([
-        PosColumn(
-          text: 'W.M.F.',
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: watermf,
-          width: 4,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
-   
-      bytes += generator.row([
-        PosColumn(
-          text: arrearsOrAdvance,
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: balance.toString(),
-          width: 4,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.row([
-        PosColumn(
-          text: 'TOTAL DUE',
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size2, bold: true),
-        ),
-        PosColumn(
-          text: totaldue,
-          width: 4,
-          styles: PosStyles(
-              height: PosTextSize.size2, bold: true, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.row([
-        PosColumn(
-          text: 'DUE DATE',
-          width: 7,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: dateDue,
-          width: 5,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.row([
-        PosColumn(
-          text: 'DISC DATE',
-          width: 7,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: discDate,
-          width: 5,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
-      bytes += generator.reset();
-      bytes += generator.hr();
-      //messages
-      bytes += generator.text('N O T I C E',
-          styles: PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.text(
-          'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
-          styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text('   Thank you for your prompt       payment.',
-          styles: PosStyles(align: PosAlign.center));
-      bytes += generator.cut();
+        //show up if senior citizen discount is applied
+        if (cardwithSeniorDisc == 1) {
+          bytes += generator.row([
+            PosColumn(
+              text: 'SC DISCOUNT',
+              width: 8,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: '-$finalSCdisc',
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
+            ),
+          ]);
+        }
+        bytes += generator.row([
+          PosColumn(
+            text: 'W.M.F.',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: watermf,
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
 
-      Uint8List byteList = Uint8List.fromList(bytes);
-      bluetooth.writeBytes(byteList);
+        bytes += generator.row([
+          PosColumn(
+            text: arrearsOrAdvance,
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: balance.toString(),
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+
+        if (cardOthers == "0.00" || cardOthers.isEmpty) {
+        } else {
+          bytes += generator.row([
+            PosColumn(
+              text: 'Others',
+              width: 8,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: cardOthers,
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
+            ),
+          ]);
+        }
+
+        bytes += generator.row([
+          PosColumn(
+            text: 'TOTAL DUE',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size2, bold: true),
+          ),
+          PosColumn(
+            text: totaldue,
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size2, bold: true, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'DUE DATE',
+            width: 7,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: dateDue,
+            width: 5,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'DISC DATE',
+            width: 7,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: discDate,
+            width: 5,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.reset();
+        bytes += generator.hr();
+        //messages
+        bytes += generator.text('N O T I C E',
+            styles: PosStyles(align: PosAlign.center, bold: true));
+        bytes += generator.text(
+            'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
+            styles: PosStyles(align: PosAlign.center));
+        bytes += generator.text('   Thank you for your prompt       payment.',
+            styles: PosStyles(align: PosAlign.center));
+        bytes += generator.cut();
+
+        Uint8List byteList = Uint8List.fromList(bytes);
+        bluetooth.writeBytes(byteList);
+      } catch (e) {
+        connected = false;
+        notifyListeners();
+        // Optionally show a message to the user
+      }
     } else {
+      connected = false;
+      notifyListeners();
       //print('no printer connected');
     }
   }
