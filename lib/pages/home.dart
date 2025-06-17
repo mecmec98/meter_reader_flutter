@@ -147,36 +147,39 @@ class _HomePageState extends State<HomePage> {
 
 // Adjust for less wider screens sizes
   Column menuButtons() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double buttonPadding = screenWidth * 0.12;
+    double iconSize = screenWidth * 0.11;
+    double fontSize = screenWidth * 0.052;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+          padding: EdgeInsets.only(left: 10.0, right: 10.0),
           child: Text(
             '',
             style: TextStyle(
               color: Colors.black,
-              fontSize: 20,
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(
-          height: 1,
-        ),
+        const SizedBox(height: 1),
         Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            //Post Meter Reading
+            // Post Meter Reading
             Padding(
-              padding: const EdgeInsets.only(top: 1, right: 50, left: 50),
+              padding: EdgeInsets.only(top: 1, right: buttonPadding, left: buttonPadding),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/postmeterreading');
                 },
                 child: Container(
                   height: 100,
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(screenWidth * 0.045),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     color: const Color.fromARGB(255, 28, 85, 227),
@@ -187,21 +190,19 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         SvgPicture.asset(
                           'assets/icons/reading.svg',
-                          height: 50,
-                          width: 50,
+                          height: iconSize,
+                          width: iconSize,
                           colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243),
-                              BlendMode.srcIn),
+                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
                         ),
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        const Text(
+                        SizedBox(width: screenWidth * 0.015),
+                        Text(
                           'Post Meter Reading',
                           style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -209,57 +210,56 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            //Edit Meter Reading
+            // Edit Meter Reading
             Padding(
-                padding: const EdgeInsets.only(top: 20, right: 50, left: 50),
-                child: GestureDetector(
-                  onTap: () {
-                   Navigator.pushNamed(context, '/editbilllist');
-                  },
-                  child: Container(
-                    height: 100,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: const Color.fromARGB(255, 28, 117, 227),
-                    ),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/edit.svg',
-                            height: 50,
-                            width: 50,
-                            colorFilter: const ColorFilter.mode(
-                                Color.fromARGB(255, 245, 243, 243),
-                                BlendMode.srcIn),
+              padding: EdgeInsets.only(top: 20, right: buttonPadding, left: buttonPadding),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/editbilllist');
+                },
+                child: Container(
+                  height: 100,
+                  padding: EdgeInsets.all(screenWidth * 0.045),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: const Color.fromARGB(255, 28, 117, 227),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/edit.svg',
+                          height: iconSize,
+                          width: iconSize,
+                          colorFilter: const ColorFilter.mode(
+                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
+                        ),
+                        SizedBox(width: screenWidth * 0.015),
+                        Text(
+                          'Edit Meter Reading',
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          const Text(
-                            'Edit Meter Reading',
-                            style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                )),
-            //Print Bill
+                ),
+              ),
+            ),
+            // Print Bill
             Padding(
-              padding: const EdgeInsets.only(top: 20, right: 50, left: 50),
+              padding: EdgeInsets.only(top: 20, right: buttonPadding, left: buttonPadding),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/printbilllist');
                 },
                 child: Container(
                   height: 100,
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(screenWidth * 0.045),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     color: const Color.fromARGB(255, 28, 137, 227),
@@ -270,21 +270,19 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         SvgPicture.asset(
                           'assets/icons/print.svg',
-                          height: 50,
-                          width: 50,
+                          height: iconSize,
+                          width: iconSize,
                           colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243),
-                              BlendMode.srcIn),
+                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
                         ),
-                        const SizedBox(
-                          width: 15,
-                        ),
-                        const Text(
+                        SizedBox(width: screenWidth * 0.03),
+                        Text(
                           'Print Bill',
                           style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),

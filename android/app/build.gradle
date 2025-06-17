@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.meter_reader_flutter"
+    namespace "com.example.meter_reader_flutter"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

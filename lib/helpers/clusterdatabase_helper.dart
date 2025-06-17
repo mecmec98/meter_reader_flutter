@@ -35,6 +35,8 @@ class ClusterdatabaseHelper {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cluter TEXT NOT NULL,
             acc_num TEXT UNIQUE NOT NULL
+            acc_name TEXT NOT NULL,
+            acc_meternum TEXT NOT NULL
           )
         ''');
       },
