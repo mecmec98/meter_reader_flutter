@@ -301,15 +301,14 @@ class BluePrinterHelper extends ChangeNotifier {
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
-            text: balance.toString(),
+            text: balance.toStringAsFixed(2),
             width: 4,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
           ),
         ]);
 
-        if (cardOthers == "0.00" || cardOthers.isEmpty) {
-        } else {
+        if (cardOthers != "0.00" || cardOthers.isNotEmpty) {
           bytes += generator.row([
             PosColumn(
               text: 'Others',

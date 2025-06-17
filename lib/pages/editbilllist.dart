@@ -72,7 +72,7 @@ class _PrintEditListState extends State<PrintEditList> {
       });
       // Query the database using the search function.
       List<Map<String, dynamic>> results =
-          await DatabaseHelper().searchPostedMasterData(query);
+          await DatabaseHelper().searchPrintedMasterData(query);
       // Convert results into your model.
       // Assumes PostmeterlistModel.fromMap exists.
       List<EditlistModel> searchResults =
