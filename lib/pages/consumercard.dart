@@ -55,113 +55,96 @@ class _ConsumercardState extends State<Consumercard> {
     super.initState();
   }
 
-  Future<void> updateMasterRecord(int billStatind) async {
-    // Ensure _newReading is set to card.cardCurrreading if null or 0
-    if (_newReading == null) {
-      if (_currentCard != null) {
-        _newReading = _currentCard!.cardCurrreading;
-      }
+  Future<bool> updateMasterRecord(int billStatind) async {
+    if (_currentCard == null || _cardId == null) return false;
+
+    final newReading = _newReading ?? _currentCard!.cardCurrreading;
+
+    if (_calculatedBill == null ||
+        _usage == null ||
+        _calculatedSCDisc == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Missing billing data.')),
+      );
+      return false;
     }
-    if (_cardId != null &&
-        _calculatedBill != null &&
-        _usage != null &&
-        _newReading != null &&
-        _calculatedSCDisc != null) {
-      // Convert calculated bill to cents and then to int.
 
-      double dbBill = _calculatedBill! * 100;
-      double scDisc = _calculatedSCDisc! * 100;
+    final updatedData = {
+      'AMOUNT': (_calculatedBill! * 100).toInt(),
+      'USAGE': _usage!.toInt(),
+      'POSTED': 1,
+      'BILL_STAT': billStatind,
+      'CREADING': newReading,
+      'MCRDGDT': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+      'SCDISC': (_calculatedSCDisc! * 100).toInt(),
+      'PEN': 0,
+    };
 
-      int finalSCdisc = scDisc.toInt();
-      int calculateBillInt = dbBill.toInt();
-      int usageInt = _usage!.toInt();
-      int penalty = 0;
-
-      int isPosted = 1;
-      int billStatus =
-          billStatind; //indicator just 1 if only saved, 2 if saved and printed
-      int? isNewReading = _newReading;
-      String dateUpdated =
-          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      Map<String, dynamic> updatedData = {
-        'AMOUNT': calculateBillInt,
-        'USAGE': usageInt,
-        'POSTED': isPosted,
-        'BILL_STAT': billStatus,
-        'CREADING': isNewReading,
-        'MCRDGDT': dateUpdated,
-        'SCDISC': finalSCdisc,
-        'PEN': penalty,
-      };
-
-      try {
-        int count =
-            await DatabaseHelper().updateMasterData(_cardId!, updatedData);
-        if (!mounted) return;
-        if (count > 0) {
-          // Optionally fetch the updated record for debugging.
-          //Map<String, dynamic>? updatedRecord =
-          //  await DatabaseHelper().getMasterByID(_cardId!);
-          //print("Updated record data: $updatedRecord");
-
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Record updated successfully!')),
-          );
-          setState(() {
-            _cardFuture = getConsumercardByID(_cardId!);
-          });
-          _currentCard = await getConsumercardByID(_cardId!);
-          //Navigator.pushNamed(context, '/postmeterreading');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Update failed.')),
-          );
-        }
-      } catch (e) {
-        if (!mounted) return;
+    try {
+      final count =
+          await DatabaseHelper().updateMasterData(_cardId!, updatedData);
+      if (!mounted) return false;
+      if (count > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving the record: $e')),
+          const SnackBar(content: Text('Record updated successfully!')),
         );
+        setState(() {
+          _cardFuture = getConsumercardByID(_cardId!);
+        });
+        _currentCard = await getConsumercardByID(_cardId!);
+        return true;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Update failed.')),
+        );
+        return false;
       }
+    } catch (e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving the record: $e')),
+      );
+      return false;
     }
   }
 
   Future<void> _printReceipt(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
     await bluetoothHelper.printReceipt(
-        _currentDate.toString(),
-        card.prefsDatedue.toString(),
-        card.cardName,
-        card.cardAddress,
-        card.cardMeterno,
-        card.cardMeterbrand,
-        card.cardAccno,
-        (_newReading ?? card.cardCurrreading)
-            .toString(), // Use new reading if available
-        card.cardPrevreading.toString(),
-        (_usage ?? card.cardUsage).toString(), // Current usage from state
-        (_calculatedBill ?? card.cardCurrbill)
-            .toStringAsFixed(2), // Calculated bill from state
-        card.cardWmf.toStringAsFixed(2),
-        card.cardArrears,
-        (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
-        card.prefsCutdate.toString(),
-        card.cardprevReadingDate,
-        card.prefsBilldate,
-        card.cardAvusage.toString(),
-        card.cardOthers.toStringAsFixed(2),
-        card.cardRefNo,
-        card.prefsReadername,
-        card.cardwithSeniorDisc,
-        card.cardOthers.toStringAsFixed(2),);
+      _currentDate.toString(),
+      card.prefsDatedue.toString(),
+      card.cardName,
+      card.cardAddress,
+      card.cardMeterno,
+      card.cardMeterbrand,
+      card.cardAccno,
+      (_newReading ?? card.cardCurrreading)
+          .toString(), // Use new reading if available
+      card.cardPrevreading.toString(),
+      (_usage ?? card.cardUsage).toString(), // Current usage from state
+      (_calculatedBill ?? card.cardCurrbill)
+          .toStringAsFixed(2), // Calculated bill from state
+      card.cardWmf.toStringAsFixed(2),
+      card.cardArrears,
+      (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+      card.prefsCutdate.toString(),
+      card.cardprevReadingDate,
+      card.prefsBilldate,
+      card.cardAvusage.toString(),
+      card.cardOthers.toStringAsFixed(2),
+      card.cardRefNo,
+      card.prefsReadername,
+      card.cardwithSeniorDisc,
+      card.cardOthers.toStringAsFixed(2),
+    );
   }
 
   /// Calls the billing helper and updates the _calculatedBill state.
+  /// dont use usage
   void _updateBill(ConsumercardModel card, double usage) async {
     try {
       // card.cardCodeRaw is used as the CSSSZ code.
-      double bill = await CalculatebillHelper.calculateBill(
+      double bill = await CalculatebillHelper.calculateBill( 
           card.cardCodeRaw, usage.toInt());
       double scDisc;
       if (card.cardwithSeniorDisc == 1 && _usage! < 30) {
@@ -433,7 +416,7 @@ class _ConsumercardState extends State<Consumercard> {
             ),
             onChanged: (value) {
               double? newReading = double.tryParse(value);
-              if (newReading == null || newReading <= card.cardPrevreading) {
+              if (newReading == null) {
                 setState(() {
                   _usage = null;
                   _calculatedBill = null;
@@ -650,14 +633,15 @@ class _ConsumercardState extends State<Consumercard> {
                   );
                 } else {
                   int billStatePrinted = 2;
-                  await updateMasterRecord(billStatePrinted);
 
+                  await updateMasterRecord(billStatePrinted);
                   try {
                     await _printReceipt(_currentCard!);
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Bill Printing')),
                     );
+                    Navigator.pop(context, true);
                   } catch (e) {
                     bluetoothHelper.connected = false;
                     if (!mounted) return;
@@ -701,8 +685,20 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           ElevatedButton(
             onPressed: () async {
-              int billStateSaved = 1;
-              await updateMasterRecord(billStateSaved);
+              try {
+                int billStateSaved = 1;
+                final success = await updateMasterRecord(billStateSaved);
+                if (!mounted) return;
+                if (success) {
+                  Navigator.pop(context, true);
+                }
+                // If not successful, do not pop or show extra message (already handled)
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e')),
+                );
+              }
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),

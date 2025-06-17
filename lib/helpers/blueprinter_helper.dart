@@ -308,7 +308,7 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
 
-        if (cardOthers != "0.00" || cardOthers.isNotEmpty) {
+        if (cardOthers != "0.00" && cardOthers.isNotEmpty) {
           bytes += generator.row([
             PosColumn(
               text: 'Others',
@@ -379,13 +379,15 @@ class BluePrinterHelper extends ChangeNotifier {
         bluetooth.writeBytes(byteList);
       } catch (e) {
         connected = false;
+        await disconnectFromDevice(); // Force disconnect to reset state
         notifyListeners();
-        // Optionally show a message to the user
+        throw Exception('Printer disconnected or error during print: $e');
       }
     } else {
       connected = false;
+      await disconnectFromDevice();
       notifyListeners();
-      //print('no printer connected');
+      throw Exception('No printer connected');
     }
   }
 }
