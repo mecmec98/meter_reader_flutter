@@ -100,9 +100,9 @@ class BluePrinterHelper extends ChangeNotifier {
 
         String arrearsOrAdvance = '';
         if (balance < 0) {
-          arrearsOrAdvance = 'Advance';
+          arrearsOrAdvance = 'ADVANCE';
         } else {
-          arrearsOrAdvance = 'Arrears';
+          arrearsOrAdvance = 'ARREARS';
         }
 
         //calculate scdiscount
@@ -282,7 +282,7 @@ class BluePrinterHelper extends ChangeNotifier {
         }
         bytes += generator.row([
           PosColumn(
-            text: 'W.M.F.',
+            text: 'W.M.C.',
             width: 8,
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
@@ -293,25 +293,26 @@ class BluePrinterHelper extends ChangeNotifier {
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
           ),
         ]);
-
-        bytes += generator.row([
-          PosColumn(
-            text: arrearsOrAdvance,
-            width: 8,
-            styles: PosStyles(height: PosTextSize.size1, bold: true),
-          ),
-          PosColumn(
-            text: balance.toStringAsFixed(2),
-            width: 4,
-            styles: PosStyles(
-                height: PosTextSize.size1, bold: true, align: PosAlign.right),
-          ),
-        ]);
+        if (balance != 0) {
+          bytes += generator.row([
+            PosColumn(
+              text: arrearsOrAdvance,
+              width: 8,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: balance.toStringAsFixed(2),
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
+            ),
+          ]);
+        }
 
         if (cardOthers != "0.00" && cardOthers.isNotEmpty) {
           bytes += generator.row([
             PosColumn(
-              text: 'Others',
+              text: 'W.S.C.',
               width: 8,
               styles: PosStyles(height: PosTextSize.size1, bold: true),
             ),

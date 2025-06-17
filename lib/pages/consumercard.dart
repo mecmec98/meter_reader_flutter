@@ -639,7 +639,7 @@ class _ConsumercardState extends State<Consumercard> {
                     await _printReceipt(_currentCard!);
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bill Printing')),
+                      const SnackBar(content: Text('Bill Printed')),
                     );
                     Navigator.pop(context, true);
                   } catch (e) {
