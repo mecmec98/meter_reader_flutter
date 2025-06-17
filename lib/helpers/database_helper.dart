@@ -155,8 +155,8 @@ class DatabaseHelper {
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
-      where: '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=?',
-      whereArgs: ['%$query%', '%$query%', '%$query%', 1],
+      where: '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=? AND BILL_STAT=?',
+      whereArgs: ['%$query%', '%$query%', '%$query%', 1, 1],
     );
     return result;
   }
