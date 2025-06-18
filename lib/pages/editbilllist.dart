@@ -39,7 +39,7 @@ class _PrintEditListState extends State<PrintEditList> {
     // Fetch the next page
     List<EditlistModel> newPrintl =
         await EditlistModel.getMasterByIDforEditlist(
-            limit: _limit, offset: _offset);
+            offset: _offset);
 
     setState(() {
       _printl.addAll(newPrintl);

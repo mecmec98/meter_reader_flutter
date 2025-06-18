@@ -118,7 +118,7 @@ class DatabaseHelper {
 
 //for getting data for the Post Meter List
   Future<List<Map<String, dynamic>>?> getMasterByIDforlist(
-      {int limit = 8, int offset = 0}) async {
+      { int offset = 0}) async {
     try {
       final db = await database;
       List<Map<String, dynamic>> result = await db.query(
@@ -126,7 +126,6 @@ class DatabaseHelper {
         columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
         where: 'POSTED=?',
         whereArgs: [0],
-        limit: limit,
         offset: offset,
       );
       return result;
@@ -177,14 +176,13 @@ class DatabaseHelper {
 
 //for getting data for the Print Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintlist(
-      {int limit = 8, int offset = 0}) async {
+      { int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
       where: 'POSTED=?',
       whereArgs: [1],
-      limit: limit,
       offset: offset,
     );
     return result;
@@ -192,14 +190,13 @@ class DatabaseHelper {
 
   //for getting data for the already Printed Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintedlist(
-      {int limit = 8, int offset = 0}) async {
+      { int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
       where: 'POSTED=? AND BILL_STAT=?',
       whereArgs: [1, 2],
-      limit: limit,
       offset: offset,
     );
     return result;
@@ -207,14 +204,13 @@ class DatabaseHelper {
 
    //for getting data for the saved only Printed Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforSavedlist(
-      {int limit = 8, int offset = 0}) async {
+      {int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
       where: 'POSTED=? AND BILL_STAT=?',
       whereArgs: [1, 1],
-      limit: limit,
       offset: offset,
     );
     return result;

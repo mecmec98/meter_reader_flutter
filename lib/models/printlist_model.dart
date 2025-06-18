@@ -23,10 +23,10 @@ class PrintlistModel {
   }
   // Static method to fetch a paginated list of models
   static Future<List<PrintlistModel>> getMasterByIDforPrintedlist(
-      {int limit = 8, int offset = 0}) async {
+      {int offset = 0}) async {
     final dbHelper = DatabaseHelper();
     final List<Map<String, dynamic>> maps =
-        await dbHelper.getMasterByIDforSavedlist(limit: limit, offset: offset);
+        await dbHelper.getMasterByIDforSavedlist( offset: offset);
     return maps.map((map) => PrintlistModel.fromMap(map)).toList();
   }
 }

@@ -257,10 +257,10 @@ class _PostmeterreadingState extends State<Postmeterreading> {
           Padding(
             padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
             child: Text(
-              'Number of Post Meter Reading: ${_posts.length}',
+              'Count: ${_posts.length}',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: Color.fromARGB(255, 33, 89, 243),
               ),
             ),

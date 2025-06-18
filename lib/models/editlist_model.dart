@@ -23,10 +23,10 @@ class EditlistModel {
   }
   // Static method to fetch a paginated list of models
   static Future<List<EditlistModel>> getMasterByIDforEditlist(
-      {int limit = 8, int offset = 0}) async {
+      { int offset = 0}) async {
     final dbHelper = DatabaseHelper();
     final List<Map<String, dynamic>> maps =
-        await dbHelper.getMasterByIDforPrintedlist(limit: limit, offset: offset);
+        await dbHelper.getMasterByIDforPrintedlist(offset: offset);
     return maps.map((map) => EditlistModel.fromMap(map)).toList();
   }
 }

@@ -27,7 +27,7 @@ class PostmeterlistModel {
     try {
       final dbHelper = DatabaseHelper();
       final List<Map<String, dynamic>>? maps =
-          await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
+          await dbHelper.getMasterByIDforlist(offset: offset);
       return maps!.map((map) => PostmeterlistModel.fromMap(map)).toList();
     } catch (e) {
       print('Error: $e');

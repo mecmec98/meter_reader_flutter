@@ -39,7 +39,7 @@ class _PrintbillListState extends State<PrintbillList> {
     // Fetch the next page
     List<PrintlistModel> newPrintl =
         await PrintlistModel.getMasterByIDforPrintedlist(
-            limit: _limit, offset: _offset);
+            offset: _offset);
 
     setState(() {
       _printl.addAll(newPrintl);
