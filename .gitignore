@@ -46,3 +46,4 @@ app.*.map.json
 
 # Android .cxx build files
 /android/app/.cxx/Debug/**/*
+/android/app/.cxx/RelWithDebInfo/**/*
