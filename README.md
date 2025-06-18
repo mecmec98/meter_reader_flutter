@@ -1,6 +1,6 @@
-# meter_reader_flutter
+# Meter Reader Flutter
 
-A new Flutter project.
+A FLutter project for DapCWD Meter Reader App, open for other districts to use. Basis of this project is the old LWUA BCWIN application so it can MRDBA.dbi database
 
 ## Getting Started
 
