@@ -167,6 +167,7 @@ class _PrintEditListState extends State<PrintEditList> {
           SizedBox(
             height: 5.0,
           ),
+          listCounter(),
           Expanded(
             child: editmetterlist(),
           ),
@@ -254,6 +255,20 @@ class _PrintEditListState extends State<PrintEditList> {
             width: 25,
             colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
           ),
+        ),
+      ),
+    );
+  }
+
+    Padding listCounter() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
+      child: Text(
+        'Count: ${_printl.length}',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Color.fromARGB(255, 33, 89, 243),
         ),
       ),
     );

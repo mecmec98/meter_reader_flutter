@@ -245,6 +245,20 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     );
   }
 
+  Padding listCounter() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
+      child: Text(
+        'Count: ${_posts.length}',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Color.fromARGB(255, 33, 89, 243),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,17 +268,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         children: [
           searchBar(),
           const SizedBox(height: 2.0),
-          Padding(
-            padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
-            child: Text(
-              'Count: ${_posts.length}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color.fromARGB(255, 33, 89, 243),
-              ),
-            ),
-          ),
+          listCounter(),
           Expanded(child: postMeterLists()),
         ],
       ),
