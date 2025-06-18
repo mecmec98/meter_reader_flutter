@@ -172,7 +172,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         } else {
           return _hasMore
               ? const Padding(
-                  padding:EdgeInsets.all(5.0),
+                  padding: EdgeInsets.all(5.0),
                   child: Center(child: CircularProgressIndicator()),
                 )
               : const SizedBox.shrink();
@@ -254,6 +254,17 @@ class _PostmeterreadingState extends State<Postmeterreading> {
         children: [
           searchBar(),
           const SizedBox(height: 2.0),
+          Padding(
+            padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
+            child: Text(
+              'Number of Post Meter Reading: ${_posts.length}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color.fromARGB(255, 33, 89, 243),
+              ),
+            ),
+          ),
           Expanded(child: postMeterLists()),
         ],
       ),
