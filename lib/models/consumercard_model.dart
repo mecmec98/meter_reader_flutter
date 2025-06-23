@@ -19,7 +19,7 @@ class ConsumercardModel {
 
   double cardCurrbill;
   double cardWmf;
-  double cardAvusage;
+  int cardAvusage;
   double cardLessdisc;
   double cardArrears;
   double cardOthers;
@@ -134,11 +134,12 @@ class ConsumercardModel {
       cardOthers:
           map['ARO'] != null ? (map['ARO'] as num).toDouble() / 100 : 0.0,
       cardWmf: map['WMF'] != null ? (map['WMF'] as num).toDouble() / 100 : 0.0,
-      cardAvusage: map['AVE'] != null ? (map['AVE'] as num).toDouble() : 0.0,
+      cardAvusage:  map['AVE'] is int ? map['AVE'] as int : 0,
       cardTotalbdd: 0, // Set default; update if needed.
       cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
+
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardRefNo: (map['REFNO'] ?? 0).toString(),
 
@@ -148,16 +149,18 @@ class ConsumercardModel {
       prefsReadername: prefsMap['meterreader'] ?? '',
     );
   }
+  
 }
 /// Retrieves a ConsumercardModel by its ID.
-
 Future<ConsumercardModel?> getConsumercardByID(int id) async {
   // Retrieve the card map from the database.
   final Map<String, dynamic>? cardMap = await DatabaseHelper().getCardByID(id);
   //Also Retrieve the prefs map from the database:
   final Map<String, dynamic>? prefsMap = await DatabaseHelper().getPrefsData();
+  
   if (cardMap != null && prefsMap != null) {
     // Use the asynchronous factory method to create the model, including rate data.
+  
     return ConsumercardModel.createFromMapWithRates(cardMap, prefsMap);
   } else {
     return null;

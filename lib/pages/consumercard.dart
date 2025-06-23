@@ -52,59 +52,79 @@ class _ConsumercardState extends State<Consumercard> {
 
   @override
   void initState() {
+
     super.initState();
   }
 
-  Future<bool> updateMasterRecord(int billStatind) async {
-    if (_currentCard == null || _cardId == null) return false;
-
-    final newReading = _newReading ?? _currentCard!.cardCurrreading;
-
-    if (_calculatedBill == null ||
-        _usage == null ||
-        _calculatedSCDisc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing billing data.')),
-      );
-      return false;
-    }
-
-    final updatedData = {
-      'AMOUNT': (_calculatedBill! * 100).toInt(),
-      'USAGE': _usage!.toInt(),
-      'POSTED': 1,
-      'BILL_STAT': billStatind,
-      'CREADING': newReading,
-      'MCRDGDT': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-      'SCDISC': (_calculatedSCDisc! * 100).toInt(),
-      'PEN': 0,
-    };
-
-    try {
-      final count =
-          await DatabaseHelper().updateMasterData(_cardId!, updatedData);
-      if (!mounted) return false;
-      if (count > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record updated successfully!')),
-        );
-        setState(() {
-          _cardFuture = getConsumercardByID(_cardId!);
-        });
-        _currentCard = await getConsumercardByID(_cardId!);
-        return true;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Update failed.')),
-        );
-        return false;
+  Future<void> updateMasterRecord(int billStatind) async {
+    // Ensure _newReading is set to card.cardCurrreading if null or 0
+    if (_newReading == null) {
+      if (_currentCard != null) {
+        _newReading = _currentCard!.cardCurrreading;
       }
-    } catch (e) {
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving the record: $e')),
-      );
-      return false;
+    }
+    if (_cardId != null &&
+        _calculatedBill != null &&
+        _usage != null &&
+        _newReading != null &&
+        _calculatedSCDisc != null) {
+      // Convert calculated bill to cents and then to int.
+
+      double dbBill = _calculatedBill! * 100;
+      double scDisc = _calculatedSCDisc! * 100;
+
+      int finalSCdisc = scDisc.toInt();
+      int calculateBillInt = dbBill.toInt();
+      int usageInt = _usage!.toInt();
+      int penalty = 0;
+
+      int isPosted = 1;
+      int billStatus =
+          billStatind; //indicator just 1 if only saved, 2 if saved and printed
+      int? isNewReading = _newReading;
+      String dateUpdated =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      Map<String, dynamic> updatedData = {
+        'AMOUNT': calculateBillInt,
+        'USAGE': usageInt,
+        'POSTED': isPosted,
+        'BILL_STAT': billStatus,
+        'CREADING': isNewReading,
+        'MCRDGDT': dateUpdated,
+        'SCDISC': finalSCdisc,
+        'PEN': penalty,
+      };
+
+      try {
+        int count =
+            await DatabaseHelper().updateMasterData(_cardId!, updatedData);
+        if (!mounted) return;
+        if (count > 0) {
+          // Optionally fetch the updated record for debugging.
+          //Map<String, dynamic>? updatedRecord =
+          //  await DatabaseHelper().getMasterByID(_cardId!);
+          //print("Updated record data: $updatedRecord");
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Record updated successfully!')),
+          );
+          setState(() {
+            _cardFuture = getConsumercardByID(_cardId!);
+          });
+          _currentCard = await getConsumercardByID(_cardId!);
+          //Navigator.pushNamed(context, '/postmeterreading');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Update failed.')),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving the record: $e')),
+        );
+      }
     }
   }
 
@@ -139,12 +159,12 @@ class _ConsumercardState extends State<Consumercard> {
     );
   }
 
+
   /// Calls the billing helper and updates the _calculatedBill state.
-  /// dont use usage
   void _updateBill(ConsumercardModel card, double usage) async {
     try {
       // card.cardCodeRaw is used as the CSSSZ code.
-      double bill = await CalculatebillHelper.calculateBill( 
+      double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
       double scDisc;
       if (card.cardwithSeniorDisc == 1 && _usage! < 30) {
@@ -639,7 +659,7 @@ class _ConsumercardState extends State<Consumercard> {
                     await _printReceipt(_currentCard!);
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bill Printed')),
+                      const SnackBar(content: Text('Bill Printing')),
                     );
                     Navigator.pop(context, true);
                   } catch (e) {
@@ -685,20 +705,10 @@ class _ConsumercardState extends State<Consumercard> {
           ),
           ElevatedButton(
             onPressed: () async {
-              try {
-                int billStateSaved = 1;
-                final success = await updateMasterRecord(billStateSaved);
-                if (!mounted) return;
-                if (success) {
-                  Navigator.pop(context, true);
-                }
-                // If not successful, do not pop or show extra message (already handled)
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e')),
-                );
-              }
+              int billStateSaved = 1;
+              await updateMasterRecord(billStateSaved);
+              if (!mounted) return;
+              Navigator.pop(context, true);
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.green),
