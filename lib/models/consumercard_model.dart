@@ -104,7 +104,7 @@ class ConsumercardModel {
     String msize = ratesData?["MSIZE$suffix"] ?? '';
 
     return ConsumercardModel(
-      cardId: map['_id'] is int ? map['PREADING'] as int : 0,
+      cardId: map['_id'] is int ? map['_id'] as int : 0,
       cardCodeRaw: map['CLSSSZ'],
       cardName: map['NAME'] ?? '',
       // Construct account number as "ZB-CLSSSZ-ACC1" using the raw CLSSSZ value.
@@ -118,7 +118,7 @@ class ConsumercardModel {
       cardMetersize: msize,
 
       cardPrevreading: map['PREADING'] is int ? map['PREADING'] as int : 0,
-      cardCurrreading: map['CREADING'],
+      cardCurrreading: map['CREADING'] is int ? map['CREADING'] as int : 0,
       cardwithSeniorDisc:
           map['WITHSCDISC'] is int ? map['WITHSCDISC'] as int : 0,
 

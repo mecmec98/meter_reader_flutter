@@ -15,10 +15,10 @@ class PrintlistModel {
 
   factory PrintlistModel.fromMap(Map<String, dynamic> map) {
     return PrintlistModel(
-      printName: map['NAME'],
-      printAddress: map['ADDRESS'],
-      printMeterno: map['MNO'],
-      printID: map['_id'],
+      printName: map['NAME'] ?? '',
+      printAddress: map['ADDRESS'] ?? '',
+      printMeterno: map['MNO'] ?? '',
+      printID: map['_id'] is int ? map['_id'] as int : 0,
     );
   }
   // Static method to fetch a paginated list of models

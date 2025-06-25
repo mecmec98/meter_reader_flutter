@@ -44,16 +44,28 @@ class _PostmeterreadingState extends State<Postmeterreading> {
           await PostmeterlistModel.getMasterModelList(
               limit: _limit, offset: _offset);
 
+      if (!mounted) return;
+      
       setState(() {
-        _posts.addAll(newPosts!);
-        _offset += newPosts.length; // update offset
-        _isLoading = false;
-        if (newPosts.length < _limit) {
+        if (newPosts != null) {
+          _posts.addAll(newPosts);
+          _offset += newPosts.length; // update offset
+          if (newPosts.length < _limit) {
+            _hasMore = false;
+          }
+        } else {
           _hasMore = false;
         }
+        _isLoading = false;
       });
     } catch (e) {
       print('Error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasMore = false;
+        });
+      }
     }
   }
 

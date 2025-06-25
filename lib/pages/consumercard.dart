@@ -187,7 +187,6 @@ class _ConsumercardState extends State<Consumercard> {
         }
       } catch (e) {
         if (!mounted) {
-          setState(() => _isSaving = false);
           return;
         }
         ScaffoldMessenger.of(context).showSnackBar(
@@ -275,7 +274,7 @@ class _ConsumercardState extends State<Consumercard> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
-                return Center(child: Text("Error: \\${snapshot.error}"));
+                return Center(child: Text("Error: ${snapshot.error}"));
               } else if (!snapshot.hasData || snapshot.data == null) {
                 return const Center(child: Text("No data found."));
               } else {

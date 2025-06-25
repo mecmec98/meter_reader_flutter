@@ -15,10 +15,10 @@ class PostmeterlistModel {
 
   factory PostmeterlistModel.fromMap(Map<String, dynamic> map) {
     return PostmeterlistModel(
-      postName: map['NAME'],
-      postAddress: map['ADDRESS'],
-      postMeterno: map['MNO'],
-      postID: map['_id'],
+      postName: map['NAME'] ?? '',
+      postAddress: map['ADDRESS'] ?? '',
+      postMeterno: map['MNO'] ?? '',
+      postID: map['_id'] is int ? map['_id'] as int : 0,
     );
   }
   // Static method to fetch a paginated list of models
@@ -28,7 +28,7 @@ class PostmeterlistModel {
       final dbHelper = DatabaseHelper();
       final List<Map<String, dynamic>>? maps =
           await dbHelper.getMasterByIDforlist(offset: offset);
-      return maps!.map((map) => PostmeterlistModel.fromMap(map)).toList();
+      return maps?.map((map) => PostmeterlistModel.fromMap(map)).toList();
     } catch (e) {
       print('Error: $e');
       return null;
