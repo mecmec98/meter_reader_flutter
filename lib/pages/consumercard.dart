@@ -175,9 +175,9 @@ class _ConsumercardState extends State<Consumercard> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Record updated successfully!')),
           );
-          setState(() {
-            _cardFuture = getConsumercardByID(_cardId!);
-          });
+          // setState(() {
+          //   _cardFuture = getConsumercardByID(_cardId!);
+          // });
           _currentCard = await getConsumercardByID(_cardId!);
           //Navigator.pushNamed(context, '/postmeterreading');
         } else {
