@@ -11,23 +11,26 @@ dependencies:
   flutter:
     sdk: flutter
 
-  english_words: ^4.0.0
+  # State Management
   provider: ^6.1.2
+  
+  # UI Components
   flutter_svg: ^2.0.17
-
-  file_picker: ^9.0.2
+  
+  # Database
   sqflite: ^2.4.1
   path_provider: ^2.1.5 
   path: ^1.9.0
-  permission_handler: ^11.4.0
-  external_path: ^2.2.0
-  share_plus: ^10.1.4
+  
+  # File Operations
+  file_picker: ^9.0.2
   image: ^4.0.17
   
-  cupertino_icons: ^1.0.8
-  esc_pos_utils_plus: ^2.0.4
+  # Utilities
   intl: ^0.20.2
-  http: ^1.3.0
+  
+  # Printing
+  esc_pos_utils_plus: ^2.0.4
   blue_thermal_printer:
     path: ./local_packages/blue_thermal_printer
 
