@@ -41,8 +41,6 @@ class BluePrinterHelper extends ChangeNotifier {
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
-    // ignore: unnecessary_null_comparison
-    if (device == null) return;
     try {
       selectedDevice = device;
       await bluetooth.connect(device);
@@ -114,10 +112,17 @@ class BluePrinterHelper extends ChangeNotifier {
 
         //Trim the reader name to first initial and last name
         List<String> parts = prefsReadername.trim().split(' ');
-        String readertrimmed = '${parts[0][0]} ${parts[1]}';
+        String readertrimmed;
+        if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+          readertrimmed = '${parts[0][0]}. ${parts[1]}';
+        } else {
+          readertrimmed = prefsReadername; // Fallback to full name if not enough parts
+        }
 
-        // Trim the last 5 characters from lastReading
-        String trimmedPrev = lastReading.substring(0, lastReading.length - 5);
+        // Trim the last 5 characters from lastReading (with safety check)
+        String trimmedPrev = lastReading.length > 5 
+            ? lastReading.substring(0, lastReading.length - 5)
+            : lastReading;
 
         final profile = await CapabilityProfile.load();
         final generator = Generator(PaperSize.mm58, profile);
@@ -149,11 +154,15 @@ class BluePrinterHelper extends ChangeNotifier {
 
         // Print smaller font text
         bytes += generator.text(
-          'National Highway Polo, Dapitan City',
+          'National Highway Polo',
           styles: PosStyles(
             align: PosAlign.center,
-            fontType: PosFontType.fontB, // Explicitly set Font B
+            fontType: PosFontType.fontA, // Explicitly set Font B
           ),
+        );
+          bytes += generator.text(
+          'Dapitan City',
+          styles: PosStyles(align: PosAlign.center),
         );
 
         bytes += generator.text(
@@ -171,12 +180,13 @@ class BluePrinterHelper extends ChangeNotifier {
 
         bytes += generator.text(
           'BILLING STATEMENT',
-          styles: PosStyles(align: PosAlign.center),
+          styles: PosStyles(align: PosAlign.center, bold: true),
         );
+        bytes += generator.text(
+            'For the Month of $monthInWords-$year'); //Current Month and year
         bytes += generator.text('Meter Reader: $readertrimmed');
         bytes += generator.text('Bill Num: $cardRefNo');
-        bytes += generator.text(
-            'For the Month of: $monthInWords-$year'); //Current Month and year
+        
         bytes +=
             generator.text('Date Printed:$datePrinted'); //Current day and time
         bytes += generator
@@ -192,7 +202,7 @@ class BluePrinterHelper extends ChangeNotifier {
         bytes += generator.text(
           address,
           styles: PosStyles(
-            fontType: PosFontType.fontB, // Explicitly set Font B
+            fontType: PosFontType.fontA, // Explicitly set Font B
           ),
         );
         bytes += generator.reset();
@@ -222,7 +232,7 @@ class BluePrinterHelper extends ChangeNotifier {
             text: prevReading,
             width: 3,
             styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-          ),
+          ), 
         ]);
         bytes += generator.row([
           PosColumn(
@@ -365,6 +375,7 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
         bytes += generator.reset();
+        bytes += generator.hr();
         bytes += generator.hr();
         //messages
         bytes += generator.text('N O T I C E',
