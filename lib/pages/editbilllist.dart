@@ -40,7 +40,7 @@ class _PrintEditListState extends State<PrintEditList> {
     List<EditlistModel> newPrintl =
         await EditlistModel.getMasterByIDforEditlist(
             offset: _offset);
-
+          if (!mounted) return;
     setState(() {
       _printl.addAll(newPrintl);
       _offset += newPrintl.length; // update offset
@@ -165,7 +165,7 @@ class _PrintEditListState extends State<PrintEditList> {
         children: [
           searchBar(),
           SizedBox(
-            height: 5.0,
+            height: 2.0,
           ),
           listCounter(),
           Expanded(

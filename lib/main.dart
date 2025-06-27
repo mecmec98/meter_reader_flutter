@@ -16,8 +16,6 @@ import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
 
 void main() async {
-
-  
   // Precache SVG assets
   // WidgetsFlutterBinding.ensureInitialized();
   // 

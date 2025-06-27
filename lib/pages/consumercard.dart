@@ -199,6 +199,7 @@ class _ConsumercardState extends State<Consumercard> {
 
   Future<void> _printReceipt(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
+    int? intusage = _usage?.toInt();
     await bluetoothHelper.printReceipt(
       _currentDate.toString(),
       card.prefsDatedue.toString(),
@@ -210,7 +211,7 @@ class _ConsumercardState extends State<Consumercard> {
       (_newReading ?? card.cardCurrreading)
           .toString(), // Use new reading if available
       card.cardPrevreading.toString(),
-      (_usage ?? card.cardUsage).toString(), // Current usage from state
+      (intusage ?? card.cardUsage).toString(), // Current usage from state
       (_calculatedBill ?? card.cardCurrbill)
           .toStringAsFixed(2), // Calculated bill from state
       card.cardWmf.toStringAsFixed(2),

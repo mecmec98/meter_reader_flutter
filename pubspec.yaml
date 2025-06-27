@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  # for android app
   # State Management
   provider: ^6.1.2
   
@@ -34,6 +34,7 @@ dependencies:
   blue_thermal_printer:
     path: ./local_packages/blue_thermal_printer
 
+  # for windows app
 
 
 
