@@ -82,12 +82,22 @@ class DatabaseHelper {
       String sourcePath = await getDatabasePath();
       File sourceFile = File(sourcePath);
 
+      //incrementing name for backup MRADB-backup(1 check if it exist then +1).dbi
+      String backupFileName = 'MRADB-backup.dbi';
+      int backupIndex = 1;
+      while (await File(join('/storage/emulated/0/Download', backupFileName)).exists()) {
+        backupFileName = 'MRADB-backup(${backupIndex++}).dbi';
+      }
+      
       // Get the Downloads directory path
       Directory downloadsDirectory = Directory('/storage/emulated/0/Download');
+      String destPathbackup = join(downloadsDirectory.path, backupFileName);
       String destPath = join(downloadsDirectory.path, 'MRADB.dbo');
 
-      // Copy the database file to the Downloads directory
+      // Copy 2 of the database file to the Downloads directory
+      await sourceFile.copy(destPathbackup);
       await sourceFile.copy(destPath);
+  
 
       print('Database exported to $destPath');
       return true;

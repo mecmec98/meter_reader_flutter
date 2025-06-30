@@ -55,7 +55,9 @@ class _DatabasedrawerState extends State<Databasedrawer> {
       allowMultiple: false,
     );
 
-    if (result != null && result.files.single.name == 'MRADB.dbi' && result.files.single.path != null) {
+    if (result != null &&
+    result.files.single.path != null &&
+    result.files.single.name.toLowerCase().endsWith('.dbi')) {
       bool success =
           await _dbHelper.importNewDatabase(result.files.single.path!);
       if (success) {
