@@ -9,7 +9,6 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:image/image.dart' as img;
 
-
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
@@ -117,11 +116,12 @@ class BluePrinterHelper extends ChangeNotifier {
         if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
           readertrimmed = '${parts[0][0]}. ${parts[1]}';
         } else {
-          readertrimmed = prefsReadername; // Fallback to full name if not enough parts
+          readertrimmed =
+              prefsReadername; // Fallback to full name if not enough parts
         }
 
         // Trim the last 5 characters from lastReading (with safety check)
-        String trimmedPrev = lastReading.length > 5 
+        String trimmedPrev = lastReading.length > 5
             ? lastReading.substring(0, lastReading.length - 5)
             : lastReading;
 
@@ -161,7 +161,7 @@ class BluePrinterHelper extends ChangeNotifier {
             fontType: PosFontType.fontA, // Explicitly set Font B
           ),
         );
-          bytes += generator.text(
+        bytes += generator.text(
           'Dapitan City',
           styles: PosStyles(align: PosAlign.center),
         );
@@ -187,7 +187,7 @@ class BluePrinterHelper extends ChangeNotifier {
             'For the Month of $monthInWords-$year'); //Current Month and year
         bytes += generator.text('Meter Reader: $readertrimmed');
         bytes += generator.text('Bill Num: $cardRefNo');
-        
+
         bytes +=
             generator.text('Date Printed:$datePrinted'); //Current day and time
         bytes += generator
@@ -199,7 +199,11 @@ class BluePrinterHelper extends ChangeNotifier {
               PosStyles(height: PosTextSize.size2, width: PosTextSize.size2),
         );
         bytes += generator.hr();
-        bytes += generator.text(name);
+        bytes += generator.text(
+          name,
+          styles: PosStyles(width: PosTextSize.size2, bold: true),
+        );
+        bytes += generator.reset();
         bytes += generator.text(
           address,
           styles: PosStyles(
@@ -233,7 +237,7 @@ class BluePrinterHelper extends ChangeNotifier {
             text: prevReading,
             width: 3,
             styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
-          ), 
+          ),
         ]);
         bytes += generator.row([
           PosColumn(

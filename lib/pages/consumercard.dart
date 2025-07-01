@@ -264,6 +264,18 @@ class _ConsumercardState extends State<Consumercard> {
   return card.cardcurrentReadingDate;
 }
 
+String getFormattedReadingDate(String cardcurrentReadingDate) {
+  try {
+    // Parse the original date string (assumed format: MM/dd/yyyy)
+    DateTime date = DateFormat('MM/dd/yyyy').parse(cardcurrentReadingDate);
+    // Format as MM-dd-yyyy
+    return DateFormat('MM-dd-yyyy').format(date);
+  } catch (e) {
+    // If parsing fails, return the original string
+    return cardcurrentReadingDate;
+  }
+}
+
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
     try {
@@ -319,9 +331,10 @@ class _ConsumercardState extends State<Consumercard> {
                   if (mounted && _currentCard?.cardId != card.cardId) {
                     setState(() {
                       _currentCard = card;
+                      String formattedDate = getFormattedReadingDate(card.cardcurrentReadingDate);
                       String onlyTime = DateFormat('HH:mm:ss').format(DateTime.now());
-                      String currentRead = getCurrentReadingDate(card);
-                      _currentReadingDate = '$currentRead $onlyTime';
+                      String datePart = formattedDate.split(' ').first;
+                      _currentReadingDate = '$datePart $onlyTime';
                     });
                   }
                 });
