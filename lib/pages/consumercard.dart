@@ -268,9 +268,9 @@ String getFormattedReadingDate(String cardcurrentReadingDate) {
   try {
     // Parse the original date string (assumed format: MM/dd/yyyy)
     DateTime date = DateFormat('MM/dd/yyyy').parse(cardcurrentReadingDate);
-    // Format as MM-dd-yyyy
-    return DateFormat('MM-dd-yyyy').format(date);
-  } catch (e) {
+    // Format as yyyy-MM-dd
+    return DateFormat('yyyy-MM-dd').format(date);
+      } catch (e) {
     // If parsing fails, return the original string
     return cardcurrentReadingDate;
   }
