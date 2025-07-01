@@ -6,6 +6,7 @@ import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 import 'consumercard/consumer_info_card.dart';
 import 'consumercard/readers_field.dart';
@@ -35,6 +36,7 @@ class _ConsumercardState extends State<Consumercard> {
   String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
   String? _currentDate =
       DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
+  String? _currentReadingDate; //holds card.cardcurrentReadingDate
 
   bool _billUpdated = false;
   bool _isSaving = false;
@@ -142,8 +144,7 @@ class _ConsumercardState extends State<Consumercard> {
       int billStatus =
           billStatind; //indicator just 1 if only saved, 2 if saved and printed
       int? isNewReading = _newReading;
-      String dateUpdated =
-          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      String dateUpdated = _currentReadingDate!; // Use the current date from the state
       Map<String, dynamic> updatedData = {
         'AMOUNT': calculateBillInt,
         'USAGE': usageInt,
@@ -200,8 +201,37 @@ class _ConsumercardState extends State<Consumercard> {
   Future<void> _printReceipt(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
     int? intusage = _usage?.toInt();
+    NumberFormat formatter = NumberFormat('#,##0.00');
+    String formattedBill = formatter.format(_beforeDatecalculation ?? 0.0);
+    //print all parameters
+    /** 
+    print("Printing Receipt with parameters:");
+    print("Current Reading Date: ${_currentReadingDate.toString()}"); 
+    print("Due Date: ${card.prefsDatedue.toString()}");
+    print("Card Name: ${card.cardName}");
+    print("Card Address: ${card.cardAddress}");
+    print("Meter Number: ${card.cardMeterno}");
+    print("Meter Brand: ${card.cardMeterbrand}");
+    print("Account Number: ${card.cardAccno}");
+    print("New Reading: ${_newReading?.toString() ?? card.cardCurrreading.toString()}");
+    print("Previous Reading: ${card.cardPrevreading.toString()}");
+    print("Usage: ${intusage?.toString() ?? card.cardUsage.toString()}");
+    print("Calculated Bill: ${_calculatedBill?.toStringAsFixed(2) ?? card.cardCurrbill.toString()}");
+    print("WMF: ${card.cardWmf.toStringAsFixed(2)}");
+    print("Arrears: ${card.cardArrears}");
+    print("Formatted Bill: $formattedBill");
+    print("Cut Date: ${card.prefsCutdate.toString()}");
+    print("Previous Reading Date: ${card.cardprevReadingDate}");
+    print("Bill Date: ${card.prefsBilldate}");
+    print("Average Usage: ${card.cardAvusage.toString()}");
+    print("Others: ${card.cardOthers.toStringAsFixed(2)}");
+    print("Reference Number: ${card.cardRefNo}");
+    print("Reader Name: ${card.prefsReadername}");
+    print("Senior Citizen Discount: ${card.cardwithSeniorDisc}");
+    print("Others Amount: ${card.cardOthers.toStringAsFixed(2)}");
+    */
     await bluetoothHelper.printReceipt(
-      _currentDate.toString(),
+      _currentReadingDate.toString(),
       card.prefsDatedue.toString(),
       card.cardName,
       card.cardAddress,
@@ -216,7 +246,7 @@ class _ConsumercardState extends State<Consumercard> {
           .toStringAsFixed(2), // Calculated bill from state
       card.cardWmf.toStringAsFixed(2),
       card.cardArrears,
-      (_beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+      formattedBill,
       card.prefsCutdate.toString(),
       card.cardprevReadingDate,
       card.prefsBilldate,
@@ -228,6 +258,11 @@ class _ConsumercardState extends State<Consumercard> {
       card.cardOthers.toStringAsFixed(2),
     );
   }
+
+
+  String getCurrentReadingDate(ConsumercardModel card) {
+  return card.cardcurrentReadingDate;
+}
 
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
@@ -284,6 +319,9 @@ class _ConsumercardState extends State<Consumercard> {
                   if (mounted && _currentCard?.cardId != card.cardId) {
                     setState(() {
                       _currentCard = card;
+                      String onlyTime = DateFormat('HH:mm:ss').format(DateTime.now());
+                      String currentRead = getCurrentReadingDate(card);
+                      _currentReadingDate = '$currentRead $onlyTime';
                     });
                   }
                 });

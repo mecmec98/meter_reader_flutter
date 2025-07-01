@@ -3,8 +3,6 @@ import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 
-
-
 class Databasedrawer extends StatefulWidget {
   @override
   State<Databasedrawer> createState() => _DatabasedrawerState();
@@ -56,8 +54,8 @@ class _DatabasedrawerState extends State<Databasedrawer> {
     );
 
     if (result != null &&
-    result.files.single.path != null &&
-    result.files.single.name.toLowerCase().endsWith('.dbi')) {
+        result.files.single.path != null &&
+        result.files.single.name.toLowerCase().endsWith('.dbi')) {
       bool success =
           await _dbHelper.importNewDatabase(result.files.single.path!);
       if (success) {
