@@ -30,6 +30,7 @@ class ConsumercardModel {
   String cardprevReadingDate;
   String cardRefNo;
   String cardcurrentReadingDate;
+  int cardPreviousUsage;
 
   String prefsDatedue;
   String prefsCutdate;
@@ -45,13 +46,11 @@ class ConsumercardModel {
     required this.cardCodeRaw,
     required this.cardClassification,
     required this.cardMetersize,
-
     required this.cardPrevreading,
     required this.cardCurrreading,
     required this.cardId,
     required this.cardwithSeniorDisc,
     required this.cardSeniorDiscValue,
-
     required this.cardCurrbill,
     required this.cardWmf,
     required this.cardAvusage,
@@ -65,12 +64,11 @@ class ConsumercardModel {
     required this.cardprevReadingDate,
     required this.cardRefNo,
     required this.cardcurrentReadingDate,
-    
+    required this.cardPreviousUsage,
     required this.prefsCutdate,
     required this.prefsDatedue,
     required this.prefsBilldate,
     required this.prefsReadername,
-
   });
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
@@ -136,11 +134,13 @@ class ConsumercardModel {
       cardOthers:
           map['ARO'] != null ? (map['ARO'] as num).toDouble() / 100 : 0.0,
       cardWmf: map['WMF'] != null ? (map['WMF'] as num).toDouble() / 100 : 0.0,
-      cardAvusage:  map['AVE'] is int ? map['AVE'] as int : 0,
+      cardAvusage: map['AVE'] is int ? map['AVE'] as int : 0,
       cardTotalbdd: 0, // Set default; update if needed.
       cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
+      cardPreviousUsage:
+          map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',
@@ -152,18 +152,18 @@ class ConsumercardModel {
       prefsReadername: prefsMap['meterreader'] ?? '',
     );
   }
-  
 }
+
 /// Retrieves a ConsumercardModel by its ID.
 Future<ConsumercardModel?> getConsumercardByID(int id) async {
   // Retrieve the card map from the database.
   final Map<String, dynamic>? cardMap = await DatabaseHelper().getCardByID(id);
   //Also Retrieve the prefs map from the database:
   final Map<String, dynamic>? prefsMap = await DatabaseHelper().getPrefsData();
-  
+
   if (cardMap != null && prefsMap != null) {
     // Use the asynchronous factory method to create the model, including rate data.
-  
+
     return ConsumercardModel.createFromMapWithRates(cardMap, prefsMap);
   } else {
     return null;

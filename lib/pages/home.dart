@@ -138,8 +138,61 @@ class _HomePageState extends State<HomePage> {
                   TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
             ),
           ),
-          Text(
-              'Printer is ${bluetoothHelper.connected ? "Connected" : "Disconnected"}'),
+          // Connection status display
+          Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: bluetoothHelper.connected
+                  ? Colors.green.shade100
+                  : Colors.red.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: bluetoothHelper.connected ? Colors.green : Colors.red,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Status: ${bluetoothHelper.connectionStatus}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: bluetoothHelper.connected
+                        ? Colors.green.shade800
+                        : Colors.red.shade800,
+                  ),
+                ),
+                if (bluetoothHelper.isReconnecting)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Manual reconnect button
+          if (!bluetoothHelper.connected &&
+              bluetoothHelper.selectedDevice != null)
+            ElevatedButton.icon(
+              onPressed: bluetoothHelper.isReconnecting
+                  ? null
+                  : () async {
+                      await bluetoothHelper.manualReconnect();
+                    },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.orange),
+              ),
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text(
+                'Manual Reconnect',
+                style:
+                    TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ),
         ],
       ),
     );
@@ -172,7 +225,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Post Meter Reading
             Padding(
-              padding: EdgeInsets.only(top: 1, right: buttonPadding, left: buttonPadding),
+              padding: EdgeInsets.only(
+                  top: 1, right: buttonPadding, left: buttonPadding),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/postmeterreading');
@@ -193,7 +247,8 @@ class _HomePageState extends State<HomePage> {
                           height: iconSize,
                           width: iconSize,
                           colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
+                              Color.fromARGB(255, 245, 243, 243),
+                              BlendMode.srcIn),
                         ),
                         SizedBox(width: screenWidth * 0.015),
                         Text(
@@ -212,7 +267,8 @@ class _HomePageState extends State<HomePage> {
             ),
             // Edit Meter Reading
             Padding(
-              padding: EdgeInsets.only(top: 20, right: buttonPadding, left: buttonPadding),
+              padding: EdgeInsets.only(
+                  top: 20, right: buttonPadding, left: buttonPadding),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/editbilllist');
@@ -233,7 +289,8 @@ class _HomePageState extends State<HomePage> {
                           height: iconSize,
                           width: iconSize,
                           colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
+                              Color.fromARGB(255, 245, 243, 243),
+                              BlendMode.srcIn),
                         ),
                         SizedBox(width: screenWidth * 0.015),
                         Text(
@@ -252,7 +309,8 @@ class _HomePageState extends State<HomePage> {
             ),
             // Print Bill
             Padding(
-              padding: EdgeInsets.only(top: 20, right: buttonPadding, left: buttonPadding),
+              padding: EdgeInsets.only(
+                  top: 20, right: buttonPadding, left: buttonPadding),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/printbilllist');
@@ -273,7 +331,8 @@ class _HomePageState extends State<HomePage> {
                           height: iconSize,
                           width: iconSize,
                           colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243), BlendMode.srcIn),
+                              Color.fromARGB(255, 245, 243, 243),
+                              BlendMode.srcIn),
                         ),
                         SizedBox(width: screenWidth * 0.03),
                         Text(

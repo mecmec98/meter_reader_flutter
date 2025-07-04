@@ -6,7 +6,6 @@ import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 
 import 'consumercard/consumer_info_card.dart';
 import 'consumercard/readers_field.dart';
@@ -34,8 +33,6 @@ class _ConsumercardState extends State<Consumercard> {
   double? _afterDatecalculation;
   double? _calculatedSCDisc;
   String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
-  String? _currentDate =
-      DateFormat('MM/dd/yyyy hh:mm a').format(DateTime.now());
   String? _currentReadingDate; //holds card.cardcurrentReadingDate
 
   bool _billUpdated = false;
@@ -62,8 +59,46 @@ class _ConsumercardState extends State<Consumercard> {
     super.initState();
   }
 
+  // Check for negative usage and show confirmation dialog
+  Future<bool> _checkNegativeUsage() async {
+    if (_usage != null && _usage! < 0) {
+      return await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Warning'),
+                content: const Text(
+                  'The Usage is negative, are you sure you want to continue?',
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('No'),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  TextButton(
+                    child: const Text('Yes'),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false; // Return false if dialog is dismissed
+    }
+    return true; // Continue if usage is not negative
+  }
+
   // Handles the Print Button click event.
   Future<void> handlePrintButton() async {
+    // Check for negative usage first
+    bool shouldContinue = await _checkNegativeUsage();
+    if (!shouldContinue || !mounted) return;
+
     final bluetoothHelper = context.read<BluePrinterHelper>();
     if (bluetoothHelper.connected == true &&
         await bluetoothHelper.bluetooth.isConnected == true) {
@@ -111,6 +146,10 @@ class _ConsumercardState extends State<Consumercard> {
       return;
     }
 
+    // Check for negative usage first
+    bool shouldContinue = await _checkNegativeUsage();
+    if (!shouldContinue || !mounted) return;
+
     int billStateSaved = 1;
     await updateMasterRecord(billStateSaved);
     if (!mounted) return;
@@ -144,7 +183,8 @@ class _ConsumercardState extends State<Consumercard> {
       int billStatus =
           billStatind; //indicator just 1 if only saved, 2 if saved and printed
       int? isNewReading = _newReading;
-      String dateUpdated = _currentReadingDate!; // Use the current date from the state
+      String dateUpdated =
+          _currentReadingDate!; // Use the current date from the state
       Map<String, dynamic> updatedData = {
         'AMOUNT': calculateBillInt,
         'USAGE': usageInt,
@@ -210,7 +250,7 @@ class _ConsumercardState extends State<Consumercard> {
     print("Due Date: ${card.prefsDatedue.toString()}");
     print("Card Name: ${card.cardName}");
     print("Card Address: ${card.cardAddress}");
-    print("Meter Number: ${card.cardMeterno}");
+    print("Meter Number: ${card.cardMeterno}"); 
     print("Meter Brand: ${card.cardMeterbrand}");
     print("Account Number: ${card.cardAccno}");
     print("New Reading: ${_newReading?.toString() ?? card.cardCurrreading.toString()}");
@@ -259,22 +299,21 @@ class _ConsumercardState extends State<Consumercard> {
     );
   }
 
-
   String getCurrentReadingDate(ConsumercardModel card) {
-  return card.cardcurrentReadingDate;
-}
-
-String getFormattedReadingDate(String cardcurrentReadingDate) {
-  try {
-    // Parse the original date string (assumed format: MM/dd/yyyy)
-    DateTime date = DateFormat('MM/dd/yyyy').parse(cardcurrentReadingDate);
-    // Format as yyyy-MM-dd
-    return DateFormat('yyyy-MM-dd').format(date);
-      } catch (e) {
-    // If parsing fails, return the original string
-    return cardcurrentReadingDate;
+    return card.cardcurrentReadingDate;
   }
-}
+
+  String getFormattedReadingDate(String cardcurrentReadingDate) {
+    try {
+      // Parse the original date string (assumed format: MM/dd/yyyy)
+      DateTime date = DateFormat('MM/dd/yyyy').parse(cardcurrentReadingDate);
+      // Format as yyyy-MM-dd
+      return DateFormat('yyyy-MM-dd').format(date);
+    } catch (e) {
+      // If parsing fails, return the original string
+      return cardcurrentReadingDate;
+    }
+  }
 
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
@@ -288,6 +327,13 @@ String getFormattedReadingDate(String cardcurrentReadingDate) {
       } else {
         scDisc = 0.00;
       }
+
+      // check if I have previous usage
+      if (card.cardPreviousUsage >= 0) {
+        //add the previous usage to the current usage
+        usage += card.cardPreviousUsage.toDouble();
+      }
+
       double totalBeforeDue =
           (bill - scDisc) + card.cardArrears + card.cardOthers + card.cardWmf;
       double totalAfterDue = totalBeforeDue * 1.05;
@@ -331,8 +377,10 @@ String getFormattedReadingDate(String cardcurrentReadingDate) {
                   if (mounted && _currentCard?.cardId != card.cardId) {
                     setState(() {
                       _currentCard = card;
-                      String formattedDate = getFormattedReadingDate(card.cardcurrentReadingDate);
-                      String onlyTime = DateFormat('HH:mm:ss').format(DateTime.now());
+                      String formattedDate =
+                          getFormattedReadingDate(card.cardcurrentReadingDate);
+                      String onlyTime =
+                          DateFormat('HH:mm:ss').format(DateTime.now());
                       String datePart = formattedDate.split(' ').first;
                       _currentReadingDate = '$datePart $onlyTime';
                     });
