@@ -7,7 +7,13 @@ class ParticularsContainer extends StatelessWidget {
   final double? beforeDatecalculation;
   final double? afterDatecalculation;
   final double? calculatedSCDisc;
-  const ParticularsContainer({super.key, required this.card, required this.calculatedBill, required this.beforeDatecalculation, required this.afterDatecalculation, required this.calculatedSCDisc});
+  const ParticularsContainer(
+      {super.key,
+      required this.card,
+      required this.calculatedBill,
+      required this.beforeDatecalculation,
+      required this.afterDatecalculation,
+      required this.calculatedSCDisc});
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +38,21 @@ class ParticularsContainer extends StatelessWidget {
               ),
             ],
           ),
+          //will show up if there's a previous usage
+          if (card.cardPreviousUsage > 0) ...[
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Previous Usage'),
+                Text(
+                  card.cardPreviousUsage.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w400),
+                ),
+              ],
+            ),
+          ],
+
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
