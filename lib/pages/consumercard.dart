@@ -271,32 +271,32 @@ class _ConsumercardState extends State<Consumercard> {
     print("Others Amount: ${card.cardOthers.toStringAsFixed(2)}");
     */
     await bluetoothHelper.printReceipt(
-      _currentReadingDate.toString(),
-      card.prefsDatedue.toString(),
-      card.cardName,
-      card.cardAddress,
-      card.cardMeterno,
-      card.cardMeterbrand,
-      card.cardAccno,
-      (_newReading ?? card.cardCurrreading)
-          .toString(), // Use new reading if available
-      card.cardPrevreading.toString(),
-      (intusage ?? card.cardUsage).toString(), // Current usage from state
-      (_calculatedBill ?? card.cardCurrbill)
-          .toStringAsFixed(2), // Calculated bill from state
-      card.cardWmf.toStringAsFixed(2),
-      card.cardArrears,
-      formattedBill,
-      card.prefsCutdate.toString(),
-      card.cardprevReadingDate,
-      card.prefsBilldate,
-      card.cardAvusage.toString(),
-      card.cardOthers.toStringAsFixed(2),
-      card.cardRefNo,
-      card.prefsReadername,
-      card.cardwithSeniorDisc,
-      card.cardOthers.toStringAsFixed(2),
-    );
+        _currentReadingDate.toString(),
+        card.prefsDatedue.toString(),
+        card.cardName,
+        card.cardAddress,
+        card.cardMeterno,
+        card.cardMeterbrand,
+        card.cardAccno,
+        (_newReading ?? card.cardCurrreading)
+            .toString(), // Use new reading if available
+        card.cardPrevreading.toString(),
+        (intusage ?? card.cardUsage).toString(), // Current usage from state
+        (_calculatedBill ?? card.cardCurrbill)
+            .toStringAsFixed(2), // Calculated bill from state
+        card.cardWmf.toStringAsFixed(2),
+        card.cardArrears,
+        formattedBill,
+        card.prefsCutdate.toString(),
+        card.cardprevReadingDate,
+        card.prefsBilldate,
+        card.cardAvusage.toString(),
+        card.cardOthers.toStringAsFixed(2),
+        card.cardRefNo,
+        card.prefsReadername,
+        card.cardwithSeniorDisc,
+        card.cardOthers.toStringAsFixed(2),
+        card.cardPreviousUsage);
   }
 
   String getCurrentReadingDate(ConsumercardModel card) {
@@ -315,9 +315,15 @@ class _ConsumercardState extends State<Consumercard> {
     }
   }
 
+
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
     try {
+      // check if I have previous usage
+      if (card.cardPreviousUsage >= 0) {
+        //add the previous usage to the current usage
+        usage += card.cardPreviousUsage.toDouble();
+      }
       // card.cardCodeRaw is used as the CSSSZ code.
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
@@ -326,12 +332,6 @@ class _ConsumercardState extends State<Consumercard> {
         scDisc = bill * 0.05;
       } else {
         scDisc = 0.00;
-      }
-
-      // check if I have previous usage
-      if (card.cardPreviousUsage >= 0) {
-        //add the previous usage to the current usage
-        usage += card.cardPreviousUsage.toDouble();
       }
 
       double totalBeforeDue =

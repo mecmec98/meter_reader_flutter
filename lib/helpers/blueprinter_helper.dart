@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
@@ -93,7 +92,7 @@ class BluePrinterHelper extends ChangeNotifier {
         print('Error during disconnect: $e');
       }
     }
-    
+
     connected = false;
     connectionStatus = 'Disconnected';
     selectedDevice = null;
@@ -219,6 +218,7 @@ class BluePrinterHelper extends ChangeNotifier {
     String prefsReadername,
     int cardwithSeniorDisc,
     String cardOthers,
+    int previousUsage,
   ) async {
     // Check connection before printing
     if (selectedDevice == null) {
@@ -226,7 +226,7 @@ class BluePrinterHelper extends ChangeNotifier {
       notifyListeners();
       throw Exception('No printer device selected');
     }
-    
+
     bool actuallyConnected = await bluetooth.isConnected ?? false;
     if (!actuallyConnected && connected) {
       connected = false;
@@ -360,7 +360,7 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.hr();
       bytes += generator.row([
         PosColumn(
-          text: 'CURR READING',
+          text: 'Curr READING',
           width: 9,
           styles: PosStyles(height: PosTextSize.size2),
         ),
@@ -372,7 +372,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'PREV READING',
+          text: 'Prev READING',
           width: 9,
           styles: PosStyles(height: PosTextSize.size2),
         ),
@@ -384,7 +384,7 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.row([
         PosColumn(
-          text: 'CURR USAGE',
+          text: 'Curr USAGE',
           width: 9,
           styles: PosStyles(height: PosTextSize.size2),
         ),
@@ -394,20 +394,34 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
         ),
       ]);
+      //only show up if previous usage is available
+      if (previousUsage != 0) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'Prev USAGE',
+            width: 9,
+            styles: PosStyles(height: PosTextSize.size2),
+          ),
+          PosColumn(
+            text: previousUsage.toString(),
+            width: 3,
+            styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+          ),
+        ]);
+      }
       bytes += generator.reset();
-      bytes += generator.row([
+      /**bytes += generator.row([
         PosColumn(
-          text: 'AVE USAGE',
-          styles: PosStyles(height: PosTextSize.size2, bold: true),
+          text: '(3 Months AVE USAGE $averageUsage)',
           width: 9,
         ),
         PosColumn(
-          text: averageUsage,
-          styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
+          text: '',
           width: 3,
         ),
       ]);
       bytes += generator.reset();
+      */
       bytes += generator.hr();
       bytes += generator.row([
         PosColumn(
