@@ -67,22 +67,39 @@ class _ConsumercardState extends State<Consumercard> {
             barrierDismissible: false,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Warning'),
+                title: const Text(
+                  'WARNING!',
+                  style:
+                      TextStyle(fontWeight: FontWeight.w700, color: Colors.red),
+                ),
                 content: const Text(
-                  'The Usage is negative, are you sure you want to continue?',
+                  'The Usage is NEGATIVE, are you sure you want to continue?',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                 ),
                 actions: <Widget>[
                   TextButton(
-                    child: const Text('No'),
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.red),
+                    ),
+                    child: const Text(
+                      'No',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () {
                       Navigator.of(context).pop(false);
                     },
                   ),
                   TextButton(
-                    child: const Text('Yes'),
                     onPressed: () {
                       Navigator.of(context).pop(true);
                     },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.green),
+                    ),
+                    child: Text(
+                      'Yes',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               );
@@ -314,7 +331,6 @@ class _ConsumercardState extends State<Consumercard> {
       return cardcurrentReadingDate;
     }
   }
-
 
   /// Calls the billing helper and updates the _calculatedBill state.
   void _updateBill(ConsumercardModel card, double usage) async {
