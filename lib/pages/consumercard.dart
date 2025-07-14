@@ -298,7 +298,7 @@ class _ConsumercardState extends State<Consumercard> {
         (_newReading ?? card.cardCurrreading)
             .toString(), // Use new reading if available
         card.cardPrevreading.toString(),
-        (intusage ?? card.cardUsage).toString(), // Current usage from state
+        (intusage ?? card.cardUsage).toInt(), // Current usage from state
         (_calculatedBill ?? card.cardCurrbill)
             .toStringAsFixed(2), // Calculated bill from state
         card.cardWmf.toStringAsFixed(2),
@@ -344,7 +344,7 @@ class _ConsumercardState extends State<Consumercard> {
       double bill = await CalculatebillHelper.calculateBill(
           card.cardCodeRaw, usage.toInt());
       double scDisc;
-      if (card.cardwithSeniorDisc == 1 && _usage! < 30) {
+      if (card.cardwithSeniorDisc == 1 && _usage! < 31) {
         scDisc = bill * 0.05;
       } else {
         scDisc = 0.00;

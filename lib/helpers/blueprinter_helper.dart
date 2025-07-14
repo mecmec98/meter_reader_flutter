@@ -204,7 +204,7 @@ class BluePrinterHelper extends ChangeNotifier {
     String accNo, //
     String currReading, //
     String prevReading, //
-    String usage, //
+    int usage, //
     String waterBill, //
     String watermf, //
     double balance,
@@ -389,7 +389,7 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(height: PosTextSize.size2),
         ),
         PosColumn(
-          text: usage,
+          text: usage.toString(),
           width: 3,
           styles: PosStyles(height: PosTextSize.size2, align: PosAlign.right),
         ),
@@ -437,7 +437,7 @@ class BluePrinterHelper extends ChangeNotifier {
         ),
       ]);
       //show up if senior citizen discount is applied
-      if (cardwithSeniorDisc == 1) {
+      if (cardwithSeniorDisc == 1 && usage < 31) {
         bytes += generator.row([
           PosColumn(
             text: 'SC DISCOUNT',
