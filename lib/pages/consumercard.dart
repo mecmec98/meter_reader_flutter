@@ -366,7 +366,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill = null;
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
-        _calculatedSCDisc = null;
+        _calculatedSCDisc = null; 
       });
     }
   }

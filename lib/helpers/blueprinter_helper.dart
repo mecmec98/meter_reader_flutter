@@ -235,16 +235,27 @@ class BluePrinterHelper extends ChangeNotifier {
       await _attemptReconnection();
     }
     try {
-      DateTime now = DateTime.now();
-      String monthInWords =
-          DateFormat.MMMM().format(now); // Get the month in words
-      String year = DateFormat.y().format(now); // Get the year in numbers
+      String formonth = billdate;
 
+// Convert date from "01/07/2025" format to "July 2025"
+      if (formonth.isNotEmpty && formonth.contains('/')) {
+        try {
+          print(formonth);
+          print("parsing month");
+          DateTime date = DateFormat('MM/dd/yyyy').parse(formonth);
+          formonth = DateFormat('MMMM yyyy').format(date);
+        } catch (e) {
+          print('Error parsing date: $e');
+        }
+      }
+      bool fordisconnect = false;
       String arrearsOrAdvance = '';
       if (balance < 0) {
         arrearsOrAdvance = 'ADVANCE';
+        fordisconnect = false;
       } else {
         arrearsOrAdvance = 'ARREARS';
+        fordisconnect = true;
       }
 
       //calculate scdiscount
@@ -327,8 +338,8 @@ class BluePrinterHelper extends ChangeNotifier {
         'BILLING STATEMENT',
         styles: PosStyles(align: PosAlign.center, bold: true),
       );
-      bytes += generator.text(
-          'For the Month of $monthInWords-$year'); //Current Month and year
+      bytes +=
+          generator.text('For the Month of $formonth'); //Current Month and year
       bytes += generator.text('Meter Reader: $readertrimmed');
       bytes += generator.text('Bill Num: $cardRefNo');
 
@@ -517,7 +528,7 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
-          text: dateDue,
+          text: fordisconnect ? 'IMMEDIATELY' : dateDue,
           width: 5,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -530,7 +541,7 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
-          text: discDate,
+          text: fordisconnect ? 'IMMEDIATELY' : discDate,
           width: 5,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -538,12 +549,14 @@ class BluePrinterHelper extends ChangeNotifier {
       ]);
       bytes += generator.reset();
       bytes += generator.hr();
-      bytes += generator.hr();
       //messages
       bytes += generator.text('N O T I C E',
           styles: PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(
           'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.',
+          styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+          'Accounts with existing arrears  will be disconnected immediately without further notice.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
