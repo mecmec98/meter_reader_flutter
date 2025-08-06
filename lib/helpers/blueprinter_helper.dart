@@ -250,7 +250,7 @@ class BluePrinterHelper extends ChangeNotifier {
       }
       bool fordisconnect = false;
       String arrearsOrAdvance = '';
-      if (balance < 0) {
+      if (balance <= 0) {
         arrearsOrAdvance = 'ADVANCE';
         fordisconnect = false;
       } else {
