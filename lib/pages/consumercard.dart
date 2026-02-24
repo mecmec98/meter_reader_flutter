@@ -34,9 +34,11 @@ class _ConsumercardState extends State<Consumercard> {
   double? _calculatedSCDisc;
   String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
   String? _currentReadingDate; //holds card.cardcurrentReadingDate
+  int? _ftax;
 
   bool _billUpdated = false;
   bool _isSaving = false;
+  bool _ftaxActivate = true;
   //String? _formattedDate =
   //    DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -195,6 +197,7 @@ class _ConsumercardState extends State<Consumercard> {
       int calculateBillInt = dbBill.toInt();
       int usageInt = _usage!.toInt();
       int penalty = 0;
+      int pca = _ftax ?? 0;
 
       int isPosted = 1;
       int billStatus =
@@ -211,6 +214,7 @@ class _ConsumercardState extends State<Consumercard> {
         'MCRDGDT': dateUpdated,
         'SCDISC': finalSCdisc,
         'PEN': penalty,
+        'PCA': pca,
       };
 
       try {
@@ -260,33 +264,13 @@ class _ConsumercardState extends State<Consumercard> {
     int? intusage = _usage?.toInt();
     NumberFormat formatter = NumberFormat('#,##0.00');
     String formattedBill = formatter.format(_beforeDatecalculation ?? 0.0);
-    //print all parameters
-    /** 
-    print("Printing Receipt with parameters:");
-    print("Current Reading Date: ${_currentReadingDate.toString()}"); 
-    print("Due Date: ${card.prefsDatedue.toString()}");
-    print("Card Name: ${card.cardName}");
-    print("Card Address: ${card.cardAddress}");
-    print("Meter Number: ${card.cardMeterno}"); 
-    print("Meter Brand: ${card.cardMeterbrand}");
-    print("Account Number: ${card.cardAccno}");
-    print("New Reading: ${_newReading?.toString() ?? card.cardCurrreading.toString()}");
-    print("Previous Reading: ${card.cardPrevreading.toString()}");
-    print("Usage: ${intusage?.toString() ?? card.cardUsage.toString()}");
-    print("Calculated Bill: ${_calculatedBill?.toStringAsFixed(2) ?? card.cardCurrbill.toString()}");
-    print("WMF: ${card.cardWmf.toStringAsFixed(2)}");
-    print("Arrears: ${card.cardArrears}");
-    print("Formatted Bill: $formattedBill");
-    print("Cut Date: ${card.prefsCutdate.toString()}");
-    print("Previous Reading Date: ${card.cardprevReadingDate}");
-    print("Bill Date: ${card.prefsBilldate}");
-    print("Average Usage: ${card.cardAvusage.toString()}");
-    print("Others: ${card.cardOthers.toStringAsFixed(2)}");
-    print("Reference Number: ${card.cardRefNo}");
-    print("Reader Name: ${card.prefsReadername}");
-    print("Senior Citizen Discount: ${card.cardwithSeniorDisc}");
-    print("Others Amount: ${card.cardOthers.toStringAsFixed(2)}");
-    */
+    int ftaxValue = _ftax ?? 0;
+
+    String messageText1 = '';
+    String messageText2 = '';
+    String messageText3 = '';
+    
+
     await bluetoothHelper.printReceipt(
         _currentReadingDate.toString(),
         card.prefsDatedue.toString(),
@@ -313,7 +297,11 @@ class _ConsumercardState extends State<Consumercard> {
         card.prefsReadername,
         card.cardwithSeniorDisc,
         card.cardOthers.toStringAsFixed(2),
-        card.cardPreviousUsage);
+        card.cardPreviousUsage,
+        ftaxValue,
+        messageText1,
+        messageText2,
+        messageText3);
   }
 
   String getCurrentReadingDate(ConsumercardModel card) {
@@ -350,15 +338,21 @@ class _ConsumercardState extends State<Consumercard> {
         scDisc = 0.00;
       }
 
+      double fTaxValue = 0;
+      if(_ftaxActivate) {
+        fTaxValue = (bill - scDisc) * (card.prefsFtax / 100);
+      }
+
       double totalBeforeDue =
-          (bill - scDisc) + card.cardArrears + card.cardOthers + card.cardWmf;
-      double totalAfterDue = totalBeforeDue * 1.05;
+          (bill - scDisc) + card.cardArrears + card.cardOthers + card.cardWmf + fTaxValue;
+      double totalAfterDue = (((bill - scDisc) + fTaxValue) * 1.05) + card.cardArrears + card.cardOthers + card.cardWmf;
 
       setState(() {
         _calculatedBill = bill;
         _beforeDatecalculation = totalBeforeDue;
         _afterDatecalculation = totalAfterDue;
         _calculatedSCDisc = scDisc;
+        _ftax = fTaxValue.toInt();
       });
     } catch (e) {
       print("Error calculating bill: $e");
@@ -367,6 +361,7 @@ class _ConsumercardState extends State<Consumercard> {
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
         _calculatedSCDisc = null; 
+        _ftax = null;
       });
     }
   }

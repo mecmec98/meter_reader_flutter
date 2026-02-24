@@ -16,7 +16,7 @@ class _PrintEditListState extends State<PrintEditList> {
   final int _limit = 8;
   bool _hasMore = true;
   String _searchQuery = '';
- 
+
   @override
   void initState() {
     super.initState();
@@ -38,9 +38,8 @@ class _PrintEditListState extends State<PrintEditList> {
     });
     // Fetch the next page
     List<EditlistModel> newPrintl =
-        await EditlistModel.getMasterByIDforEditlist(
-            offset: _offset);
-          if (!mounted) return;
+        await EditlistModel.getMasterByIDforEditlist(offset: _offset);
+    if (!mounted) return;
     setState(() {
       _printl.addAll(newPrintl);
       _offset += newPrintl.length; // update offset
@@ -105,7 +104,7 @@ class _PrintEditListState extends State<PrintEditList> {
     // Alternate the background color
     final Color tileColor = index % 2 == 0
         ? Colors.white
-   : const Color.fromARGB(255, 233, 239, 252);
+        : const Color.fromARGB(255, 233, 239, 252);
     return GestureDetector(
       onTap: () async {
         // Navigate and wait for a result
@@ -167,7 +166,7 @@ class _PrintEditListState extends State<PrintEditList> {
           SizedBox(
             height: 2.0,
           ),
-          listCounter(),
+          //listCounter(),
           Expanded(
             child: editmetterlist(),
           ),
@@ -175,6 +174,7 @@ class _PrintEditListState extends State<PrintEditList> {
       ),
     );
   }
+
 
   ListView editmetterlist() {
     return ListView.builder(
@@ -199,7 +199,7 @@ class _PrintEditListState extends State<PrintEditList> {
 
   Container searchBar() {
     return Container(
-       margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
+      margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
           color: Color.fromARGB(255, 230, 223, 223),
@@ -207,13 +207,13 @@ class _PrintEditListState extends State<PrintEditList> {
           spreadRadius: 0.0,
         )
       ]),
-      child: TextField( 
+      child: TextField(
         decoration: InputDecoration(
           hintText: 'Search',
           hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: Padding( 
+          prefixIcon: Padding(
             padding: const EdgeInsets.all(10.0),
             child: SvgPicture.asset(
               'assets/icons/search.svg',
@@ -260,7 +260,7 @@ class _PrintEditListState extends State<PrintEditList> {
     );
   }
 
-    Padding listCounter() {
+  Padding listCounter() {
     return Padding(
       padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
       child: Text(

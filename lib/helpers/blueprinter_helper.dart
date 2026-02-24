@@ -219,6 +219,10 @@ class BluePrinterHelper extends ChangeNotifier {
     int cardwithSeniorDisc,
     String cardOthers,
     int previousUsage,
+    int ftax,
+    String messageText1,
+    String messageText2,
+    String messageText3
   ) async {
     // Check connection before printing
     if (selectedDevice == null) {

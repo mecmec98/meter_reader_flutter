@@ -7,6 +7,8 @@ class ParticularsContainer extends StatelessWidget {
   final double? beforeDatecalculation;
   final double? afterDatecalculation;
   final double? calculatedSCDisc;
+
+  final bool ftaxActivate = true;
   const ParticularsContainer(
       {super.key,
       required this.card,
@@ -93,6 +95,20 @@ class ParticularsContainer extends StatelessWidget {
                     calculatedSCDisc != null
                         ? calculatedSCDisc!.toStringAsFixed(2)
                         : '0.00',
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+          ],
+          if (ftaxActivate) ...[
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Franchise Tax',
+                  style: TextStyle(color: Colors.green),
+                ),
+                Text('${card.prefsFtax.toStringAsFixed(0)}%',
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),

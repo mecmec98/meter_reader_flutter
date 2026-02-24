@@ -36,40 +36,43 @@ class ConsumercardModel {
   String prefsCutdate;
   String prefsBilldate;
   String prefsReadername;
+  double prefsFtax;
+  double prefsPenper;
 
-  ConsumercardModel({
-    required this.cardName,
-    required this.cardAccno,
-    required this.cardAddress,
-    required this.cardMeterno,
-    required this.cardMeterbrand,
-    required this.cardCodeRaw,
-    required this.cardClassification,
-    required this.cardMetersize,
-    required this.cardPrevreading,
-    required this.cardCurrreading,
-    required this.cardId,
-    required this.cardwithSeniorDisc,
-    required this.cardSeniorDiscValue,
-    required this.cardCurrbill,
-    required this.cardWmf,
-    required this.cardAvusage,
-    required this.cardLessdisc,
-    required this.cardArrears,
-    required this.cardOthers,
-    required this.cardTotalbdd,
-    required this.cardPenalty,
-    required this.cardTotaladd,
-    required this.cardUsage,
-    required this.cardprevReadingDate,
-    required this.cardRefNo,
-    required this.cardcurrentReadingDate,
-    required this.cardPreviousUsage,
-    required this.prefsCutdate,
-    required this.prefsDatedue,
-    required this.prefsBilldate,
-    required this.prefsReadername,
-  });
+  ConsumercardModel(
+      {required this.cardName,
+      required this.cardAccno,
+      required this.cardAddress,
+      required this.cardMeterno,
+      required this.cardMeterbrand,
+      required this.cardCodeRaw,
+      required this.cardClassification,
+      required this.cardMetersize,
+      required this.cardPrevreading,
+      required this.cardCurrreading,
+      required this.cardId,
+      required this.cardwithSeniorDisc,
+      required this.cardSeniorDiscValue,
+      required this.cardCurrbill,
+      required this.cardWmf,
+      required this.cardAvusage,
+      required this.cardLessdisc,
+      required this.cardArrears,
+      required this.cardOthers,
+      required this.cardTotalbdd,
+      required this.cardPenalty,
+      required this.cardTotaladd,
+      required this.cardUsage,
+      required this.cardprevReadingDate,
+      required this.cardRefNo,
+      required this.cardcurrentReadingDate,
+      required this.cardPreviousUsage,
+      required this.prefsCutdate,
+      required this.prefsDatedue,
+      required this.prefsBilldate,
+      required this.prefsReadername,
+      required this.prefsFtax,
+      required this.prefsPenper});
 
   /// Asynchronously creates a ConsumercardModel from a database [map]
   /// and retrieves the additional rate data.
@@ -139,8 +142,7 @@ class ConsumercardModel {
       cardPenalty: 0, // Set default; update if needed.
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
-      cardPreviousUsage:
-          map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
+      cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',
@@ -150,6 +152,12 @@ class ConsumercardModel {
       prefsDatedue: prefsMap['datedue'] ?? '',
       prefsBilldate: prefsMap['billdate'] ?? '',
       prefsReadername: prefsMap['meterreader'] ?? '',
+      prefsFtax: prefsMap['ftaxbill'] != null
+          ? (prefsMap['ftaxbill'] as num).toDouble() / 100
+          : 0.0,
+      prefsPenper: prefsMap['pen_per'] != null
+          ? (prefsMap['pen_per'] as num).toDouble() / 100
+          : 0.0,
     );
   }
 }
