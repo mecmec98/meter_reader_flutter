@@ -108,7 +108,12 @@ class _HomePageState extends State<HomePage> {
             items: bluetoothHelper.devices
                 .map((device) => DropdownMenuItem(
                       value: device,
-                      child: Text(device.name ?? "Unknown Device"),
+                      child: SizedBox(
+                          width: 200,
+                          child: Text(
+                        device.name ?? "Unknown Device",
+                        overflow: TextOverflow.ellipsis,
+                      )),
                     ))
                 .toList(),
             onChanged: (device) {

@@ -195,35 +195,37 @@ class BluePrinterHelper extends ChangeNotifier {
   }
 
   Future<void> printReceipt(
-    String datePrinted, //
-    String dateDue, //
-    String name, //
-    String address, //
-    String meterNo, //
-    String meterBrand, //
-    String accNo, //
-    String currReading, //
-    String prevReading, //
-    int usage, //
-    String waterBill, //
-    String watermf, //
-    double balance,
-    String totaldue,
-    String discDate,
-    String lastReading,
-    String billdate,
-    String averageUsage,
-    String otherFees,
-    String cardRefNo,
-    String prefsReadername,
-    int cardwithSeniorDisc,
-    String cardOthers,
-    int previousUsage,
-    int ftax,
-    String messageText1,
-    String messageText2,
-    String messageText3
-  ) async {
+      String datePrinted, //
+      String dateDue, //
+      String name, //
+      String address, //
+      String meterNo, //
+      String meterBrand, //
+      String accNo, //
+      String currReading, //
+      String prevReading, //
+      int usage, //
+      String waterBill, //
+      String watermf, //
+      double balance,
+      String totaldue,
+      String discDate,
+      String lastReading,
+      String billdate,
+      String averageUsage,
+      String otherFees,
+      String cardRefNo,
+      String prefsReadername,
+      int cardwithSeniorDisc,
+      String cardOthers,
+      int previousUsage,
+      double ftax,
+      String messageText1,
+      String messageText2,
+      String messageText3,
+      double afterdue,
+      bool penaltyActivate,
+      double penaltyValue) async {
     // Check connection before printing
     if (selectedDevice == null) {
       connectionStatus = 'No device selected';
@@ -451,6 +453,7 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+
       //show up if senior citizen discount is applied
       if (cardwithSeniorDisc == 1 && usage < 31) {
         bytes += generator.row([
@@ -467,6 +470,20 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
+      //ftax
+      bytes += generator.row([
+        PosColumn(
+          text: 'FTAX(2%)',
+          width: 8,
+          styles: PosStyles(height: PosTextSize.size1, bold: true),
+        ),
+        PosColumn(
+          text: ftax.toStringAsFixed(2),
+          width: 4,
+          styles: PosStyles(
+              height: PosTextSize.size1, bold: true, align: PosAlign.right),
+        ),
+      ]);
       bytes += generator.row([
         PosColumn(
           text: 'W.M.C.',
@@ -525,6 +542,8 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size2, bold: true, align: PosAlign.right),
         ),
       ]);
+
+      bytes += generator.hr();
       bytes += generator.row([
         PosColumn(
           text: 'DUE DATE',
@@ -532,12 +551,41 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(height: PosTextSize.size1, bold: true),
         ),
         PosColumn(
-          text: fordisconnect ? 'IMMEDIATELY' : dateDue,
+          text: dateDue,
           width: 5,
           styles: PosStyles(
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+      if (penaltyActivate) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'PENALTY 5%',
+            width: 7,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: penaltyValue.toStringAsFixed(2),
+            width: 5,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'BILL AFTER DUE',
+            width: 7,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: afterdue.toStringAsFixed(2),
+            width: 5,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
+
       bytes += generator.row([
         PosColumn(
           text: 'DISC DATE',
@@ -561,6 +609,9 @@ class BluePrinterHelper extends ChangeNotifier {
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(
           'Accounts with existing arrears  will be disconnected immediately without further notice.',
+          styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+          'We are now implenting a 2% FTAX implented via Board Resolution 0-0000-00',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));

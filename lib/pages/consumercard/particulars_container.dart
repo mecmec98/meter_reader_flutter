@@ -108,7 +108,7 @@ class ParticularsContainer extends StatelessWidget {
                   'Franchise Tax',
                   style: TextStyle(color: Colors.green),
                 ),
-                Text('${card.prefsFtax.toStringAsFixed(0)}%',
+                Text('${card.prefsFtax.toStringAsFixed(2)}%',
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),
@@ -126,10 +126,10 @@ class ParticularsContainer extends StatelessWidget {
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Penalty after due Date',
+            children: [
+              Text('Penalty',
                   style: TextStyle(color: Colors.red)),
-              Text('5%', style: TextStyle(fontWeight: FontWeight.w400)),
+              Text('${card.prefsPenper.toStringAsFixed(2)}%', style: TextStyle(fontWeight: FontWeight.w400)),
             ],
           ),
           const Divider(color: Colors.grey, thickness: 0.5),

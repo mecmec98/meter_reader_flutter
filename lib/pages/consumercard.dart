@@ -34,11 +34,13 @@ class _ConsumercardState extends State<Consumercard> {
   double? _calculatedSCDisc;
   String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
   String? _currentReadingDate; //holds card.cardcurrentReadingDate
-  int? _ftax;
+  double? _ftax;
+  double? _penaltyValue;
 
   bool _billUpdated = false;
   bool _isSaving = false;
   bool _ftaxActivate = true;
+  bool _penaltyActivate = true;
   //String? _formattedDate =
   //    DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -192,12 +194,13 @@ class _ConsumercardState extends State<Consumercard> {
 
       double dbBill = _calculatedBill! * 100;
       double scDisc = _calculatedSCDisc! * 100;
+      double ftax = _ftax! * 100;
 
       int finalSCdisc = scDisc.toInt();
       int calculateBillInt = dbBill.toInt();
       int usageInt = _usage!.toInt();
       int penalty = 0;
-      int pca = _ftax ?? 0;
+      int pca = ftax.toInt();
 
       int isPosted = 1;
       int billStatus =
@@ -264,12 +267,13 @@ class _ConsumercardState extends State<Consumercard> {
     int? intusage = _usage?.toInt();
     NumberFormat formatter = NumberFormat('#,##0.00');
     String formattedBill = formatter.format(_beforeDatecalculation ?? 0.0);
-    int ftaxValue = _ftax ?? 0;
+    double ftaxValue = _ftax ?? 0;
+    double afterDue = _afterDatecalculation ?? 0.0;
+    double penaltyValue = _penaltyValue ?? 0.0;
 
     String messageText1 = '';
     String messageText2 = '';
     String messageText3 = '';
-    
 
     await bluetoothHelper.printReceipt(
         _currentReadingDate.toString(),
@@ -301,7 +305,10 @@ class _ConsumercardState extends State<Consumercard> {
         ftaxValue,
         messageText1,
         messageText2,
-        messageText3);
+        messageText3,
+        afterDue,
+        _penaltyActivate,
+        penaltyValue);
   }
 
   String getCurrentReadingDate(ConsumercardModel card) {
@@ -339,20 +346,37 @@ class _ConsumercardState extends State<Consumercard> {
       }
 
       double fTaxValue = 0;
-      if(_ftaxActivate) {
+      if (_ftaxActivate) {
         fTaxValue = (bill - scDisc) * (card.prefsFtax / 100);
       }
 
-      double totalBeforeDue =
-          (bill - scDisc) + card.cardArrears + card.cardOthers + card.cardWmf + fTaxValue;
-      double totalAfterDue = (((bill - scDisc) + fTaxValue) * 1.05) + card.cardArrears + card.cardOthers + card.cardWmf;
+      double penalty = 0;
+      if (_penaltyActivate) {
+        penalty = (card.prefsPenper / 100) + 1;
+      }
+
+      double penaltyValue = 0;
+      if (_penaltyActivate) {
+        penaltyValue = (bill - scDisc) * (card.prefsPenper / 100);
+      }
+
+      double totalBeforeDue = ((bill - scDisc) + fTaxValue) +
+          card.cardArrears +
+          card.cardOthers +
+          card.cardWmf;
+      double totalAfterDue = (((bill - scDisc)) * penalty) +
+          fTaxValue +
+          card.cardArrears +
+          card.cardOthers +
+          card.cardWmf;
 
       setState(() {
         _calculatedBill = bill;
         _beforeDatecalculation = totalBeforeDue;
         _afterDatecalculation = totalAfterDue;
         _calculatedSCDisc = scDisc;
-        _ftax = fTaxValue.toInt();
+        _ftax = fTaxValue;
+        _penaltyValue = penaltyValue;
       });
     } catch (e) {
       print("Error calculating bill: $e");
@@ -360,8 +384,9 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill = null;
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
-        _calculatedSCDisc = null; 
+        _calculatedSCDisc = null;
         _ftax = null;
+        _penaltyValue = null;
       });
     }
   }
