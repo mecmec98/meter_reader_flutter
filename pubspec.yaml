@@ -33,6 +33,9 @@ dependencies:
   esc_pos_utils_plus: ^2.0.4
   blue_thermal_printer:
     path: ./local_packages/blue_thermal_printer
+  
+  # for SMS
+  flutter_sms: ^3.0.1
 
   # for windows app
 
