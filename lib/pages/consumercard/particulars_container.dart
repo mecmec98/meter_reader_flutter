@@ -7,6 +7,8 @@ class ParticularsContainer extends StatelessWidget {
   final double? beforeDatecalculation;
   final double? afterDatecalculation;
   final double? calculatedSCDisc;
+  final double? flatbill;
+  final double? totalFlatbill;
 
   final bool ftaxActivate = true;
   const ParticularsContainer(
@@ -15,7 +17,9 @@ class ParticularsContainer extends StatelessWidget {
       required this.calculatedBill,
       required this.beforeDatecalculation,
       required this.afterDatecalculation,
-      required this.calculatedSCDisc});
+      required this.calculatedSCDisc,
+      required this.flatbill,
+      required this.totalFlatbill});
 
   @override
   Widget build(BuildContext context) {
@@ -28,141 +32,174 @@ class ParticularsContainer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Current Bill'),
-              Text(
-                calculatedBill != null
-                    ? calculatedBill!.toStringAsFixed(2)
-                    : '0.00',
-                style: const TextStyle(fontWeight: FontWeight.w400),
-              ),
-            ],
-          ),
-          //will show up if there's a previous usage
-          if (card.cardPreviousUsage > 0) ...[
-            const Divider(color: Colors.grey, thickness: 0.5),
+          if (card.cardRateType == 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Previous Usage'),
+                const Text('Current Bill'),
                 Text(
-                  card.cardPreviousUsage.toString(),
+                  calculatedBill != null
+                      ? calculatedBill!.toStringAsFixed(2)
+                      : '0.00',
                   style: const TextStyle(fontWeight: FontWeight.w400),
                 ),
               ],
             ),
-          ],
+            //will show up if there's a previous usage
+            if (card.cardPreviousUsage > 0) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Previous Usage'),
+                  Text(
+                    card.cardPreviousUsage.toString(),
+                    style: const TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                ],
+              ),
+            ],
 
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Arrears'),
-              Text(card.cardArrears.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w400)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Others'),
-              Text(card.cardOthers.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w400)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Water Maintenance Fee'),
-              Text(card.cardWmf.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w400)),
-            ],
-          ),
-          if (card.cardwithSeniorDisc == 1) ...[
             const Divider(color: Colors.grey, thickness: 0.5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Senior Citizen Discount',
-                  style: TextStyle(color: Colors.green),
-                ),
+                const Text('Arrears'),
+                Text(card.cardArrears.toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Others'),
+                Text(card.cardOthers.toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Water Maintenance Fee'),
+                Text(card.cardWmf.toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+            if (card.cardwithSeniorDisc == 1) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Senior Citizen Discount',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  Text(
+                      calculatedSCDisc != null
+                          ? calculatedSCDisc!.toStringAsFixed(2)
+                          : '0.00',
+                      style: const TextStyle(fontWeight: FontWeight.w400)),
+                ],
+              ),
+            ],
+            if (ftaxActivate) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Franchise Tax',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  Text('${card.prefsFtax.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w400)),
+                ],
+              ),
+            ],
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total Before Due Date',
+                    style: TextStyle(color: Colors.blue)),
+                Text((beforeDatecalculation ?? 0.0).toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Penalty', style: TextStyle(color: Colors.red)),
+                Text('${card.prefsPenper.toStringAsFixed(0)}%',
+                    style: TextStyle(fontWeight: FontWeight.w400)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Date Due', style: TextStyle(color: Colors.orange)),
+                Text(card.prefsDatedue,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, color: Colors.orange)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total After Due Date',
+                    style: TextStyle(color: Colors.orange)),
+                Text((afterDatecalculation ?? 0.0).toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Disconnection Date',
+                    style: TextStyle(color: Colors.red)),
+                Text(card.prefsCutdate,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.red)),
+              ],
+            ),
+          ] else ...[
+            //for flat rates
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Flat Rate'),
                 Text(
-                    calculatedSCDisc != null
-                        ? calculatedSCDisc!.toStringAsFixed(2)
-                        : '0.00',
-                    style: const TextStyle(fontWeight: FontWeight.w400)),
+                  flatbill != null ? flatbill!.toStringAsFixed(2) : '10.00',
+                  style: const TextStyle(fontWeight: FontWeight.w400),
+                ),
               ],
             ),
-          ],
-          if (ftaxActivate) ...[
             const Divider(color: Colors.grey, thickness: 0.5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Franchise Tax',
-                  style: TextStyle(color: Colors.green),
-                ),
-                Text('${card.prefsFtax.toStringAsFixed(2)}%',
+                const Text('Arrears'),
+                Text(card.cardArrears.toStringAsFixed(2),
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),
-          ],
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Total Before Due Date',
-                  style: TextStyle(color: Colors.blue)),
-              Text((beforeDatecalculation ?? 0.0).toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Penalty',
-                  style: TextStyle(color: Colors.red)),
-              Text('${card.prefsPenper.toStringAsFixed(2)}%', style: TextStyle(fontWeight: FontWeight.w400)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Date Due', style: TextStyle(color: Colors.orange)),
-              Text(card.prefsDatedue,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500, color: Colors.orange)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Total After Due Date',
-                  style: TextStyle(color: Colors.orange)),
-              Text((afterDatecalculation ?? 0.0).toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const Divider(color: Colors.grey, thickness: 0.5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Disconnection Date',
-                  style: TextStyle(color: Colors.red)),
-              Text(card.prefsCutdate,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.red)),
-            ],
-          ),
+            const Divider(color: Colors.grey, thickness: 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total Bill'),
+                Text((totalFlatbill ?? 0.0).toStringAsFixed(2),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w400, color: Colors.green)),
+              ],
+            ),
+          ]
         ],
       ),
     );

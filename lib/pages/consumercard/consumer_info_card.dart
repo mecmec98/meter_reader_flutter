@@ -145,7 +145,7 @@ class ConsumerInfoCard extends StatelessWidget {
               ],
             ),
           ),
-        ],
+        ],//children
       ),
     );
   }

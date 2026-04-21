@@ -36,6 +36,7 @@ class _ConsumercardState extends State<Consumercard> {
   String? _currentReadingDate; //holds card.cardcurrentReadingDate
   double? _ftax;
   double? _penaltyValue;
+  double? _flatbill;
 
   bool _billUpdated = false;
   bool _isSaving = false;
@@ -61,6 +62,12 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void initState() {
     super.initState();
+    _loadFlatbill();
+  }
+
+  Future<void> _loadFlatbill() async {
+    final value = await CalculatebillHelper.getFlatbill();
+    setState(() => _flatbill = value);
   }
 
   // Check for negative usage and show confirmation dialog
@@ -130,10 +137,12 @@ class _ConsumercardState extends State<Consumercard> {
         );
       } else {
         int billStatePrinted = 2;
-        await updateMasterRecord(billStatePrinted);
+        
+        //await updateMasterRecord(billStatePrinted); //make new one for flat
+
         try {
           if (_currentCard != null) {
-            await _printReceipt(_currentCard!);
+            await _printReceiptFlat(_currentCard!);
           }
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -175,6 +184,38 @@ class _ConsumercardState extends State<Consumercard> {
     await updateMasterRecord(billStateSaved);
     if (!mounted) return;
     Navigator.pop(context, true);
+  }
+
+  Future<void> handlePrintFlat() async {
+    final bluetoothHelper = context.read<BluePrinterHelper>();
+    if (bluetoothHelper.connected == true &&
+        await bluetoothHelper.bluetooth.isConnected == true) {
+        int billStatePrinted = 2;
+        await updateMasterRecord(billStatePrinted);
+
+        try {
+          if (_currentCard != null) {
+            await _printReceipt(_currentCard!);
+          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Bill Printing')),
+          );
+          Navigator.pop(context, true);
+        } catch (e) {
+          bluetoothHelper.connected = false;
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Printer disconnected during print!')),
+          );
+        }
+      
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Printer not connected!')),
+      );
+    }
   }
 
   Future<void> updateMasterRecord(int billStatind) async {
@@ -309,6 +350,10 @@ class _ConsumercardState extends State<Consumercard> {
         afterDue,
         _penaltyActivate,
         penaltyValue);
+  }
+
+  Future<void> _printReceiptFlat(ConsumercardModel card) async {
+    final bluetoothHelper = context.read<BluePrinterHelper>();
   }
 
   String getCurrentReadingDate(ConsumercardModel card) {
@@ -471,6 +516,9 @@ class _ConsumercardState extends State<Consumercard> {
                             beforeDatecalculation: _beforeDatecalculation,
                             afterDatecalculation: _afterDatecalculation,
                             calculatedSCDisc: _calculatedSCDisc,
+                            flatbill: _flatbill,
+                            totalFlatbill:
+                                (_flatbill ?? 0.0) + (card.cardArrears),
                           ),
                         ),
                       ),
@@ -484,6 +532,7 @@ class _ConsumercardState extends State<Consumercard> {
             child: BottomButtons(
               onPrint: handlePrintButton,
               onSave: handleSaveButton,
+              onPrintFlat: handlePrintFlat,
             ),
           ),
         ),

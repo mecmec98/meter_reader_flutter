@@ -31,6 +31,7 @@ class ConsumercardModel {
   String cardRefNo;
   String cardcurrentReadingDate;
   int cardPreviousUsage;
+  int cardRateType;
 
   String prefsDatedue;
   String prefsCutdate;
@@ -67,6 +68,7 @@ class ConsumercardModel {
       required this.cardRefNo,
       required this.cardcurrentReadingDate,
       required this.cardPreviousUsage,
+      required this.cardRateType,
       required this.prefsCutdate,
       required this.prefsDatedue,
       required this.prefsBilldate,
@@ -143,6 +145,7 @@ class ConsumercardModel {
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
       cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
+      cardRateType: map['RATETYPE'] is int? map['RATETYPE'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',
@@ -158,6 +161,7 @@ class ConsumercardModel {
       prefsPenper: prefsMap['pen_per'] != null
           ? (prefsMap['pen_per'] as num).toDouble() / 100
           : 0.0,
+      
     );
   }
 }

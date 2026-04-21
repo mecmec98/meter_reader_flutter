@@ -56,8 +56,9 @@ class CalculatebillHelper {
       // For usage 21 to 30:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * (usage - 20))
       int extraUnits = usage - 20; // For usage = 30, extraUnits = 10.
-      finalValue =
-          (minCharge / 100) + ((bulk1 / 100) * 10) + ((bulk2 / 100) * extraUnits);
+      finalValue = (minCharge / 100) +
+          ((bulk1 / 100) * 10) +
+          ((bulk2 / 100) * extraUnits);
     } else if (usage <= 40) {
       // For usage 31 to 40:
       // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * 10) + ((BULK3$suffix/100) * (usage - 30))
@@ -77,5 +78,24 @@ class CalculatebillHelper {
     }
 
     return finalValue;
+  }
+
+  static Future<double> getFlatbill() async {
+    final db = await DatabaseHelper().database;
+    List<Map<String, dynamic>> result = await db.query(
+      'rates',
+      columns: ['FLAT2'],
+      where: 'CODE = ? AND _id = ?',
+      whereArgs: [20, 2],
+      limit: 1,
+    );
+
+    if (result.isEmpty) {
+      throw Exception("Could not find flat rate");
+    }
+    //divide by 100 first then convert the invt value to double
+    final raw = result.first['FLAT2'];
+    final flatbill = (raw is int ? raw.toDouble() : raw as double) / 100;
+    return flatbill;
   }
 }

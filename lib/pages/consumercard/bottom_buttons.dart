@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class BottomButtons extends StatelessWidget {
+ class BottomButtons extends StatelessWidget {
   final VoidCallback onPrint;
   final VoidCallback onSave;
+  final VoidCallback onPrintFlat;
 
   const BottomButtons({
     super.key,
     required this.onPrint,
     required this.onSave,
+    required this.onPrintFlat
   });
 
   @override

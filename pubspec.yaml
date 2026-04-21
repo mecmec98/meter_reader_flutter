@@ -39,6 +39,11 @@ dependencies:
 
   # for windows app
 
+  #for archiving to zip
+
+  # for Images/camera
+  image_picker: ^1.2.1
+
 
 
 dev_dependencies:
