@@ -628,4 +628,243 @@ class BluePrinterHelper extends ChangeNotifier {
       throw Exception('Printer disconnected or error during print: $e');
     }
   }
+
+  Future<void> printReceiptFlat(
+    String datePrinted, //
+    String dateDue, //
+    String name, //
+    String address, //
+    String accNo, //
+    String waterBill, //
+    double balance,
+    String totaldue,
+    String billdate,
+    String lastReading,
+    String cardRefNo,
+    String prefsReadername,
+    String messageText1,
+    String messageText2,
+    String messageText3,
+  ) async {
+    if (selectedDevice == null) {
+      connectionStatus = 'No device selected';
+      notifyListeners();
+      throw Exception('No printer device selected');
+    }
+    bool actuallyConnected = await bluetooth.isConnected ?? false;
+    if (!actuallyConnected && connected) {
+      connected = false;
+      connectionStatus = 'Disconnected - Attempting to reconnect...';
+      notifyListeners();
+      await _attemptReconnection();
+    }
+    try {
+      String formonth = billdate;
+
+// Convert date from "01/07/2025" format to "July 2025"
+      if (formonth.isNotEmpty && formonth.contains('/')) {
+        try {
+          print(formonth);
+          print("parsing month");
+          DateTime date = DateFormat('MM/dd/yyyy').parse(formonth);
+          formonth = DateFormat('MMMM yyyy').format(date);
+        } catch (e) {
+          print('Error parsing date: $e');
+        }
+      }
+      bool fordisconnect = false;
+      String arrearsOrAdvance = '';
+      if (balance <= 0) {
+        arrearsOrAdvance = 'ADVANCE';
+        fordisconnect = false;
+      } else {
+        arrearsOrAdvance = 'ARREARS';
+        fordisconnect = true;
+      }
+
+      //Trim the reader name to first initial and last name
+      List<String> parts = prefsReadername.trim().split(' ');
+      String readertrimmed;
+      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        readertrimmed = '${parts[0][0]}. ${parts[1]}';
+      } else {
+        readertrimmed =
+            prefsReadername; // Fallback to full name if not enough parts
+      }
+
+      // Trim the last 5 characters from lastReading (with safety check)
+      String trimmedPrev = lastReading.length > 5
+          ? lastReading.substring(0, lastReading.length - 5)
+          : lastReading;
+
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(PaperSize.mm58, profile);
+
+      List<int> bytes = [];
+
+      // Print header
+      bytes += generator.feed(2);
+      try {
+        final ByteData data = await rootBundle
+            .load('assets/icons/receiptlogo.png'); // path in your assets
+        final Uint8List imageBytes = data.buffer.asUint8List();
+        final img.Image? logo = img.decodeImage(imageBytes);
+        if (logo != null) {
+          bytes += generator.image(logo, align: PosAlign.center);
+        }
+      } catch (e) {
+        print('Error loading logo: $e');
+      }
+      bytes += generator.text(
+        'Dapitan City Water District',
+        styles: PosStyles(
+          align: PosAlign.center,
+          height: PosTextSize.size1,
+          width: PosTextSize.size1,
+          bold: true,
+        ),
+      );
+
+      // Print smaller font text
+      bytes += generator.text(
+        'National Highway Polo',
+        styles: PosStyles(
+          align: PosAlign.center,
+          fontType: PosFontType.fontA, // Explicitly set Font B
+        ),
+      );
+      bytes += generator.text(
+        'Dapitan City',
+        styles: PosStyles(align: PosAlign.center),
+      );
+
+      bytes += generator.text(
+        'HOTLINE NO. 0948-4616-970',
+        styles: PosStyles(align: PosAlign.center),
+      );
+
+      bytes += generator.text(
+        'NON-VAT-REG. TIN 553-002',
+        styles: PosStyles(align: PosAlign.center),
+      );
+
+      bytes += generator.reset();
+      bytes += generator.hr();
+
+      bytes += generator.text(
+        'BILLING STATEMENT',
+        styles: PosStyles(align: PosAlign.center, bold: true),
+      );
+      bytes +=
+          generator.text('For the Month of $formonth'); //Current Month and year
+      bytes += generator.text('Meter Reader: $readertrimmed');
+      bytes += generator.text('Bill Num: $cardRefNo');
+
+      bytes +=
+          generator.text('Date Printed:$datePrinted'); //Current day and time
+      bytes += generator
+          .text('Period Covered:$trimmedPrev-$billdate'); //Bill covered
+      bytes += generator.hr();
+      bytes += generator.text(
+        accNo,
+        styles: PosStyles(height: PosTextSize.size2, width: PosTextSize.size2),
+      );
+      bytes += generator.hr();
+      bytes += generator.text(
+        name,
+        styles: PosStyles(width: PosTextSize.size2, bold: true),
+      );
+      bytes += generator.reset();
+      bytes += generator.text(
+        address,
+        styles: PosStyles(
+          fontType: PosFontType.fontA, // Explicitly set Font B
+        ),
+      );
+      bytes += generator.reset();
+      bytes += generator.hr();
+
+      bytes += generator.reset();
+      /**bytes += generator.row([
+        PosColumn(
+          text: '(3 Months AVE USAGE $averageUsage)',
+          width: 9,
+        ),
+        PosColumn(
+          text: '',
+          width: 3,
+        ),
+      ]);
+      bytes += generator.reset();
+      */
+      bytes += generator.hr();
+      bytes += generator.row([
+        PosColumn(
+          text: 'WATER BILL',
+          width: 8,
+          styles: PosStyles(height: PosTextSize.size1, bold: true),
+        ),
+        PosColumn(
+          text: waterBill,
+          width: 4,
+          styles: PosStyles(
+              height: PosTextSize.size1, bold: true, align: PosAlign.right),
+        ),
+      ]);
+      if (balance != 0) {
+        bytes += generator.row([
+          PosColumn(
+            text: arrearsOrAdvance,
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: balance.toStringAsFixed(2),
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
+      bytes += generator.row([
+        PosColumn(
+          text: 'TOTAL DUE',
+          width: 8,
+          styles: PosStyles(height: PosTextSize.size2, bold: true),
+        ),
+        PosColumn(
+          text: totaldue,
+          width: 4,
+          styles: PosStyles(
+              height: PosTextSize.size2, bold: true, align: PosAlign.right),
+        ),
+      ]);
+
+      bytes += generator.hr();
+      bytes += generator.row([
+        PosColumn(
+          text: 'DUE DATE',
+          width: 7,
+          styles: PosStyles(height: PosTextSize.size1, bold: true),
+        ),
+        PosColumn(
+          text: dateDue,
+          width: 5,
+          styles: PosStyles(
+              height: PosTextSize.size1, bold: true, align: PosAlign.right),
+        ),
+      ]);
+      bytes += generator.cut();
+
+      Uint8List byteList = Uint8List.fromList(bytes);
+      bluetooth.writeBytes(byteList);
+    } catch (e) {
+      connected = false;
+      connectionStatus = 'Print failed - Attempting to reconnect...';
+      notifyListeners();
+      // Try to reconnect automatically
+      await _attemptReconnection();
+      throw Exception('Printer disconnected or error during print: $e');
+    }
+  }
 }

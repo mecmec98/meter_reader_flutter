@@ -5,12 +5,14 @@ import 'package:flutter_svg/flutter_svg.dart';
   final VoidCallback onPrint;
   final VoidCallback onSave;
   final VoidCallback onPrintFlat;
+  final int rateType;
 
   const BottomButtons({
     super.key,
     required this.onPrint,
     required this.onSave,
-    required this.onPrintFlat
+    required this.onPrintFlat,
+    required this.rateType
   });
 
   @override
@@ -22,7 +24,7 @@ import 'package:flutter_svg/flutter_svg.dart';
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed: onPrint,
+            onPressed:  rateType == 0 ? onPrint : onPrintFlat,
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(

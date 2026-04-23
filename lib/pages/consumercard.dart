@@ -26,6 +26,7 @@ class _ConsumercardState extends State<Consumercard> {
   int? _cardId;
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
+  int rateType = 0;
 
   double? _usage;
   double? _calculatedBill;
@@ -137,7 +138,7 @@ class _ConsumercardState extends State<Consumercard> {
         );
       } else {
         int billStatePrinted = 2;
-        
+
         //await updateMasterRecord(billStatePrinted); //make new one for flat
 
         try {
@@ -190,26 +191,25 @@ class _ConsumercardState extends State<Consumercard> {
     final bluetoothHelper = context.read<BluePrinterHelper>();
     if (bluetoothHelper.connected == true &&
         await bluetoothHelper.bluetooth.isConnected == true) {
-        int billStatePrinted = 2;
-        await updateMasterRecord(billStatePrinted);
+      int billStatePrinted = 2;
+      await updateMasterRecord(billStatePrinted);
 
-        try {
-          if (_currentCard != null) {
-            await _printReceipt(_currentCard!);
-          }
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Bill Printing')),
-          );
-          Navigator.pop(context, true);
-        } catch (e) {
-          bluetoothHelper.connected = false;
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Printer disconnected during print!')),
-          );
+      try {
+        if (_currentCard != null) {
+          await _printReceipt(_currentCard!);
         }
-      
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bill Printing')),
+        );
+        Navigator.pop(context, true);
+      } catch (e) {
+        bluetoothHelper.connected = false;
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Printer disconnected during print!')),
+        );
+      }
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -354,6 +354,38 @@ class _ConsumercardState extends State<Consumercard> {
 
   Future<void> _printReceiptFlat(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
+    final datePrinted = null;
+    final dateDue = null;
+    final name = null;
+    final address = null;
+    final accNo = null;
+    final waterBill = null;
+    final balance = null;
+    final totaldue = null;
+    final billdate = null;
+    final lastReading = null;
+    final cardRefNo = null;
+    final prefsReadername = null;
+    final messageText1 = null;
+    final messageText2 = null;
+    final messageText3 = null;
+
+    bluetoothHelper.printReceiptFlat(
+        datePrinted,
+        dateDue,
+        name,
+        address,
+        accNo,
+        waterBill,
+        balance,
+        totaldue,
+        billdate,
+        lastReading,
+        cardRefNo,
+        prefsReadername,
+        messageText1,
+        messageText2,
+        messageText3);
   }
 
   String getCurrentReadingDate(ConsumercardModel card) {
@@ -458,6 +490,7 @@ class _ConsumercardState extends State<Consumercard> {
                   if (mounted && _currentCard?.cardId != card.cardId) {
                     setState(() {
                       _currentCard = card;
+                      rateType = card.cardRateType;
                       String formattedDate =
                           getFormattedReadingDate(card.cardcurrentReadingDate);
                       String onlyTime =
@@ -533,6 +566,7 @@ class _ConsumercardState extends State<Consumercard> {
               onPrint: handlePrintButton,
               onSave: handleSaveButton,
               onPrintFlat: handlePrintFlat,
+              rateType: rateType,
             ),
           ),
         ),
