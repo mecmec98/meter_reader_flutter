@@ -641,7 +641,6 @@ class BluePrinterHelper extends ChangeNotifier {
     String billdate,
     String lastReading,
     String cardRefNo,
-    String prefsReadername,
     String messageText1,
     String messageText2,
     String messageText3,
@@ -680,16 +679,6 @@ class BluePrinterHelper extends ChangeNotifier {
       } else {
         arrearsOrAdvance = 'ARREARS';
         fordisconnect = true;
-      }
-
-      //Trim the reader name to first initial and last name
-      List<String> parts = prefsReadername.trim().split(' ');
-      String readertrimmed;
-      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-        readertrimmed = '${parts[0][0]}. ${parts[1]}';
-      } else {
-        readertrimmed =
-            prefsReadername; // Fallback to full name if not enough parts
       }
 
       // Trim the last 5 characters from lastReading (with safety check)
@@ -757,7 +746,6 @@ class BluePrinterHelper extends ChangeNotifier {
       );
       bytes +=
           generator.text('For the Month of $formonth'); //Current Month and year
-      bytes += generator.text('Meter Reader: $readertrimmed');
       bytes += generator.text('Bill Num: $cardRefNo');
 
       bytes +=
@@ -782,21 +770,6 @@ class BluePrinterHelper extends ChangeNotifier {
         ),
       );
       bytes += generator.reset();
-      bytes += generator.hr();
-
-      bytes += generator.reset();
-      /**bytes += generator.row([
-        PosColumn(
-          text: '(3 Months AVE USAGE $averageUsage)',
-          width: 9,
-        ),
-        PosColumn(
-          text: '',
-          width: 3,
-        ),
-      ]);
-      bytes += generator.reset();
-      */
       bytes += generator.hr();
       bytes += generator.row([
         PosColumn(
@@ -854,6 +827,10 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+      bytes += generator.reset();
+      bytes += generator.hr();
+
+      
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);

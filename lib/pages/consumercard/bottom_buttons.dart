@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
- class BottomButtons extends StatelessWidget {
+class BottomButtons extends StatelessWidget {
   final VoidCallback onPrint;
   final VoidCallback onSave;
   final VoidCallback onPrintFlat;
   final int rateType;
 
-  const BottomButtons({
-    super.key,
-    required this.onPrint,
-    required this.onSave,
-    required this.onPrintFlat,
-    required this.rateType
-  });
+  const BottomButtons(
+      {super.key,
+      required this.onPrint,
+      required this.onSave,
+      required this.onPrintFlat,
+      required this.rateType});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +23,17 @@ import 'package:flutter_svg/flutter_svg.dart';
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ElevatedButton(
-            onPressed:  rateType == 0 ? onPrint : onPrintFlat,
+            onPressed: () {
+              print(
+                  'rateType value: $rateType, type: ${rateType.runtimeType} ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+              if (rateType == 0) {
+                onPrint();
+                print("Doing normal print +++++++++++++++++++++++++++++++++++");
+              } else {
+                onPrintFlat();
+                print("Doing normal flatprint +++++++++++++++++++++++++++++++++++");
+              }
+            },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.all(Colors.blue),
               padding: WidgetStateProperty.all<EdgeInsets>(

@@ -26,7 +26,7 @@ class _ConsumercardState extends State<Consumercard> {
   int? _cardId;
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
-  int rateType = 0;
+  int? _rateType;
 
   double? _usage;
   double? _calculatedBill;
@@ -138,12 +138,10 @@ class _ConsumercardState extends State<Consumercard> {
         );
       } else {
         int billStatePrinted = 2;
-
-        //await updateMasterRecord(billStatePrinted); //make new one for flat
-
+        await updateMasterRecord(billStatePrinted, 0);
         try {
           if (_currentCard != null) {
-            await _printReceiptFlat(_currentCard!);
+            await _printReceipt(_currentCard!);
           }
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -182,21 +180,23 @@ class _ConsumercardState extends State<Consumercard> {
     if (!shouldContinue || !mounted) return;
 
     int billStateSaved = 1;
-    await updateMasterRecord(billStateSaved);
+    await updateMasterRecord(billStateSaved, 0);
     if (!mounted) return;
     Navigator.pop(context, true);
   }
 
   Future<void> handlePrintFlat() async {
+    print("test here 1+++++++++++++++++++++++++++++++++++++++++++++++++++");
     final bluetoothHelper = context.read<BluePrinterHelper>();
     if (bluetoothHelper.connected == true &&
         await bluetoothHelper.bluetooth.isConnected == true) {
       int billStatePrinted = 2;
-      await updateMasterRecord(billStatePrinted);
-
+      print("test here 2+++++++++++++++++++++++++++++++++++++++++++++++++++");
+      await updateMasterRecord(billStatePrinted, 1);
+      print("test here 3+++++++++++++++++++++++++++++++++++++++++++++++++++");
       try {
         if (_currentCard != null) {
-          await _printReceipt(_currentCard!);
+          await _printReceiptFlat(_currentCard!);
         }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -218,87 +218,91 @@ class _ConsumercardState extends State<Consumercard> {
     }
   }
 
-  Future<void> updateMasterRecord(int billStatind) async {
+  Future<void> updateMasterRecord(int billStatind, int ratetype) async {
     //setState(() => _isSaving = true);
     // Ensure _newReading is set to card.cardCurrreading if null or 0
-    if (_newReading == null) {
-      if (_currentCard != null) {
-        _newReading = _currentCard!.cardCurrreading;
-      }
-    }
-    if (_cardId != null &&
-        _calculatedBill != null &&
-        _usage != null &&
-        _newReading != null &&
-        _calculatedSCDisc != null) {
-      // Convert calculated bill to cents and then to int.
-
-      double dbBill = _calculatedBill! * 100;
-      double scDisc = _calculatedSCDisc! * 100;
-      double ftax = _ftax! * 100;
-
-      int finalSCdisc = scDisc.toInt();
-      int calculateBillInt = dbBill.toInt();
-      int usageInt = _usage!.toInt();
-      int penalty = 0;
-      int pca = ftax.toInt();
-
-      int isPosted = 1;
-      int billStatus =
-          billStatind; //indicator just 1 if only saved, 2 if saved and printed
-      int? isNewReading = _newReading;
-      String dateUpdated =
-          _currentReadingDate!; // Use the current date from the state
-      Map<String, dynamic> updatedData = {
-        'AMOUNT': calculateBillInt,
-        'USAGE': usageInt,
-        'POSTED': isPosted,
-        'BILL_STAT': billStatus,
-        'CREADING': isNewReading,
-        'MCRDGDT': dateUpdated,
-        'SCDISC': finalSCdisc,
-        'PEN': penalty,
-        'PCA': pca,
-      };
-
-      try {
-        int count =
-            await DatabaseHelper().updateMasterData(_cardId!, updatedData);
-        if (!mounted) {
-          //setState(() => _isSaving = false);
-          return;
+    if (ratetype == 0) {
+      if (_newReading == null) {
+        if (_currentCard != null) {
+          _newReading = _currentCard!.cardCurrreading;
         }
-        if (count > 0) {
-          // Optionally fetch the updated record for debugging.
-          //Map<String, dynamic>? updatedRecord =
-          //  await DatabaseHelper().getMasterByID(_cardId!);
-          //print("Updated record data: $updatedRecord");
+      }
+      if (_cardId != null &&
+          _calculatedBill != null &&
+          _usage != null &&
+          _newReading != null &&
+          _calculatedSCDisc != null) {
+        // Convert calculated bill to cents and then to int.
 
+        double dbBill = _calculatedBill! * 100;
+        double scDisc = _calculatedSCDisc! * 100;
+        double ftax = _ftax! * 100;
+
+        int finalSCdisc = scDisc.toInt();
+        int calculateBillInt = dbBill.toInt();
+        int usageInt = _usage!.toInt();
+        int penalty = 0;
+        int pca = ftax.toInt();
+
+        int isPosted = 1;
+        int billStatus =
+            billStatind; //indicator just 1 if only saved, 2 if saved and printed
+        int? isNewReading = _newReading;
+        String dateUpdated =
+            _currentReadingDate!; // Use the current date from the state
+        Map<String, dynamic> updatedData = {
+          'AMOUNT': calculateBillInt,
+          'USAGE': usageInt,
+          'POSTED': isPosted,
+          'BILL_STAT': billStatus,
+          'CREADING': isNewReading,
+          'MCRDGDT': dateUpdated,
+          'SCDISC': finalSCdisc,
+          'PEN': penalty,
+          'PCA': pca,
+        };
+
+        try {
+          int count =
+              await DatabaseHelper().updateMasterData(_cardId!, updatedData);
           if (!mounted) {
-            setState(() => _isSaving = false);
+            //setState(() => _isSaving = false);
+            return;
+          }
+          if (count > 0) {
+            // Optionally fetch the updated record for debugging.
+            //Map<String, dynamic>? updatedRecord =
+            //  await DatabaseHelper().getMasterByID(_cardId!);
+            //print("Updated record data: $updatedRecord");
+
+            if (!mounted) {
+              setState(() => _isSaving = false);
+              return;
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Record updated successfully!')),
+            );
+            // setState(() {
+            //   _cardFuture = getConsumercardByID(_cardId!);
+            // });
+            _currentCard = await getConsumercardByID(_cardId!);
+            //Navigator.pushNamed(context, '/postmeterreading');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Update failed.')),
+            );
+          }
+        } catch (e) {
+          if (!mounted) {
             return;
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Record updated successfully!')),
-          );
-          // setState(() {
-          //   _cardFuture = getConsumercardByID(_cardId!);
-          // });
-          _currentCard = await getConsumercardByID(_cardId!);
-          //Navigator.pushNamed(context, '/postmeterreading');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Update failed.')),
+            SnackBar(content: Text('Error saving the record: $e')),
           );
         }
-      } catch (e) {
-        if (!mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving the record: $e')),
-        );
       }
+    } else {
+      print("saving flatbill");
     }
     setState(() => _isSaving = false);
   }
@@ -354,35 +358,25 @@ class _ConsumercardState extends State<Consumercard> {
 
   Future<void> _printReceiptFlat(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
-    final datePrinted = null;
-    final dateDue = null;
-    final name = null;
-    final address = null;
-    final accNo = null;
-    final waterBill = null;
-    final balance = null;
-    final totaldue = null;
-    final billdate = null;
-    final lastReading = null;
-    final cardRefNo = null;
-    final prefsReadername = null;
-    final messageText1 = null;
-    final messageText2 = null;
-    final messageText3 = null;
+
+    String waterbillString = (_flatbill ?? 0.0).toStringAsFixed(0);
+    double flatTotaldue = (_flatbill ?? 0.0) + card.cardArrears;
+    String messageText1 = '';
+    String messageText2 = '';
+    String messageText3 = '';
 
     bluetoothHelper.printReceiptFlat(
-        datePrinted,
-        dateDue,
-        name,
-        address,
-        accNo,
-        waterBill,
-        balance,
-        totaldue,
-        billdate,
-        lastReading,
-        cardRefNo,
-        prefsReadername,
+        _currentReadingDate.toString(),
+        card.prefsDatedue,
+        card.cardName,
+        card.cardAddress,
+        card.cardAccno,
+        waterbillString,
+        card.cardArrears,
+        flatTotaldue.toStringAsFixed(2),
+        card.prefsBilldate,
+        card.cardprevReadingDate,
+        card.cardRefNo,
         messageText1,
         messageText2,
         messageText3);
@@ -490,7 +484,9 @@ class _ConsumercardState extends State<Consumercard> {
                   if (mounted && _currentCard?.cardId != card.cardId) {
                     setState(() {
                       _currentCard = card;
-                      rateType = card.cardRateType;
+                      _rateType = card.cardRateType;
+                      print(
+                          "$_rateType onbuild +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
                       String formattedDate =
                           getFormattedReadingDate(card.cardcurrentReadingDate);
                       String onlyTime =
@@ -566,7 +562,7 @@ class _ConsumercardState extends State<Consumercard> {
               onPrint: handlePrintButton,
               onSave: handleSaveButton,
               onPrintFlat: handlePrintFlat,
-              rateType: rateType,
+              rateType: _rateType ?? 0,
             ),
           ),
         ),
