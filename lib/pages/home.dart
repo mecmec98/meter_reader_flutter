@@ -1,6 +1,9 @@
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+
+import 'package:meter_reader_flutter/pages/databasepage.dart';
+
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 import 'package:provider/provider.dart';
@@ -111,9 +114,9 @@ class _HomePageState extends State<HomePage> {
                       child: SizedBox(
                           width: 200,
                           child: Text(
-                        device.name ?? "Unknown Device",
-                        overflow: TextOverflow.ellipsis,
-                      )),
+                            device.name ?? "Unknown Device",
+                            overflow: TextOverflow.ellipsis,
+                          )),
                     ))
                 .toList(),
             onChanged: (device) {
@@ -373,12 +376,17 @@ class _HomePageState extends State<HomePage> {
       ),
       centerTitle: true,
       leading: GestureDetector(
-        onTap: () => _scaffoldKey.currentState?.openDrawer(),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DatabasePage()),
+          );
+        },
         child: Container(
           margin: const EdgeInsets.all(10),
           alignment: Alignment.center,
           child: SvgPicture.asset(
-            'assets/icons/menu.svg',
+            'assets/icons/database.svg',
             height: 25,
             width: 25,
             colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
