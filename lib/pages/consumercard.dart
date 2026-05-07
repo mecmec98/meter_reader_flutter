@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
-import 'package:meter_reader_flutter/models/consumercard_model.dart'; // Make sure the path is correct
+import 'package:meter_reader_flutter/models/consumercard_model.dart';
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
@@ -186,14 +186,11 @@ class _ConsumercardState extends State<Consumercard> {
   }
 
   Future<void> handlePrintFlat() async {
-    print("test here 1+++++++++++++++++++++++++++++++++++++++++++++++++++");
     final bluetoothHelper = context.read<BluePrinterHelper>();
     if (bluetoothHelper.connected == true &&
         await bluetoothHelper.bluetooth.isConnected == true) {
       int billStatePrinted = 2;
-      print("test here 2+++++++++++++++++++++++++++++++++++++++++++++++++++");
       await updateMasterRecord(billStatePrinted, 1);
-      print("test here 3+++++++++++++++++++++++++++++++++++++++++++++++++++");
       try {
         if (_currentCard != null) {
           await _printReceiptFlat(_currentCard!);

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+
 import 'package:meter_reader_flutter/pages/home.dart';
 import 'package:meter_reader_flutter/pages/postmeterreading.dart';
 import 'package:meter_reader_flutter/pages/consumercard.dart';
@@ -9,6 +10,8 @@ import 'package:meter_reader_flutter/pages/printbilllist.dart';
 import 'package:meter_reader_flutter/pages/printface.dart';
 import 'package:meter_reader_flutter/pages/editbilllist.dart';
 import 'package:meter_reader_flutter/pages/databasepage.dart';
+import 'package:meter_reader_flutter/pages/appsettingspage.dart';
+
 
 import 'package:provider/provider.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
@@ -58,6 +61,7 @@ class MyApp extends StatelessWidget {
         // '/sample': (context) => SamplePrint(),
         '/printface': (context) => Printface(),
         '/databasepage': (context) => DatabasePage(),
+        '/appsettingspage': (context) => AppSettingsPage(),
       },
     );
   }

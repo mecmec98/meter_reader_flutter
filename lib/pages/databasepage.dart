@@ -2,31 +2,66 @@ import 'package:flutter/material.dart';
 import 'databasepage/currentreadinginfo.dart';
 import 'databasepage/wirelesstransfer.dart';
 import 'databasepage/manualtransfer.dart';
- 
+
+import 'package:meter_reader_flutter/models/prefs_model.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:file_picker/file_picker.dart';
+
 class DatabasePage extends StatefulWidget {
   const DatabasePage({super.key});
- 
+
   @override
   State<DatabasePage> createState() => _DatabasePageState();
 }
- 
+
 class _DatabasePageState extends State<DatabasePage> {
   // Reading data — replace with your actual model/provider
-  final String readingDate = 'May 6, 2026';
-  final String reader = 'Juan dela Cruz';
-  final String zone = 'Zone A — North';
-  final String book = 'Book 04';
- 
+  String? _readingDate = '--';
+  String? _reader = '--';
+  List<String> _zones = [];
+  List<String> _books = [];
+
   bool wirelessUploaded = false;
   bool wirelessDownloaded = false;
   String? wirelessUploadTime;
   String? wirelessDownloadTime;
- 
+
   bool manualUploaded = false;
   bool manualDownloaded = false;
   String? manualUploadTime;
   String? manualDownloadTime;
- 
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDataprefs();
+    _fetchZoneBook();
+  }
+
+  Future<void> _fetchDataprefs() async {
+    final fetchedPrefs = await PrefsModel.fetch();
+    if (!mounted) return;
+    setState(() {
+      _reader = fetchedPrefs?.readername ?? '';
+      _readingDate = fetchedPrefs?.billdate ?? '';
+    });
+  }
+
+  Future<void> _fetchZoneBook() async {
+    final zbList = await DatabaseHelper().getDistinctZB();
+    if (!mounted) return;
+
+    // Split each ZB into zone and book then deduplicate
+    final zones = zbList.map((zb) => zb.substring(0, 2)).toSet().toList()
+      ..sort();
+    final books = zbList.map((zb) => zb.substring(2)).toSet().toList()..sort();
+
+    setState(() {
+      _zones = zones;
+      _books = books;
+    });
+  }
+
   void _handleWirelessUpload() {
     final time = TimeOfDay.now().format(context);
     setState(() {
@@ -34,7 +69,7 @@ class _DatabasePageState extends State<DatabasePage> {
       wirelessUploadTime = time;
     });
   }
- 
+
   void _handleWirelessDownload() {
     final time = TimeOfDay.now().format(context);
     setState(() {
@@ -42,7 +77,7 @@ class _DatabasePageState extends State<DatabasePage> {
       wirelessDownloadTime = time;
     });
   }
- 
+
   void _handleManualUpload() {
     final time = TimeOfDay.now().format(context);
     setState(() {
@@ -50,7 +85,7 @@ class _DatabasePageState extends State<DatabasePage> {
       manualUploadTime = time;
     });
   }
- 
+
   void _handleManualDownload() {
     final time = TimeOfDay.now().format(context);
     setState(() {
@@ -58,13 +93,13 @@ class _DatabasePageState extends State<DatabasePage> {
       manualDownloadTime = time;
     });
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
-        backgroundColor:  Colors.blue,
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         title: const Text(
           'Reading data',
@@ -80,10 +115,10 @@ class _DatabasePageState extends State<DatabasePage> {
             const SectionLabel(label: 'Current reading info'),
             const SizedBox(height: 8),
             CurrentReadingInfo(
-              readingDate: readingDate,
-              reader: reader,
-              zone: zone,
-              book: book,
+              readingDate: _readingDate ?? "",
+              reader: _reader ?? "",
+              zone: _zones,
+              book: _books,
             ),
             const SizedBox(height: 20),
             const SectionLabel(label: 'Transfer'),
@@ -111,11 +146,11 @@ class _DatabasePageState extends State<DatabasePage> {
     );
   }
 }
- 
+
 class SectionLabel extends StatelessWidget {
   final String label;
   const SectionLabel({super.key, required this.label});
- 
+
   @override
   Widget build(BuildContext context) {
     return Text(

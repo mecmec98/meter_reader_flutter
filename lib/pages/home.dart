@@ -1,12 +1,15 @@
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+//import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import 'package:meter_reader_flutter/pages/databasepage.dart';
+import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 import 'package:provider/provider.dart';
+
+import 'package:meter_reader_flutter/widgets/printerfab_widget.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -66,7 +69,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: appBar(context),
-      endDrawer: drawerforPrinter(context),
+      floatingActionButton: const PrinterFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       drawer: Databasedrawer(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,6 +83,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+//Old printer Drawer
+/** 
   Drawer drawerforPrinter(BuildContext context) {
     final bluetoothHelper = context.watch<BluePrinterHelper>();
 
@@ -205,6 +211,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+*/
 
 // Adjust for less wider screens sizes
   Column menuButtons() {
@@ -395,21 +402,17 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         GestureDetector(
-          onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AppSettingsPage()),
+          ),
           child: Container(
             margin: const EdgeInsets.all(10),
             width: 37,
             alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/icons/print.svg',
-              height: 25,
-              width: 25,
-              colorFilter: ColorFilter.mode(
-                  bluetoothHelper.connected ? Colors.green : Colors.black,
-                  BlendMode.srcIn),
-            ),
+            child: const Icon(Icons.settings_outlined, color: Colors.black),
           ),
-        )
+        ),
       ],
     );
   }

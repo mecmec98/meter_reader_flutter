@@ -24,14 +24,10 @@ class BottomButtons extends StatelessWidget {
         children: [
           ElevatedButton(
             onPressed: () {
-              print(
-                  'rateType value: $rateType, type: ${rateType.runtimeType} ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
               if (rateType == 0) {
                 onPrint();
-                print("Doing normal print +++++++++++++++++++++++++++++++++++");
               } else {
                 onPrintFlat();
-                print("Doing normal flatprint +++++++++++++++++++++++++++++++++++");
               }
             },
             style: ButtonStyle(

@@ -77,7 +77,7 @@ class DatabaseHelper {
 
 //for database export
   Future<bool> exportDatabase() async {
-     try {
+    try {
       // Get the database file path
       String sourcePath = await getDatabasePath();
       File sourceFile = File(sourcePath);
@@ -85,10 +85,11 @@ class DatabaseHelper {
       //incrementing name for backup MRADB-backup(1 check if it exist then +1).dbi
       String backupFileName = 'MRADB-backup.dbi';
       int backupIndex = 1;
-      while (await File(join('/storage/emulated/0/Download', backupFileName)).exists()) {
+      while (await File(join('/storage/emulated/0/Download', backupFileName))
+          .exists()) {
         backupFileName = 'MRADB-backup(${backupIndex++}).dbi';
       }
-      
+
       // Get the Downloads directory path
       Directory downloadsDirectory = Directory('/storage/emulated/0/Download');
       String destPathbackup = join(downloadsDirectory.path, backupFileName);
@@ -97,7 +98,6 @@ class DatabaseHelper {
       // Copy 2 of the database file to the Downloads directory
       await sourceFile.copy(destPathbackup);
       await sourceFile.copy(destPath);
-  
 
       print('Database exported to $destPath');
       return true;
@@ -105,7 +105,7 @@ class DatabaseHelper {
       print(e);
       return false;
     }
-}
+  }
 
 //used for testing
   Future<Map<String, dynamic>?> getMasterByID(int id) async {
@@ -127,7 +127,7 @@ class DatabaseHelper {
 
 //for getting data for the Post Meter List
   Future<List<Map<String, dynamic>>?> getMasterByIDforlist(
-      { int offset = 0}) async {
+      {int offset = 0}) async {
     try {
       final db = await database;
       List<Map<String, dynamic>> result = await db.query(
@@ -163,7 +163,8 @@ class DatabaseHelper {
     List<Map<String, dynamic>> result = await db.query(
       'master',
       columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
-      where: '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=? AND BILL_STAT=?',
+      where:
+          '(NAME LIKE ? OR ADDRESS LIKE ? OR MNO LIKE ?) AND POSTED=? AND BILL_STAT=?',
       whereArgs: ['%$query%', '%$query%', '%$query%', 1, 1],
     );
     return result;
@@ -185,7 +186,7 @@ class DatabaseHelper {
 
 //for getting data for the Print Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintlist(
-      { int offset = 0}) async {
+      {int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
@@ -199,7 +200,7 @@ class DatabaseHelper {
 
   //for getting data for the already Printed Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforPrintedlist(
-      { int offset = 0}) async {
+      {int offset = 0}) async {
     final db = await database;
     List<Map<String, dynamic>> result = await db.query(
       'master',
@@ -211,7 +212,7 @@ class DatabaseHelper {
     return result;
   }
 
-   //for getting data for the saved only Printed Bill List
+  //for getting data for the saved only Printed Bill List
   Future<List<Map<String, dynamic>>> getMasterByIDforSavedlist(
       {int offset = 0}) async {
     final db = await database;
@@ -255,7 +256,7 @@ class DatabaseHelper {
     final db = await database;
     return await db.update(
       'master',
-      updatedData, 
+      updatedData,
       where: '_id = ?',
       whereArgs: [id],
     );
@@ -271,5 +272,13 @@ class DatabaseHelper {
       limit: 1,
     );
     return result.isNotEmpty ? result.first : null;
+  }
+
+//get all zone and books currently in database
+  Future<List<String>> getDistinctZB() async {
+    final db = await database;
+    final result =
+        await db.rawQuery('SELECT DISTINCT ZB FROM master ORDER BY ZB ASC');
+    return result.map((row) => row['ZB'].toString()).toList();
   }
 }
