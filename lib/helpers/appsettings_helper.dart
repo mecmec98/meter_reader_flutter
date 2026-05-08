@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:meter_reader_flutter/models/features_model.dart';
+import 'package:meter_reader_flutter/models/databaselog_model.dart';
 
 class AppSettingsHelper {
   static final AppSettingsHelper _instance = AppSettingsHelper._internal();
@@ -19,14 +20,20 @@ class AppSettingsHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'app_settings.db');
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+
+    // Auto-clean logs older than 1 year on every init
+    await _clearOldLogs(db);
+    return db;
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Features table
     await db.execute('''
       CREATE TABLE features (
         key TEXT PRIMARY KEY,
@@ -41,13 +48,50 @@ class AppSettingsHelper {
       'label': 'Placeholder Feature 1',
       'enabled': 1,
     });
-
     await db.insert('features', {
       'key': 'feature_placeholder_2',
       'label': 'Placeholder Feature 2',
       'enabled': 1,
     });
+
+    // Logs table
+    await db.execute('''
+      CREATE TABLE logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        method TEXT NOT NULL,
+        datetime TEXT NOT NULL
+      )
+    ''');
   }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add logs table for existing installs that only have features table
+      await db.execute('''
+        CREATE TABLE logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          method TEXT NOT NULL,
+          datetime TEXT NOT NULL
+        )
+      ''');
+    }
+  }
+
+  Future<void> _clearOldLogs(Database db) async {
+    final cutoff =
+        DateTime.now().subtract(const Duration(days: 365)).toIso8601String();
+    await db.delete(
+      'logs',
+      where: 'datetime < ?',
+      whereArgs: [cutoff],
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // Features
+  // ─────────────────────────────────────────
 
   /// Get all features
   Future<List<FeatureModel>> getAllFeatures() async {
@@ -84,5 +128,68 @@ class AppSettingsHelper {
       whereArgs: [key],
     );
   }
-}
 
+  // ─────────────────────────────────────────
+  // Logs
+  // ─────────────────────────────────────────
+  
+  /// Add a new log entry
+  /// [type] → 'upload' or 'download'
+  /// [method] → 'wireless' or 'manual'
+  Future<void> addLog({
+    required String type,
+    required String method,
+  }) async {
+    final db = await database;
+    await db.insert('logs', {
+      'type': type,
+      'method': method,
+      'datetime': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Get all logs ordered by most recent
+  Future<List<DatabaseLogModel>> getLogs() async {
+    final db = await database;
+    final rows = await db.query('logs', orderBy: 'datetime DESC');
+    return rows.map((row) => DatabaseLogModel.fromMap(row)).toList();
+  }
+
+  /// Get latest log for a specific type and method
+  /// e.g. getLatestLog('upload', 'wireless')
+  Future<DatabaseLogModel?> getLatestLog(String type, String method) async {
+    final db = await database;
+    final rows = await db.query(
+      'logs',
+      where: 'type = ? AND method = ?',
+      whereArgs: [type, method],
+      orderBy: 'datetime DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return DatabaseLogModel.fromMap(rows.first);
+  }
+
+  /// Get latest logs for all 4 combinations at once
+  Future<Map<String, DatabaseLogModel?>> getLatestLogs() async {
+    final db = await database;
+
+    Future<DatabaseLogModel?> fetch(String type, String method) async {
+      final rows = await db.query(
+        'logs',
+        where: 'type = ? AND method = ?',
+        whereArgs: [type, method],
+        orderBy: 'datetime DESC',
+        limit: 1,
+      );
+      return rows.isNotEmpty ? DatabaseLogModel.fromMap(rows.first) : null;
+    }
+
+    return {
+      'upload_wireless': await fetch('upload', 'wireless'),
+      'download_wireless': await fetch('download', 'wireless'),
+      'upload_manual': await fetch('upload', 'manual'),
+      'download_manual': await fetch('download', 'manual'),
+    };
+  }
+}

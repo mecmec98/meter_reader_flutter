@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
 class ManualTransfer extends StatefulWidget {
   final VoidCallback onUpload;
   final VoidCallback onDownload;
+  final Future<void> Function() onRefresh;
   final bool uploaded;
   final bool downloaded;
   final String? uploadTime;
@@ -12,6 +15,7 @@ class ManualTransfer extends StatefulWidget {
     super.key,
     required this.onUpload,
     required this.onDownload,
+    required this.onRefresh,
     required this.uploaded,
     required this.downloaded,
     this.uploadTime,
@@ -25,19 +29,112 @@ class ManualTransfer extends StatefulWidget {
 class _ManualTransferState extends State<ManualTransfer> {
   bool _uploadLoading = false;
   bool _downloadLoading = false;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   Future<void> _handleUpload() async {
+    // Confirm dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Importing New Database'),
+        content: const Text(
+            'Importing a new database will replace the current one. Are you sure?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.red)),
+            child: const Text('No', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.green)),
+            child: const Text('Yes', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Pick file
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+
+    if (result == null ||
+        result.files.single.path == null ||
+        !result.files.single.name.toLowerCase().endsWith('.dbi')) return;
+
     setState(() => _uploadLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1500));
+
+    final success =
+        await _dbHelper.importNewDatabase(result.files.single.path!);
+
+    if (!mounted) return;
     setState(() => _uploadLoading = false);
-    widget.onUpload();
+
+    if (success) {
+      // Refresh CurrentReadingInfo with new DB data
+      await widget.onRefresh();
+      widget.onUpload();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Database imported successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to import database')),
+      );
+    }
   }
 
   Future<void> _handleDownload() async {
+    // Confirm dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Database'),
+        content: const Text(
+            'Exporting the database will replace any previously exported database (MRADB.dbo) in your Public Downloads folder.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.red)),
+            child: const Text('No', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.green)),
+            child: const Text('Yes', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _downloadLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1500));
+
+    final success = await _dbHelper.exportDatabase();
+
+    if (!mounted) return;
     setState(() => _downloadLoading = false);
-    widget.onDownload();
+
+    if (success) {
+      widget.onDownload();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Database exported to Downloads folder!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to export database')),
+      );
+    }
   }
 
   @override

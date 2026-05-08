@@ -5,6 +5,8 @@ import 'databasepage/manualtransfer.dart';
 
 import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
+
 import 'package:file_picker/file_picker.dart';
 
 class DatabasePage extends StatefulWidget {
@@ -62,7 +64,13 @@ class _DatabasePageState extends State<DatabasePage> {
     });
   }
 
+  Future<void> _refreshAll() async {
+    await _fetchDataprefs();
+    await _fetchZoneBook();
+  }
+
   void _handleWirelessUpload() {
+    AppSettingsHelper().addLog(type: 'upload', method: 'wireless');
     final time = TimeOfDay.now().format(context);
     setState(() {
       wirelessUploaded = true;
@@ -71,6 +79,7 @@ class _DatabasePageState extends State<DatabasePage> {
   }
 
   void _handleWirelessDownload() {
+    AppSettingsHelper().addLog(type: 'download', method: 'wireless');
     final time = TimeOfDay.now().format(context);
     setState(() {
       wirelessDownloaded = true;
@@ -79,6 +88,7 @@ class _DatabasePageState extends State<DatabasePage> {
   }
 
   void _handleManualUpload() {
+    AppSettingsHelper().addLog(type: 'upload', method: 'manual');
     final time = TimeOfDay.now().format(context);
     setState(() {
       manualUploaded = true;
@@ -87,6 +97,7 @@ class _DatabasePageState extends State<DatabasePage> {
   }
 
   void _handleManualDownload() {
+    AppSettingsHelper().addLog(type: 'download', method: 'manual');
     final time = TimeOfDay.now().format(context);
     setState(() {
       manualDownloaded = true;
@@ -135,6 +146,7 @@ class _DatabasePageState extends State<DatabasePage> {
             ManualTransfer(
               onUpload: _handleManualUpload,
               onDownload: _handleManualDownload,
+              onRefresh: _refreshAll,
               uploaded: manualUploaded,
               downloaded: manualDownloaded,
               uploadTime: manualUploadTime,

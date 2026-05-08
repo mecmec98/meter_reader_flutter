@@ -482,8 +482,6 @@ class _ConsumercardState extends State<Consumercard> {
                     setState(() {
                       _currentCard = card;
                       _rateType = card.cardRateType;
-                      print(
-                          "$_rateType onbuild +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
                       String formattedDate =
                           getFormattedReadingDate(card.cardcurrentReadingDate);
                       String onlyTime =

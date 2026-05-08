@@ -1,15 +1,16 @@
 //import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 
 import 'package:meter_reader_flutter/pages/databasepage.dart';
 import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/pages/databasedrawer.dart';
-import 'package:provider/provider.dart';
 
 import 'package:meter_reader_flutter/widgets/printerfab_widget.dart';
+import 'package:meter_reader_flutter/widgets/pin_dialog.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -402,10 +403,15 @@ class _HomePageState extends State<HomePage> {
       ),
       actions: [
         GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AppSettingsPage()),
-          ),
+          onTap: () async {
+            final granted = await showPinDialog(context);
+            if (granted && context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AppSettingsPage()),
+              );
+            }
+          },
           child: Container(
             margin: const EdgeInsets.all(10),
             width: 37,
