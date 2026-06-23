@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:meter_reader_flutter/models/features_model.dart';
 import 'package:meter_reader_flutter/models/databaselog_model.dart';
+import 'package:meter_reader_flutter/models/serversettings_model.dart';
 
 class AppSettingsHelper {
   static final AppSettingsHelper _instance = AppSettingsHelper._internal();
@@ -63,6 +64,22 @@ class AppSettingsHelper {
         datetime TEXT NOT NULL
       )
     ''');
+
+    //Server settings table
+    await db.execute('''
+      CREATE TABLE server_settings (
+        id INTEGER PRIMARY KEY,
+        server_ip TEXT NOT NULL DEFAULT '',
+        server_port INTEGER NOT NULL DEFAULT 8765
+      )
+    ''');
+
+    // Seed default row
+    await db.insert('server_settings', {
+      'id': 1,
+      'server_ip': '192.168.1.188',
+      'server_port': 8765,
+    });
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -76,6 +93,21 @@ class AppSettingsHelper {
           datetime TEXT NOT NULL
         )
       ''');
+    }
+
+    if (oldVersion < 3) {
+      await db.execute('''
+    CREATE TABLE server_settings (
+      id INTEGER PRIMARY KEY,
+      server_ip TEXT NOT NULL DEFAULT '',
+      server_port INTEGER NOT NULL DEFAULT 8765
+    )
+  ''');
+      await db.insert('server_settings', {
+        'id': 1,
+        'server_ip': '192.168.1.188',
+        'server_port': 8765,
+      });
     }
   }
 
@@ -132,7 +164,7 @@ class AppSettingsHelper {
   // ─────────────────────────────────────────
   // Logs
   // ─────────────────────────────────────────
-  
+
   /// Add a new log entry
   /// [type] → 'upload' or 'download'
   /// [method] → 'wireless' or 'manual'
@@ -191,5 +223,24 @@ class AppSettingsHelper {
       'upload_manual': await fetch('upload', 'manual'),
       'download_manual': await fetch('download', 'manual'),
     };
+  }
+
+  Future<ServerSettingsModel> getServerSettings() async {
+    final db = await database;
+    final rows =
+        await db.query('server_settings', where: 'id = ?', whereArgs: [1]);
+    if (rows.isEmpty) return ServerSettingsModel(ip: '', port: 8765);
+    return ServerSettingsModel.fromMap(rows.first);
+  }
+
+  Future<void> saveServerSettings(
+      {required String ip, required int port}) async {
+    final db = await database;
+    await db.update(
+      'server_settings',
+      {'server_ip': ip, 'server_port': port},
+      where: 'id = ?',
+      whereArgs: [1],
+    );
   }
 }
