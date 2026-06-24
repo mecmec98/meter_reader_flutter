@@ -23,7 +23,7 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );

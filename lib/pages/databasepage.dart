@@ -7,8 +7,6 @@ import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 
-import 'package:file_picker/file_picker.dart';
-
 class DatabasePage extends StatefulWidget {
   const DatabasePage({super.key});
 
@@ -17,7 +15,6 @@ class DatabasePage extends StatefulWidget {
 }
 
 class _DatabasePageState extends State<DatabasePage> {
-  // Reading data — replace with your actual model/provider
   String? _readingDate = '--';
   String? _reader = '--';
   List<String> _zones = [];
@@ -52,12 +49,9 @@ class _DatabasePageState extends State<DatabasePage> {
   Future<void> _fetchZoneBook() async {
     final zbList = await DatabaseHelper().getDistinctZB();
     if (!mounted) return;
-
-    // Split each ZB into zone and book then deduplicate
     final zones = zbList.map((zb) => zb.substring(0, 2)).toSet().toList()
       ..sort();
     final books = zbList.map((zb) => zb.substring(2)).toSet().toList()..sort();
-
     setState(() {
       _zones = zones;
       _books = books;
@@ -70,7 +64,6 @@ class _DatabasePageState extends State<DatabasePage> {
   }
 
   void _handleWirelessUpload() {
-    AppSettingsHelper().addLog(type: 'upload', method: 'wireless');
     final time = TimeOfDay.now().format(context);
     setState(() {
       wirelessUploaded = true;
@@ -79,7 +72,6 @@ class _DatabasePageState extends State<DatabasePage> {
   }
 
   void _handleWirelessDownload() {
-    AppSettingsHelper().addLog(type: 'download', method: 'wireless');
     final time = TimeOfDay.now().format(context);
     setState(() {
       wirelessDownloaded = true;
@@ -126,8 +118,8 @@ class _DatabasePageState extends State<DatabasePage> {
             const SectionLabel(label: 'Current reading info'),
             const SizedBox(height: 8),
             CurrentReadingInfo(
-              readingDate: _readingDate ?? "",
-              reader: _reader ?? "",
+              readingDate: _readingDate ?? '',
+              reader: _reader ?? '',
               zone: _zones,
               book: _books,
             ),
@@ -137,6 +129,7 @@ class _DatabasePageState extends State<DatabasePage> {
             WirelessTransfer(
               onUpload: _handleWirelessUpload,
               onDownload: _handleWirelessDownload,
+              onRefresh: _refreshAll,
               uploaded: wirelessUploaded,
               downloaded: wirelessDownloaded,
               uploadTime: wirelessUploadTime,

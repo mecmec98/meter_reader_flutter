@@ -25,6 +25,7 @@ dependencies:
   # File Operations
   file_picker: ^9.0.2
   image: ^4.0.17
+  http: ^1.6.0
   
   # Utilities
   intl: ^0.20.2
