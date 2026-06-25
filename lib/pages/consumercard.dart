@@ -41,8 +41,8 @@ class _ConsumercardState extends State<Consumercard> {
 
   bool _billUpdated = false;
   bool _isSaving = false;
-  bool _ftaxActivate = true;
-  bool _penaltyActivate = true;
+  bool _ftaxActivate = false;
+  bool _penaltyActivate = false;
   //String? _formattedDate =
   //    DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -65,6 +65,15 @@ class _ConsumercardState extends State<Consumercard> {
     super.initState();
     _loadFlatbill();
   }
+
+  // Future<void> _checkforFtax() {
+  //   if (_currentCard != null) {
+  //     setState(() {
+  //       _ftaxActivate =
+  //           _currentCard!.prefsFtax != null && _currentCard!.prefsFtax != 0;
+  //     });
+  //   }
+  // }
 
   Future<void> _loadFlatbill() async {
     final value = await CalculatebillHelper.getFlatbill();
@@ -345,6 +354,7 @@ class _ConsumercardState extends State<Consumercard> {
         card.cardOthers.toStringAsFixed(2),
         card.cardPreviousUsage,
         ftaxValue,
+        _ftaxActivate,
         messageText1,
         messageText2,
         messageText3,

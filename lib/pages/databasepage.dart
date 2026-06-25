@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'databasepage/currentreadinginfo.dart';
 import 'databasepage/wirelesstransfer.dart';
 import 'databasepage/manualtransfer.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
@@ -22,6 +23,7 @@ class _DatabasePageState extends State<DatabasePage> {
 
   bool wirelessUploaded = false;
   bool wirelessDownloaded = false;
+  bool _serverOnline = false;
   String? wirelessUploadTime;
   String? wirelessDownloadTime;
 
@@ -35,6 +37,24 @@ class _DatabasePageState extends State<DatabasePage> {
     super.initState();
     _fetchDataprefs();
     _fetchZoneBook();
+    _pingServer();
+  }
+
+  Future<void> _pingServer() async {
+    try {
+      final settings = await AppSettingsHelper().getServerSettings();
+      final response = await http
+          .get(Uri.parse('http://${settings.ip}:${settings.port}/ping'))
+          .timeout(const Duration(seconds: 5));
+      if (!mounted) return;
+      setState(() {
+        _serverOnline = response.statusCode == 200 &&
+            response.body.contains('MRA_SERVER_OK');
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _serverOnline = false);
+    }
   }
 
   Future<void> _fetchDataprefs() async {
@@ -127,6 +147,7 @@ class _DatabasePageState extends State<DatabasePage> {
             const SectionLabel(label: 'Transfer'),
             const SizedBox(height: 8),
             WirelessTransfer(
+              serverOnline: _serverOnline,
               onUpload: _handleWirelessUpload,
               onDownload: _handleWirelessDownload,
               onRefresh: _refreshAll,

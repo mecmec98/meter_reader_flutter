@@ -220,6 +220,7 @@ class BluePrinterHelper extends ChangeNotifier {
       String cardOthers,
       int previousUsage,
       double ftax,
+      bool ftaxActivate,
       String messageText1,
       String messageText2,
       String messageText3,
@@ -471,19 +472,21 @@ class BluePrinterHelper extends ChangeNotifier {
         ]);
       }
       //ftax
-      bytes += generator.row([
-        PosColumn(
-          text: 'FTAX(2%)',
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: ftax.toStringAsFixed(2),
-          width: 4,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
+      if (ftaxActivate) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'FTAX(2%)',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: ftax.toStringAsFixed(2),
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
       bytes += generator.row([
         PosColumn(
           text: 'W.M.C.',
@@ -610,9 +613,12 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.text(
           'Accounts with existing arrears  will be disconnected immediately without further notice.',
           styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text(
-          'We are now implenting a 2% FTAX implented via Board Resolution 0-0000-00',
-          styles: PosStyles(align: PosAlign.center));
+      if (ftaxActivate) {
+        bytes += generator.text(
+            'We are now implenting a 2% FTAX implented via Board Resolution 0-0000-00',
+            styles: PosStyles(align: PosAlign.center));
+      }
+
       bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
@@ -830,7 +836,6 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.reset();
       bytes += generator.hr();
 
-      
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);

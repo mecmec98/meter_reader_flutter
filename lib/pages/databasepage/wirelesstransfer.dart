@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/prefs_model.dart';
@@ -9,6 +10,7 @@ import 'package:meter_reader_flutter/models/serversettings_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 class WirelessTransfer extends StatefulWidget {
+  final bool serverOnline;
   final VoidCallback onUpload;
   final VoidCallback onDownload;
   final Future<void> Function() onRefresh;
@@ -19,6 +21,7 @@ class WirelessTransfer extends StatefulWidget {
 
   const WirelessTransfer({
     super.key,
+    required this.serverOnline,
     required this.onUpload,
     required this.onDownload,
     required this.onRefresh,
@@ -37,6 +40,7 @@ class _WirelessTransferState extends State<WirelessTransfer> {
 
   // Download panel state
   bool _showDownloadPanel = false;
+  bool _showUploadNudge = false;
   bool _pinging = false;
   bool? _pingSuccess;
   List<String> _dates = [];
@@ -91,19 +95,25 @@ class _WirelessTransferState extends State<WirelessTransfer> {
       }
       final readerName = _sanitize(prefs.readername);
       final dbPath = await _dbHelper.getDatabasePath();
+      final billDate = prefs.billdate;
+      final formattedBillDate = DateFormat('yyyy-MM-dd').format(
+        DateFormat('MM/dd/yyyy').parse(billDate),
+      );
       final dbFile = File(dbPath);
       if (!await dbFile.exists()) {
         _showSnack('Database file not found.');
         return;
       }
       final uri = Uri.parse(
-          'http://${settings.ip}:${settings.port}/upload?reader=$readerName&date=$_today');
+          'http://${settings.ip}:${settings.port}/upload?reader=$readerName&date=$formattedBillDate');
       final bytes = await dbFile.readAsBytes();
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/octet-stream'},
-        body: bytes,
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/octet-stream'},
+            body: bytes,
+          )
+          .timeout(const Duration(seconds: 30));
       if (!mounted) return;
       if (response.statusCode == 200) {
         await _settingsHelper.addLog(type: 'upload', method: 'wireless');
@@ -131,14 +141,49 @@ class _WirelessTransferState extends State<WirelessTransfer> {
       });
       return;
     }
+
+    // Check for unuploaded readings
+    final hasPosted = await _checkHasPostedReadings();
+    final lastWirelessUpload =
+        await _settingsHelper.getLatestLog('upload', 'wireless');
+    final lastManualUpload =
+        await _settingsHelper.getLatestLog('upload', 'manual');
+
+    final uploadedToday = (lastWirelessUpload != null &&
+            lastWirelessUpload.datetime.toIso8601String().startsWith(_today)) ||
+        (lastManualUpload != null &&
+            lastManualUpload.datetime.toIso8601String().startsWith(_today));
+
+    if (hasPosted && !uploadedToday) {
+      setState(() {
+        _showDownloadPanel = true;
+        _showUploadNudge = true;
+      });
+      return;
+    }
+
     setState(() {
       _showDownloadPanel = true;
-      _resetDownloadPanel();
+      _showUploadNudge = false;
     });
+    _resetDownloadPanel();
     await _ping();
   }
 
+  Future<bool> _checkHasPostedReadings() async {
+    try {
+      final db = await _dbHelper.database;
+      final result = await db
+          .rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED = 1');
+      final count = result.first['count'] as int;
+      return count > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
   void _resetDownloadPanel() {
+    _showUploadNudge = false;
     _pinging = false;
     _pingSuccess = null;
     _dates = [];
@@ -159,8 +204,7 @@ class _WirelessTransferState extends State<WirelessTransfer> {
     try {
       final settings = await _getSettings();
       final response = await http
-          .get(Uri.parse(
-              'http://${settings.ip}:${settings.port}/ping'))
+          .get(Uri.parse('http://${settings.ip}:${settings.port}/ping'))
           .timeout(const Duration(seconds: 5));
       if (!mounted) return;
       if (response.statusCode == 200 &&
@@ -192,16 +236,16 @@ class _WirelessTransferState extends State<WirelessTransfer> {
     try {
       final settings = await _getSettings();
       final response = await http
-          .get(Uri.parse(
-              'http://${settings.ip}:${settings.port}/dates'))
+          .get(Uri.parse('http://${settings.ip}:${settings.port}/dates'))
           .timeout(const Duration(seconds: 5));
       if (!mounted) return;
       final data = json.decode(response.body);
       final dates = List<String>.from(data['dates'] ?? []);
       setState(() {
         _dates = dates;
-        _selectedDate =
-            dates.contains(_today) ? _today : (dates.isNotEmpty ? dates.first : '');
+        _selectedDate = dates.contains(_today)
+            ? _today
+            : (dates.isNotEmpty ? dates.first : '');
       });
       if (_selectedDate.isNotEmpty) await _loadFiles(_selectedDate);
     } catch (e) {
@@ -238,11 +282,38 @@ class _WirelessTransferState extends State<WirelessTransfer> {
   }
 
   Future<void> _downloadFile(String filename) async {
+    // Confirmation with context
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Download'),
+        content: Text(
+            'Download and import "$filename"?\n\nThis will replace your current database.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.red)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.blue)),
+            child:
+                const Text('Download', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
     setState(() {
       _downloadingFile = filename;
       _downloading = true;
       _downloadProgress = 0;
     });
+
     try {
       final settings = await _getSettings();
       final uri = Uri.parse(
@@ -266,11 +337,21 @@ class _WirelessTransferState extends State<WirelessTransfer> {
         }
       }
       if (!mounted) return;
+
+      // Backup current DB before replacing
+      final dbPath = await _dbHelper.getDatabasePath();
+      final dbFile = File(dbPath);
       final tempDir = await getTemporaryDirectory();
+      if (await dbFile.exists()) {
+        await dbFile.copy('${tempDir.path}/MRADB_backup_before_import.dbi');
+      }
+
+      // Import new DB
       final tempFile = File('${tempDir.path}/temp_import.dbi');
       await tempFile.writeAsBytes(bytes);
       final success = await _dbHelper.importNewDatabase(tempFile.path);
       await tempFile.delete();
+
       if (!mounted) return;
       if (success) {
         await widget.onRefresh();
@@ -300,9 +381,12 @@ class _WirelessTransferState extends State<WirelessTransfer> {
   String _sanitize(String name) =>
       name.trim().toLowerCase().replaceAll(' ', '_');
 
-  void _showSnack(String msg) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(msg)));
+  void _showSnack(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
+  // ─────────────────────────────────────────
+  // Build
+  // ─────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -316,20 +400,32 @@ class _WirelessTransferState extends State<WirelessTransfer> {
           ),
           child: Column(
             children: [
-              // Header
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Row(
                   children: [
                     const Icon(Icons.wifi, size: 20, color: Colors.blue),
                     const SizedBox(width: 10),
-                    const Text(
-                      'Wireless',
+                    const Text('Wireless',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87)),
+                    const SizedBox(width: 10),
+                    Icon(
+                      Icons.circle,
+                      size: 8,
+                      color: widget.serverOnline ? Colors.green : Colors.red,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.serverOnline ? 'Online' : 'Offline',
                       style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: widget.serverOnline ? Colors.green : Colors.red,
+                      ),
                     ),
                     const Spacer(),
                     Container(
@@ -339,20 +435,16 @@ class _WirelessTransferState extends State<WirelessTransfer> {
                         color: const Color.fromARGB(255, 207, 228, 255),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'Wi-Fi',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.blue),
-                      ),
+                      child: const Text('Wi-Fi',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue)),
                     ),
                   ],
                 ),
               ),
               const Divider(height: 1, thickness: 0.5),
-
-              // Buttons
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -383,8 +475,6 @@ class _WirelessTransferState extends State<WirelessTransfer> {
                   ],
                 ),
               ),
-
-              // Status indicators
               if (widget.uploaded)
                 _StatusRow(
                   icon: Icons.check_circle_outline,
@@ -418,162 +508,228 @@ class _WirelessTransferState extends State<WirelessTransfer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Panel header
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(
                     children: [
                       const Icon(Icons.download_outlined,
                           size: 18, color: Colors.blue),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Download Reading Data',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87),
-                      ),
+                      const Text('Download Reading Data',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87)),
                     ],
                   ),
                 ),
                 const Divider(height: 1, thickness: 0.5),
                 Padding(
                   padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Ping status
-                      _buildPingStatus(),
-
-                      if (_pingSuccess == true) ...[
-                        const SizedBox(height: 16),
-
-                        // ── Date chips
-                        const Text(
-                          'SELECT DATE',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black45,
-                              letterSpacing: 0.5),
-                        ),
-                        const SizedBox(height: 8),
-                        _dates.isEmpty
-                            ? const Text('No dates available.',
-                                style: TextStyle(
-                                    fontSize: 13, color: Colors.black45))
-                            : SizedBox(
-                                height: 36,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _dates.length,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(width: 8),
-                                  itemBuilder: (context, index) {
-                                    final d = _dates[index];
-                                    final isSelected = d == _selectedDate;
-                                    final isToday = d == _today;
-                                    return GestureDetector(
-                                      onTap: _loadingFiles || _downloading
-                                          ? null
-                                          : () => _loadFiles(d),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 14, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? Colors.blue
-                                              : Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? Colors.blue
-                                                : Colors.black
-                                                    .withOpacity(0.12),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          isToday ? 'Today' : d,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-
-                        const SizedBox(height: 16),
-
-                        // ── File list
-                        const Text(
-                          'SELECT FILE',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black45,
-                              letterSpacing: 0.5),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildFileList(),
-                      ],
-
-                      // ── Error
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.07),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: Colors.red.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.error_outline,
-                                  size: 16, color: Colors.red),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            setState(() => _errorMessage = null);
-                            _ping();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            side: BorderSide(
-                                color: Colors.black.withOpacity(0.2)),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                          icon: const Icon(Icons.refresh, size: 16),
-                          label: const Text('Retry',
-                              style: TextStyle(fontSize: 13)),
-                        ),
-                      ],
-                    ],
-                  ),
+                  child: _showUploadNudge
+                      ? _buildUploadNudge()
+                      : _buildDownloadContent(),
                 ),
               ],
             ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // Upload nudge
+  // ─────────────────────────────────────────
+  Widget _buildUploadNudge() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.orange.withOpacity(0.4)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.warning_amber_outlined,
+                  color: Colors.orange, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'You have unuploaded readings. Upload your data first before downloading a new database.',
+                  style: TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() => _showUploadNudge = false);
+                  _ping();
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black54,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  side: BorderSide(color: Colors.black.withOpacity(0.2)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Download Anyway',
+                    style: TextStyle(fontSize: 13)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showDownloadPanel = false;
+                    _resetDownloadPanel();
+                  });
+                  _handleUpload();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.upload_outlined, size: 16),
+                label: const Text('Upload Now',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // Download content
+  // ─────────────────────────────────────────
+  Widget _buildDownloadContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Ping status
+        _buildPingStatus(),
+
+        if (_pingSuccess == true) ...[
+          const SizedBox(height: 16),
+
+          // Date chips
+          const Text('SELECT DATE',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black45,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 8),
+          _dates.isEmpty
+              ? const Text('No dates available.',
+                  style: TextStyle(fontSize: 13, color: Colors.black45))
+              : SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _dates.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final d = _dates[index];
+                      final isSelected = d == _selectedDate;
+                      final isToday = d == _today;
+                      return GestureDetector(
+                        onTap: _loadingFiles || _downloading
+                            ? null
+                            : () => _loadFiles(d),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.blue : Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.blue
+                                  : Colors.black.withOpacity(0.12),
+                            ),
+                          ),
+                          child: Text(
+                            isToday ? 'Today' : d,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+          const SizedBox(height: 16),
+
+          // File list
+          const Text('SELECT FILE',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black45,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 8),
+          _buildFileList(),
+        ],
+
+        // Error
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.07),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(_errorMessage!,
+                      style: const TextStyle(fontSize: 12, color: Colors.red)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () {
+              setState(() => _errorMessage = null);
+              _ping();
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: BorderSide(color: Colors.black.withOpacity(0.2)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry', style: TextStyle(fontSize: 13)),
           ),
         ],
       ],
@@ -587,8 +743,8 @@ class _WirelessTransferState extends State<WirelessTransfer> {
           SizedBox(
             width: 14,
             height: 14,
-            child: CircularProgressIndicator(
-                strokeWidth: 2, color: Colors.blue),
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
           ),
           SizedBox(width: 10),
           Text('Connecting to server...',
@@ -634,8 +790,8 @@ class _WirelessTransferState extends State<WirelessTransfer> {
             SizedBox(
               width: 14,
               height: 14,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.blue),
+              child:
+                  CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
             ),
             SizedBox(width: 10),
             Text('Loading files...',
@@ -649,8 +805,7 @@ class _WirelessTransferState extends State<WirelessTransfer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Downloading $_downloadingFile...',
-              style:
-                  const TextStyle(fontSize: 13, color: Colors.black54)),
+              style: const TextStyle(fontSize: 13, color: Colors.black54)),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: _downloadProgress > 0 ? _downloadProgress : null,
@@ -687,25 +842,22 @@ class _WirelessTransferState extends State<WirelessTransfer> {
               InkWell(
                 onTap: () => _downloadFile(file),
                 borderRadius: isLast
-                    ? const BorderRadius.vertical(
-                        bottom: Radius.circular(8))
+                    ? const BorderRadius.vertical(bottom: Radius.circular(8))
                     : BorderRadius.zero,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
                       const Icon(Icons.storage_outlined,
                           size: 18, color: Colors.blue),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          file,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87),
-                        ),
+                        child: Text(file,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87)),
                       ),
                       const Icon(Icons.download_outlined,
                           size: 16, color: Colors.black38),
@@ -713,8 +865,7 @@ class _WirelessTransferState extends State<WirelessTransfer> {
                   ),
                 ),
               ),
-              if (!isLast)
-                const Divider(height: 1, thickness: 0.5, indent: 12),
+              if (!isLast) const Divider(height: 1, thickness: 0.5, indent: 12),
             ],
           );
         }).toList(),
@@ -752,8 +903,7 @@ class _TransferButton extends StatelessWidget {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         icon: loading
@@ -764,8 +914,7 @@ class _TransferButton extends StatelessWidget {
                     strokeWidth: 2, color: Colors.white))
             : Icon(icon, size: 16),
         label: Text(loading ? 'Uploading...' : label,
-            style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w500)),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       );
     } else {
       return OutlinedButton.icon(
@@ -774,20 +923,17 @@ class _TransferButton extends StatelessWidget {
           foregroundColor: Colors.black87,
           padding: const EdgeInsets.symmetric(vertical: 12),
           side: BorderSide(color: Colors.black.withOpacity(0.2)),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: loading
             ? SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.black.withOpacity(0.5)))
+                    strokeWidth: 2, color: Colors.black.withOpacity(0.5)))
             : Icon(icon, size: 16),
         label: Text(loading ? 'Downloading...' : label,
-            style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w500)),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       );
     }
   }
@@ -814,8 +960,7 @@ class _StatusRow extends StatelessWidget {
       children: [
         const Divider(height: 1, thickness: 0.5),
         Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
             children: [
               Icon(icon, size: 16, color: iconColor),
@@ -828,8 +973,8 @@ class _StatusRow extends StatelessWidget {
               if (time != null) ...[
                 const Spacer(),
                 Text(time!,
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.black45)),
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.black45)),
               ],
             ],
           ),
