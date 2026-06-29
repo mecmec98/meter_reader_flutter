@@ -7,7 +7,6 @@ import 'package:meter_reader_flutter/pages/home.dart';
 import 'package:meter_reader_flutter/pages/postmeterreading.dart';
 import 'package:meter_reader_flutter/pages/consumercard.dart';
 import 'package:meter_reader_flutter/pages/printbilllist.dart';
-import 'package:meter_reader_flutter/pages/printface.dart';
 import 'package:meter_reader_flutter/pages/editbilllist.dart';
 import 'package:meter_reader_flutter/pages/databasepage.dart';
 import 'package:meter_reader_flutter/pages/appsettingspage.dart';
@@ -59,7 +58,7 @@ class MyApp extends StatelessWidget {
         //'/consumercardbill': (context) => ConsumercardBill(),
         '/printbilllist': (context) => PrintbillList(),
         // '/sample': (context) => SamplePrint(),
-        '/printface': (context) => Printface(),
+        // '/printface': (context) => Printface(),
         '/databasepage': (context) => DatabasePage(),
         '/appsettingspage': (context) => AppSettingsPage(),
       },
