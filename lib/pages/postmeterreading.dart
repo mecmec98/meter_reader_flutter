@@ -17,11 +17,13 @@ class _PostmeterreadingState extends State<Postmeterreading> {
   final int _limit = 8;
   bool _hasMore = true;
   String _searchQuery = '';
+  int _remainingCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadRemainingCount();
     _scrollController.addListener(() {
       // Only paginate if there is no active search.
       if (_scrollController.position.pixels >=
@@ -109,6 +111,12 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     super.dispose();
   }
 
+  Future<void> _loadRemainingCount() async {
+    final stats = await DatabaseHelper().getReadingStats();
+    if (!mounted) return;
+    setState(() => _remainingCount = stats['remaining'] ?? 0);
+  }
+
   Future<void> _refreshList() async {
     setState(() {
       _posts.clear();
@@ -116,6 +124,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       _hasMore = true;
     });
     await _loadData();
+    await _loadRemainingCount();
   }
 
   Widget _buildPostItem(PostmeterlistModel post, int index) {
@@ -261,7 +270,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     return Padding(
       padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
       child: Text(
-        'Count: ${_posts.length}',
+        '$_remainingCount Remaining',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,

@@ -274,6 +274,17 @@ class DatabaseHelper {
     return result.isNotEmpty ? result.first : null;
   }
 
+  Future<Map<String, int>> getReadingStats() async {
+    final db = await database;
+    final totalResult =
+        await db.rawQuery('SELECT COUNT(*) as count FROM master');
+    final postedResult =
+        await db.rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED > 0');
+    final total = totalResult.first['count'] as int;
+    final completed = postedResult.first['count'] as int;
+    return {'total': total, 'completed': completed, 'remaining': total - completed};
+  }
+
 //get all zone and books currently in database
   Future<List<String>> getDistinctZB() async {
     final db = await database;

@@ -124,7 +124,7 @@ class _WirelessTransferState extends State<WirelessTransfer> {
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnack('Could not reach server.');
+      _showSnack('Could not reach server: $e');
     } finally {
       if (mounted) setState(() => _uploadLoading = false);
     }
@@ -173,8 +173,8 @@ class _WirelessTransferState extends State<WirelessTransfer> {
   Future<bool> _checkHasPostedReadings() async {
     try {
       final db = await _dbHelper.database;
-      final result = await db
-          .rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED = 1');
+final result = await db
+           .rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED > 0');
       final count = result.first['count'] as int;
       return count > 0;
     } catch (e) {
@@ -282,6 +282,8 @@ class _WirelessTransferState extends State<WirelessTransfer> {
   }
 
   Future<void> _downloadFile(String filename) async {
+    if (_downloading) return;
+
     // Confirmation with context
     final confirmed = await showDialog<bool>(
       context: context,

@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
      package="com.example.meter_reader_flutter">
 
+<uses-permission android:name="android.permission.INTERNET"/>
 <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 <uses-permission android:name="android.permission.BLUETOOTH" />
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
@@ -27,6 +28,7 @@
     <application
         android:label="DapCWD Meter Reader"
         android:name="${applicationName}"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"
         android:theme="@style/LaunchTheme">

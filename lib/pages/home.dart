@@ -1,4 +1,3 @@
-//import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +6,7 @@ import 'package:meter_reader_flutter/pages/databasepage.dart';
 import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
+import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 
 import 'package:meter_reader_flutter/widgets/printerfab_widget.dart';
@@ -22,29 +22,32 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool isBluetoothOn = false;
+  Map<String, int>? _readingStats;
 
   @override
   void initState() {
     super.initState();
-    // Run bluetooth init after frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initBluetooth();
-      //helloword
+      _loadReadingStats();
     });
   }
 
   void _initBluetooth() async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
-
-    //print(bluetoothHelper.connected);
     isBluetoothOn = (await bluetoothHelper.bluetooth.isOn)!;
 
     if (!isBluetoothOn) {
       _showBluetoothDialog();
     } else {
       await bluetoothHelper.initBluetooth();
-      //print(bluetoothHelper.connected);
     }
+  }
+
+  Future<void> _loadReadingStats() async {
+    final stats = await DatabaseHelper().getReadingStats();
+    if (!mounted) return;
+    setState(() => _readingStats = stats);
   }
 
   void _showBluetoothDialog() {
@@ -76,7 +79,9 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          if (_readingStats != null) _buildStatsCard(),
+          const SizedBox(height: 16),
           menuButtons(),
           const SizedBox(height: 20),
         ],
@@ -84,290 +89,238 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-//Old printer Drawer
-/** 
-  Drawer drawerforPrinter(BuildContext context) {
-    final bluetoothHelper = context.watch<BluePrinterHelper>();
+  Widget _buildStatsCard() {
+    final stats = _readingStats!;
+    final total = stats['total'] ?? 0;
+    final completed = stats['completed'] ?? 0;
+    final remaining = stats['remaining'] ?? 0;
+    final progress = total > 0 ? completed / total : 0.0;
+    final percentText = total > 0 ? '${(progress * 100).toStringAsFixed(0)}%' : '0%';
 
-    return Drawer(
-      child: Column(
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.only(top: 60),
-            child: Text(
-              'Connect Printer',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 25),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await bluetoothHelper.initBluetooth();
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.blue),
-            ),
-            icon: const Icon(Icons.bluetooth, color: Colors.white),
-            label: const Text(
-              'Refresh Devices',
-              style:
-                  TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
-            ),
-          ),
-          const Text('Select Bluetooth Device'),
-          DropdownButton<BluetoothDevice>(
-            items: bluetoothHelper.devices
-                .map((device) => DropdownMenuItem(
-                      value: device,
-                      child: SizedBox(
-                          width: 200,
-                          child: Text(
-                            device.name ?? "Unknown Device",
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                    ))
-                .toList(),
-            onChanged: (device) {
-              if (device != null) {
-                bluetoothHelper.selectedDevice = device;
-              }
-            },
-            value: bluetoothHelper.selectedDevice,
-          ),
-          ElevatedButton.icon(
-            onPressed: bluetoothHelper.connected
-                ? () async {
-                    await bluetoothHelper.disconnectFromDevice();
-                  }
-                : () async {
-                    if (bluetoothHelper.selectedDevice != null) {
-                      await bluetoothHelper
-                          .connectToDevice(bluetoothHelper.selectedDevice!);
-                    }
-                  },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.blue),
-            ),
-            label: Text(
-              bluetoothHelper.connected ? 'Disconnect' : 'Connect',
-              style:
-                  TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
-            ),
-          ),
-          // Connection status display
-          Container(
-            padding: const EdgeInsets.all(8),
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bluetoothHelper.connected
-                  ? Colors.green.shade100
-                  : Colors.red.shade100,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: bluetoothHelper.connected ? Colors.green : Colors.red,
-              ),
-            ),
-            child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black.withOpacity(0.08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  'Status: ${bluetoothHelper.connectionStatus}',
+                const Icon(Icons.bar_chart_rounded, size: 20, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text(
+                  'Reading Progress',
                   style: TextStyle(
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: bluetoothHelper.connected
-                        ? Colors.green.shade800
-                        : Colors.red.shade800,
+                    color: Colors.black87,
                   ),
                 ),
-                if (bluetoothHelper.isReconnecting)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+                const Spacer(),
+                Text(
+                  '$completed / $total',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue,
                   ),
+                ),
               ],
             ),
-          ),
-          // Manual reconnect button
-          if (!bluetoothHelper.connected &&
-              bluetoothHelper.selectedDevice != null)
-            ElevatedButton.icon(
-              onPressed: bluetoothHelper.isReconnecting
-                  ? null
-                  : () async {
-                      await bluetoothHelper.manualReconnect();
-                    },
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.orange),
-              ),
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              label: const Text(
-                'Manual Reconnect',
-                style:
-                    TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
             ),
-        ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _statChip(
+                  icon: Icons.check_circle_outline,
+                  label: '$completed Completed',
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 12),
+                _statChip(
+                  icon: Icons.pending_outlined,
+                  label: '$remaining Remaining',
+                  color: Colors.orange,
+                ),
+                const Spacer(),
+                Text(
+                  percentText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black45,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-*/
 
-// Adjust for less wider screens sizes
+  Widget _statChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
   Column menuButtons() {
     double screenWidth = MediaQuery.of(context).size.width;
-    double buttonPadding = screenWidth * 0.12;
-    double iconSize = screenWidth * 0.11;
-    double fontSize = screenWidth * 0.052;
+    double buttonPadding = screenWidth * 0.08;
+    double iconSize = screenWidth * 0.09;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(left: 10.0, right: 10.0),
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
           child: Text(
             '',
             style: TextStyle(
-              color: Colors.black,
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+              letterSpacing: 0.8,
             ),
           ),
         ),
-        const SizedBox(height: 1),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Post Meter Reading
-            Padding(
-              padding: EdgeInsets.only(
-                  top: 1, right: buttonPadding, left: buttonPadding),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/postmeterreading');
-                },
-                child: Container(
-                  height: 100,
-                  padding: EdgeInsets.all(screenWidth * 0.045),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: const Color.fromARGB(255, 28, 85, 227),
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/reading.svg',
-                          height: iconSize,
-                          width: iconSize,
-                          colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243),
-                              BlendMode.srcIn),
-                        ),
-                        SizedBox(width: screenWidth * 0.015),
-                        Text(
-                          'Post Meter Reading',
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Edit Meter Reading
-            Padding(
-              padding: EdgeInsets.only(
-                  top: 20, right: buttonPadding, left: buttonPadding),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/editbilllist');
-                },
-                child: Container(
-                  height: 100,
-                  padding: EdgeInsets.all(screenWidth * 0.045),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: const Color.fromARGB(255, 28, 117, 227),
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/edit.svg',
-                          height: iconSize,
-                          width: iconSize,
-                          colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243),
-                              BlendMode.srcIn),
-                        ),
-                        SizedBox(width: screenWidth * 0.015),
-                        Text(
-                          'Edit Meter Reading',
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Print Bill
-            Padding(
-              padding: EdgeInsets.only(
-                  top: 20, right: buttonPadding, left: buttonPadding),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/printbilllist');
-                },
-                child: Container(
-                  height: 100,
-                  padding: EdgeInsets.all(screenWidth * 0.045),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: const Color.fromARGB(255, 28, 137, 227),
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/print.svg',
-                          height: iconSize,
-                          width: iconSize,
-                          colorFilter: const ColorFilter.mode(
-                              Color.fromARGB(255, 245, 243, 243),
-                              BlendMode.srcIn),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-                        Text(
-                          'Print Bill',
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        )
+        _menuButton(
+          padding: buttonPadding,
+          iconSize: iconSize,
+          iconPath: 'assets/icons/reading.svg',
+          color: const Color.fromARGB(255, 28, 85, 227),
+          label: 'Post Meter Reading',
+          description: 'Record new meter readings for consumers',
+          onTap: () => Navigator.pushNamed(context, '/postmeterreading'),
+        ),
+        const SizedBox(height: 14),
+        _menuButton(
+          padding: buttonPadding,
+          iconSize: iconSize,
+          iconPath: 'assets/icons/edit.svg',
+          color: const Color.fromARGB(255, 28, 117, 227),
+          label: 'Edit Meter Reading',
+          description: 'Modify previously saved meter readings',
+          onTap: () => Navigator.pushNamed(context, '/editbilllist'),
+        ),
+        const SizedBox(height: 14),
+        _menuButton(
+          padding: buttonPadding,
+          iconSize: iconSize,
+          iconPath: 'assets/icons/print.svg',
+          color: const Color.fromARGB(255, 28, 137, 227),
+          label: 'Print Bill',
+          description: 'Print billing statements for completed readings',
+          onTap: () => Navigator.pushNamed(context, '/printbilllist'),
+        ),
       ],
+    );
+  }
+
+  Widget _menuButton({
+    required double padding,
+    required double iconSize,
+    required String iconPath,
+    required Color color,
+    required String label,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: padding),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(padding * 0.5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: color,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    iconPath,
+                    height: iconSize,
+                    width: iconSize,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withOpacity(0.6),
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -112,7 +112,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
       if (!mounted) return;
       setState(() {
         _pingSuccess = false;
-        _pingMessage = 'Could not reach server at $ip:$port';
+        _pingMessage = 'Could not reach server at $ip:$port: $e';
       });
     } finally {
       if (mounted) setState(() => _pinging = false);
@@ -410,143 +410,135 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         ),
                       )
                     : Container(
+                        height: 320,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border:
                               Border.all(color: Colors.black.withOpacity(0.08)),
                         ),
-                        child: Column(
-                          children: [
-                            // Table header
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.07),
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(12)),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      'Date & Time',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      'Type',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      'Method',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1, thickness: 0.5),
-                            // Table rows
-                            ..._logs.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final log = entry.value;
-                              final isLast = index == _logs.length - 1;
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            itemCount: _logs.length,
+                            separatorBuilder: (_, __) => const Divider(
+                                height: 1, thickness: 0.5, indent: 14),
+                            itemBuilder: (context, index) {
+                              final log = _logs[index];
                               final isUpload = log.type == 'upload';
                               final isWireless = log.method == 'wireless';
 
-                              return Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 10),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 2,
-                                          child: Text(
-                                            _formatDateTime(log.datetime),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: isUpload
-                                                  ? Colors.green
-                                                      .withOpacity(0.1)
-                                                  : Colors.blue
-                                                      .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              isUpload ? 'Upload' : 'Download',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w500,
-                                                color: isUpload
-                                                    ? Colors.green.shade700
-                                                    : Colors.blue.shade700,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Row(
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isUpload
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.blue.withOpacity(0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        isUpload
+                                            ? Icons.upload_file_outlined
+                                            : Icons.download_outlined,
+                                        size: 18,
+                                        color: isUpload
+                                            ? Colors.green.shade700
+                                            : Colors.blue.shade700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
                                             children: [
-                                              Icon(
-                                                isWireless
-                                                    ? Icons.wifi
-                                                    : Icons.usb_outlined,
-                                                size: 13,
-                                                color: Colors.black45,
-                                              ),
-                                              const SizedBox(width: 4),
                                               Text(
-                                                isWireless
-                                                    ? 'Wireless'
-                                                    : 'Manual',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.black54,
+                                                isUpload
+                                                    ? 'Upload'
+                                                    : 'Download',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isUpload
+                                                      ? Colors.green.shade700
+                                                      : Colors.blue.shade700,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: isWireless
+                                                      ? Colors.orange
+                                                          .withOpacity(0.1)
+                                                      : Colors.grey
+                                                          .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      isWireless
+                                                          ? Icons.wifi
+                                                          : Icons.usb_outlined,
+                                                      size: 10,
+                                                      color: isWireless
+                                                          ? Colors.orange
+                                                              .shade700
+                                                          : Colors.black54,
+                                                    ),
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      isWireless
+                                                          ? 'Wireless'
+                                                          : 'Manual',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: isWireless
+                                                            ? Colors.orange
+                                                                .shade700
+                                                            : Colors.black54,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _formatDateTime(log.datetime),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.black45,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  if (!isLast)
-                                    const Divider(
-                                        height: 1, thickness: 0.5, indent: 14),
-                                ],
+                                  ],
+                                ),
                               );
-                            }),
-                          ],
+                            },
+                          ),
                         ),
                       ),
                 const SizedBox(height: 20),
