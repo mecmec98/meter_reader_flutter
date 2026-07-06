@@ -7,6 +7,7 @@ import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 
 import 'package:meter_reader_flutter/widgets/printerfab_widget.dart';
@@ -23,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool isBluetoothOn = false;
   Map<String, int>? _readingStats;
+  bool _disconnectionListEnabled = false;
 
   @override
   void initState() {
@@ -30,7 +32,14 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initBluetooth();
       _loadReadingStats();
+      _loadFeatureFlags();
     });
+  }
+
+  Future<void> _loadFeatureFlags() async {
+    final enabled = await AppSettingsHelper().isEnabled('feature_disconnection_list');
+    if (!mounted) return;
+    setState(() => _disconnectionListEnabled = enabled);
   }
 
   void _initBluetooth() async {
@@ -257,6 +266,18 @@ class _HomePageState extends State<HomePage> {
           description: 'View and manage consumer notes',
           onTap: () => Navigator.pushNamed(context, '/notes'),
         ),
+        if (_disconnectionListEnabled) ...[
+          const SizedBox(height: 14),
+          _menuButton(
+            padding: buttonPadding,
+            iconSize: iconSize,
+            iconPath: 'assets/icons/print.svg',
+            color: Colors.red,
+            label: 'Disconnection List',
+            description: 'View consumers for disconnection',
+            onTap: () {},
+          ),
+        ],
       ],
     );
   }

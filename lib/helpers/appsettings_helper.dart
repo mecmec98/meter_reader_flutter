@@ -23,7 +23,7 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -45,14 +45,9 @@ class AppSettingsHelper {
 
     // Seed default features
     await db.insert('features', {
-      'key': 'feature_placeholder_1',
-      'label': 'Placeholder Feature 1',
-      'enabled': 1,
-    });
-    await db.insert('features', {
-      'key': 'feature_placeholder_2',
-      'label': 'Placeholder Feature 2',
-      'enabled': 1,
+      'key': 'feature_disconnection_list',
+      'label': 'Disconnection List',
+      'enabled': 0,
     });
 
     // Logs table
@@ -107,6 +102,16 @@ class AppSettingsHelper {
         'id': 1,
         'server_ip': '192.168.1.188',
         'server_port': 8765,
+      });
+    }
+
+    if (oldVersion < 4) {
+      await db.delete('features',
+          where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
+      await db.insert('features', {
+        'key': 'feature_disconnection_list',
+        'label': 'Disconnection List',
+        'enabled': 0,
       });
     }
   }
