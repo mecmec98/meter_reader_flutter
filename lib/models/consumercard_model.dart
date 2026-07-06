@@ -32,6 +32,7 @@ class ConsumercardModel {
   String cardcurrentReadingDate;
   int cardPreviousUsage;
   int cardRateType;
+  int cardMasCode;
 
   String prefsDatedue;
   String prefsCutdate;
@@ -69,6 +70,7 @@ class ConsumercardModel {
       required this.cardcurrentReadingDate,
       required this.cardPreviousUsage,
       required this.cardRateType,
+      required this.cardMasCode,
       required this.prefsCutdate,
       required this.prefsDatedue,
       required this.prefsBilldate,
@@ -146,6 +148,7 @@ class ConsumercardModel {
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
       cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
       cardRateType: map['RATETYPE'] is int? map['RATETYPE'] as int : 0,
+      cardMasCode: map['MASCODE'] is int ? map['MASCODE'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',

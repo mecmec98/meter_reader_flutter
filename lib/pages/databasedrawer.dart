@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:meter_reader_flutter/helpers/notes_helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -59,6 +60,7 @@ class _DatabasedrawerState extends State<Databasedrawer> {
       bool success =
           await _dbHelper.importNewDatabase(result.files.single.path!);
       if (success) {
+        await NotesHelper().archiveAllActiveNotes();
         setState(() {
           _dataimportSuccess = true;
         });

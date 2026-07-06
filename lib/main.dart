@@ -10,6 +10,8 @@ import 'package:meter_reader_flutter/pages/printbilllist.dart';
 import 'package:meter_reader_flutter/pages/editbilllist.dart';
 import 'package:meter_reader_flutter/pages/databasepage.dart';
 import 'package:meter_reader_flutter/pages/appsettingspage.dart';
+import 'package:meter_reader_flutter/pages/notes.dart';
+import 'package:meter_reader_flutter/pages/consumer_note_details.dart';
 
 
 import 'package:provider/provider.dart';
@@ -61,6 +63,7 @@ class MyApp extends StatelessWidget {
         // '/printface': (context) => Printface(),
         '/databasepage': (context) => DatabasePage(),
         '/appsettingspage': (context) => AppSettingsPage(),
+        '/notes': (context) => NotesPage(),
       },
     );
   }

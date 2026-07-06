@@ -79,9 +79,9 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           if (_readingStats != null) _buildStatsCard(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 5),
           menuButtons(),
           const SizedBox(height: 20),
         ],
@@ -231,7 +231,7 @@ class _HomePageState extends State<HomePage> {
           iconPath: 'assets/icons/edit.svg',
           color: const Color.fromARGB(255, 28, 117, 227),
           label: 'Edit Meter Reading',
-          description: 'Modify previously saved meter readings',
+          description: 'Modify previously saved and printed meter readings',
           onTap: () => Navigator.pushNamed(context, '/editbilllist'),
         ),
         const SizedBox(height: 14),
@@ -241,8 +241,21 @@ class _HomePageState extends State<HomePage> {
           iconPath: 'assets/icons/print.svg',
           color: const Color.fromARGB(255, 28, 137, 227),
           label: 'Print Bill',
-          description: 'Print billing statements for completed readings',
+          description: 'Print billing statements for saved readings',
           onTap: () => Navigator.pushNamed(context, '/printbilllist'),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Divider(thickness: 1, height: 30),
+        ),
+        _menuButton(
+          padding: buttonPadding,
+          iconSize: iconSize,
+          iconPath: 'assets/icons/note.svg',
+          color: Colors.green,
+          label: 'Notes',
+          description: 'View and manage consumer notes',
+          onTap: () => Navigator.pushNamed(context, '/notes'),
         ),
       ],
     );

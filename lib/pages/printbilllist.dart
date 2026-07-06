@@ -261,13 +261,16 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Padding listCounter() {
     return Padding(
-      padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
-      child: Text(
-        'Count: ${_printl.length}',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Color.fromARGB(255, 33, 89, 243),
+      padding: const EdgeInsets.only(right: 15.0, bottom: 5.0),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Text(
+           'Count: ${_printl.length}',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color.fromARGB(255, 33, 89, 243),
+          ),
         ),
       ),
     );

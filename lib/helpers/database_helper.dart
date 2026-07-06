@@ -292,4 +292,16 @@ class DatabaseHelper {
         await db.rawQuery('SELECT DISTINCT ZB FROM master ORDER BY ZB ASC');
     return result.map((row) => row['ZB'].toString()).toList();
   }
+
+  Future<Map<String, dynamic>?> getConsumerByMasCode(int masCode) async {
+    final db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'master',
+      columns: ['NAME', 'ACC1', 'ZB', 'CLSSSZ'],
+      where: 'MASCODE = ?',
+      whereArgs: [masCode],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
 }

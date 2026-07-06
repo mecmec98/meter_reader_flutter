@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
+import 'package:meter_reader_flutter/helpers/notes_helper.dart';
 import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:meter_reader_flutter/models/serversettings_model.dart';
 import 'package:path_provider/path_provider.dart';
@@ -356,6 +357,7 @@ final result = await db
 
       if (!mounted) return;
       if (success) {
+        await NotesHelper().archiveAllActiveNotes();
         await widget.onRefresh();
         await _settingsHelper.addLog(type: 'download', method: 'wireless');
         widget.onDownload();

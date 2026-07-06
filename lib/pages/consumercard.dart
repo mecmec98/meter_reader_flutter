@@ -3,6 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/models/consumercard_model.dart';
 import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
+import 'package:meter_reader_flutter/helpers/notes_helper.dart';
+import 'package:meter_reader_flutter/models/consumer_note_model.dart';
+import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +30,7 @@ class _ConsumercardState extends State<Consumercard> {
   int? _newReading;
   Future<ConsumercardModel?>? _cardFuture;
   int? _rateType;
+  bool _cardInitialized = false;
 
   double? _usage;
   double? _calculatedBill;
@@ -50,6 +54,7 @@ class _ConsumercardState extends State<Consumercard> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_cardFuture != null) return;
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is int) {
       _cardId = args;
@@ -487,32 +492,34 @@ class _ConsumercardState extends State<Consumercard> {
                 return const Center(child: Text("No data found."));
               } else {
                 final card = snapshot.data!;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && _currentCard?.cardId != card.cardId) {
-                    setState(() {
-                      _currentCard = card;
-                      _rateType = card.cardRateType;
-                      String formattedDate =
-                          getFormattedReadingDate(card.cardcurrentReadingDate);
-                      String onlyTime =
-                          DateFormat('HH:mm:ss').format(DateTime.now());
-                      String datePart = formattedDate.split(' ').first;
-                      _currentReadingDate = '$datePart $onlyTime';
+                if (!_cardInitialized) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && _currentCard?.cardId != card.cardId) {
+                      setState(() {
+                        _currentCard = card;
+                        _rateType = card.cardRateType;
+                        String formattedDate =
+                            getFormattedReadingDate(card.cardcurrentReadingDate);
+                        String onlyTime =
+                            DateFormat('HH:mm:ss').format(DateTime.now());
+                        String datePart = formattedDate.split(' ').first;
+                        _currentReadingDate = '$datePart $onlyTime';
+                      });
+                    }
+                  });
+                  if (!_billUpdated && card.cardUsage != 0) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _updateBill(card, card.cardUsage);
+                      setState(() {
+                        _usage = card.cardUsage;
+                        _billUpdated = true;
+                      });
                     });
                   }
-                });
-                if (!_billUpdated && card.cardUsage != 0) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _updateBill(card, card.cardUsage);
-                    setState(() {
-                      _usage = card.cardUsage;
-                      _billUpdated = true;
-                    });
-                  });
+                  _cardInitialized = true;
                 }
                 return Column(
                   children: [
-                    const SizedBox(height: 10),
                     Center(child: ConsumerInfoCard(card: card)),
                     const SizedBox(height: 2),
                     Center(
@@ -583,11 +590,109 @@ class _ConsumercardState extends State<Consumercard> {
     );
   }
 
+  void _showNoteDialog(BuildContext context) {
+    if (_currentCard == null) return;
+    final card = _currentCard!;
+    final TextEditingController _noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.note_add_outlined, color: Colors.green.shade600, size: 22),
+            const SizedBox(width: 8),
+            const Text('Add Note', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(card.cardName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(card.cardAccno, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _noteController,
+                maxLines: 5,
+                minLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Type your note here...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.green.shade400, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final text = _noteController.text.trim();
+              if (text.isEmpty) return;
+              final prefs = await PrefsModel.fetch();
+              final note = ConsumerNoteModel(
+                masCode: card.cardMasCode,
+                noteText: text,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                readingDate: prefs?.billdate ?? '',
+                readerName: prefs?.readername ?? '',
+                zb: card.cardAccno.split('-').first,
+              );
+              await NotesHelper().insertNote(note);
+              if (!ctx.mounted) return;
+              Navigator.of(ctx).pop();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Note saved')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            icon: const Icon(Icons.save_outlined, size: 18),
+            label: const Text('Save Note'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// AppBar widget.
   AppBar cardAppBar(BuildContext context) {
     return AppBar(
       title: const Text(
-        'Water Consumer',
+        '',
         style: TextStyle(
           color: Colors.black,
           fontSize: 22,
@@ -600,7 +705,7 @@ class _ConsumercardState extends State<Consumercard> {
           Navigator.pop(context, true);
         },
         child: Container(
-          margin: const EdgeInsets.all(10),
+          margin: const EdgeInsets.all(5),
           alignment: Alignment.center,
           child: SvgPicture.asset(
             'assets/icons/arrow-left.svg',
@@ -610,6 +715,23 @@ class _ConsumercardState extends State<Consumercard> {
           ),
         ),
       ),
+      actions: [
+        GestureDetector(
+          onTap: () {
+            _showNoteDialog(context);
+          },
+          child: Container(
+            margin: const EdgeInsets.all(10),
+            alignment: Alignment.center,
+            child: SvgPicture.asset(
+              'assets/icons/note.svg',
+              height: 25,
+              width: 25,
+              colorFilter: const ColorFilter.mode(Colors.green, BlendMode.srcIn),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
