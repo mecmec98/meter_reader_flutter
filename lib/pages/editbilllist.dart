@@ -166,7 +166,7 @@ class _PrintEditListState extends State<PrintEditList> {
           SizedBox(
             height: 2.0,
           ),
-          //listCounter(),
+          listCounter(),
           Expanded(
             child: editmetterlist(),
           ),
@@ -233,27 +233,29 @@ class _PrintEditListState extends State<PrintEditList> {
 
   AppBar editAppbar(BuildContext context) {
     return AppBar(
+      backgroundColor: const Color.fromARGB(255, 28, 117, 227),
+      leadingWidth: 40,
       title: Text(
         'Edit Meter Reading',
         style: TextStyle(
-          color: Colors.black,
+          color: Colors.white,
           fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
       ),
-      centerTitle: true,
+      centerTitle: false,
       leading: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(context, '/');
+          Navigator.pop(context);
         },
         child: Container(
-          margin: EdgeInsets.all(10),
+          margin: EdgeInsets.only(left: 8),
           alignment: Alignment.center,
           child: SvgPicture.asset(
             'assets/icons/arrow-left.svg',
             height: 25,
             width: 25,
-            colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
       ),
@@ -262,13 +264,16 @@ class _PrintEditListState extends State<PrintEditList> {
 
   Padding listCounter() {
     return Padding(
-      padding: const EdgeInsets.only(left: 15.0, bottom: 5.0),
-      child: Text(
-        'Count: ${_printl.length}',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Color.fromARGB(255, 33, 89, 243),
+      padding: const EdgeInsets.only(right: 15.0, bottom: 5.0),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Text(
+          'Count: ${_printl.length}',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color.fromARGB(255, 33, 89, 243),
+          ),
         ),
       ),
     );

@@ -36,20 +36,57 @@ class CurrentReadingInfo extends StatelessWidget {
             value: reader,
             showDivider: true,
           ),
-          _ChipsRow(
-            icon: Icons.location_on_outlined,
-            label: 'Zone',
-            items: zone,
-            showDivider: true,
-          ),
-          _ChipsRow(
-            icon: Icons.menu_book_outlined,
-            label: 'Book',
-            items: book,
-            showDivider: false,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                Expanded(child: _buildChipColumn(Icons.location_on_outlined, 'Zone', zone)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildChipColumn(Icons.menu_book_outlined, 'Book', book)),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+  Widget _buildChipColumn(IconData icon, String label, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.blue),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        items.isEmpty
+            ? const Text('--', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87))
+            : Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: items
+                    .map((item) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3F2FD),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+      ],
     );
   }
 }
@@ -103,85 +140,6 @@ class _InfoRow extends StatelessWidget {
         ),
         if (showDivider)
           const Divider(height: 1, thickness: 0.5, indent: 14, endIndent: 14),
-      ],
-    );
-  }
-}
-
-class _ChipsRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final List<String> items;
-  final bool showDivider;
-
-  const _ChipsRow({
-    required this.icon,
-    required this.label,
-    required this.items,
-    required this.showDivider,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: Colors.blue),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  items.isEmpty
-                      ? const Text(
-                          '--',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        )
-                      : Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: items.map((item) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE3F2FD),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Colors.blue
-                                      .withOpacity(0.3)),
-                            ),
-                            child: Text(
-                              item,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color:Color(0xFF1565C0),
-                              ),
-                            ),
-                          )).toList(),
-                        ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          const Divider(height: 1, thickness: 0.5, indent: 14),
       ],
     );
   }

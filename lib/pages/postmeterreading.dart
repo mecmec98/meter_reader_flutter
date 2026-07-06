@@ -239,27 +239,29 @@ class _PostmeterreadingState extends State<Postmeterreading> {
 
   AppBar postAppbar(BuildContext context) {
     return AppBar(
+      backgroundColor: const Color.fromARGB(255, 28, 85, 227),
+      leadingWidth: 40,
       title: const Text(
         'Post Meter Reading',
         style: TextStyle(
-          color: Colors.black,
+          color: Colors.white,
           fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
       ),
-      centerTitle: true,
+      centerTitle: false,
       leading: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(context, '/');
+          Navigator.pop(context);
         },
         child: Container(
-          margin: const EdgeInsets.all(10),
+          margin: const EdgeInsets.only(left: 8),
           alignment: Alignment.center,
           child: SvgPicture.asset(
             'assets/icons/arrow-left.svg',
             height: 25,
             width: 25,
-            colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
       ),
