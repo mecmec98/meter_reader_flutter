@@ -23,13 +23,14 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
 
     // Auto-clean logs older than 1 year on every init
     await _clearOldLogs(db);
+    await db.delete('features', where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
     return db;
   }
 
@@ -113,6 +114,11 @@ class AppSettingsHelper {
         'label': 'Disconnection List',
         'enabled': 0,
       });
+    }
+
+    if (oldVersion < 5) {
+      await db.delete('features',
+          where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
     }
   }
 

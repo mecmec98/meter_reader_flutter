@@ -393,10 +393,11 @@ class _HomePageState extends State<HomePage> {
           onTap: () async {
             final granted = await showPinDialog(context);
             if (granted && context.mounted) {
-              Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AppSettingsPage()),
               );
+              if (context.mounted) _loadFeatureFlags();
             }
           },
           child: Container(
