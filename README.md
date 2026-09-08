@@ -13,7 +13,7 @@ The app is compatible with the legacy **LWUA BCWIN/MRDBA** system and works with
 - **Print Bill** — Send billing statements to Bluetooth thermal printers using ESC/POS commands
 - **Database Management** — Import/export databases manually via the file picker, or transfer wirelessly via HTTP to a companion server
 - **Reading Progress** — Track completed versus remaining readings directly on the home screen
-- **Consumer Notes** — Attach field notes to consumer accounts
+- **Consumer Notes** — Attach field notes to consumer accountsvb n
 - **PIN-Protected Settings** — Secured app configuration access
 
 ---

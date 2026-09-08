@@ -33,7 +33,6 @@ void main() async {
   //   svg.cache.putIfAbsent(menuLoader.cacheKey(null), () => menuLoader.loadBytes(null)),
   // ]);
 
-
   runApp(
     MultiProvider(
       providers: [
@@ -64,8 +63,10 @@ class MyApp extends StatelessWidget {
         '/databasepage': (context) => DatabasePage(),
         '/appsettingspage': (context) => AppSettingsPage(),
         '/notes': (context) => NotesPage(),
+        '/disconnectionlist': (context) => const Scaffold(body: Center(child: Text('Disconnection List'))),
       },
     );
   }
 }
+
 

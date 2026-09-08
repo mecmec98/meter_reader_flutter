@@ -275,7 +275,7 @@ class _HomePageState extends State<HomePage> {
             color: Colors.red,
             label: 'Disconnection List',
             description: 'View consumers for disconnection',
-            onTap: () {},
+            onTap: () => Navigator.pushNamed(context, '/disconnectionlist'),
           ),
         ],
       ],
