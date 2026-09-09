@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'databasepage/currentreadinginfo.dart';
 import 'databasepage/wirelesstransfer.dart';
 import 'databasepage/manualtransfer.dart';
+import 'databasepage/disconnection_import.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:meter_reader_flutter/models/prefs_model.dart';
@@ -31,6 +32,9 @@ class _DatabasePageState extends State<DatabasePage> {
   bool manualDownloaded = false;
   String? manualUploadTime;
   String? manualDownloadTime;
+
+  bool disconnectionImported = false;
+  String? disconnectionImportTime;
 
   @override
   void initState() {
@@ -117,6 +121,14 @@ class _DatabasePageState extends State<DatabasePage> {
     });
   }
 
+  void _handleDisconnectionImport() {
+    final time = TimeOfDay.now().format(context);
+    setState(() {
+      disconnectionImported = true;
+      disconnectionImportTime = time;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,6 +177,14 @@ class _DatabasePageState extends State<DatabasePage> {
               downloaded: manualDownloaded,
               uploadTime: manualUploadTime,
               downloadTime: manualDownloadTime,
+            ),
+            const SizedBox(height: 12),
+            const SectionLabel(label: 'Disconnection'),
+            const SizedBox(height: 8),
+            DisconnectionImport(
+              onImported: _handleDisconnectionImport,
+              imported: disconnectionImported,
+              importTime: disconnectionImportTime,
             ),
           ],
         ),

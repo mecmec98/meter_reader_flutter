@@ -120,33 +120,53 @@ class _PrintbillListState extends State<PrintbillList> {
       },
       child: Card(
         color: tileColor,
-        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        margin: const EdgeInsets.only(bottom: 8, left: 4, right: 4),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: Colors.black.withOpacity(0.08)),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                printl.printName,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      printl.printName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                printl.printMeterno,
-                style: TextStyle(
-                    color: Color.fromARGB(255, 33, 89, 243),
-                    fontSize: 19,
-                    fontWeight: FontWeight.w500),
-              ),
-              Text(
-                printl.printAddress,
-                style: TextStyle(
-                  color: Colors.blueGrey,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      printl.printAddress,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    printl.printMeterno,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -160,16 +180,19 @@ class _PrintbillListState extends State<PrintbillList> {
     return Scaffold(
       appBar: printAppbar(context),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          searchBar(),
-          SizedBox(
-            height: 5.0,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Column(
+              children: [
+                listCounter(),
+                const SizedBox(height: 8),
+                searchBar(),
+              ],
+            ),
           ),
-          listCounter(),
-          Expanded(
-            child: printMeterLists(),
-          ),
+          const SizedBox(height: 8),
+          Expanded(child: printMeterLists()),
         ],
       ),
     );
@@ -179,6 +202,7 @@ class _PrintbillListState extends State<PrintbillList> {
     return ListView.builder(
       shrinkWrap: true,
       controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       itemCount: _printl.length + 1, // add one for the loading indicator
       itemBuilder: (context, index) {
         if (index < _printl.length) {
@@ -198,30 +222,32 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Container searchBar() {
     return Container(
-      margin: const EdgeInsets.only(top: 15, bottom: 12, left: 15, right: 15),
-      decoration: BoxDecoration(boxShadow: [
-        BoxShadow(
-          color: Color.fromARGB(255, 230, 223, 223),
-          blurRadius: 8,
-          spreadRadius: 0.0,
-        )
-      ]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withOpacity(0.08)),
+      ),
       child: TextField(
         decoration: InputDecoration(
-          hintText: 'Search',
-          hintStyle: TextStyle(color: Color.fromARGB(255, 195, 186, 186)),
+          hintText: 'Search by name, account no, meter no, or address',
+          hintStyle: const TextStyle(
+            color: Color.fromARGB(255, 195, 186, 186),
+            fontSize: 13,
+          ),
           filled: true,
           fillColor: Colors.white,
           prefixIcon: Padding(
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(10),
             child: SvgPicture.asset(
               'assets/icons/search.svg',
               colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
             ),
           ),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(5),
-              borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
         onChanged: (value) {
           _searchData(value);
@@ -232,23 +258,19 @@ class _PrintbillListState extends State<PrintbillList> {
 
   AppBar printAppbar(BuildContext context) {
     return AppBar(
-      backgroundColor: const Color.fromARGB(255, 28, 137, 227),
-      leadingWidth: 40,
-      title: Text(
+      backgroundColor: const Color.fromARGB(255, 28, 85, 227),
+      foregroundColor: Colors.white,
+      title: const Text(
         'Print Bill',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w500),
       ),
-      centerTitle: false,
+      elevation: 0,
       leading: GestureDetector(
         onTap: () {
           Navigator.pop(context);
         },
         child: Container(
-          margin: EdgeInsets.only(left: 8),
+          margin: const EdgeInsets.only(left: 8),
           alignment: Alignment.center,
           child: SvgPicture.asset(
             'assets/icons/arrow-left.svg',
@@ -263,16 +285,29 @@ class _PrintbillListState extends State<PrintbillList> {
 
   Padding listCounter() {
     return Padding(
-      padding: const EdgeInsets.only(right: 15.0, bottom: 5.0),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Text(
-           'Count: ${_printl.length}',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color.fromARGB(255, 33, 89, 243),
-          ),
+      padding: const EdgeInsets.only(top: 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.receipt_long_outlined,
+                size: 18, color: Colors.blue),
+            const SizedBox(width: 10),
+            Text(
+              '${_printl.length} Not Printed Bills',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue.shade700,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,8 @@
 //import 'package:meter_reader_flutter/pages/sample.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 
 import 'package:meter_reader_flutter/pages/home.dart';
@@ -12,6 +14,7 @@ import 'package:meter_reader_flutter/pages/databasepage.dart';
 import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 import 'package:meter_reader_flutter/pages/notes.dart';
 import 'package:meter_reader_flutter/pages/consumer_note_details.dart';
+import 'package:meter_reader_flutter/pages/disconnectionlist.dart';
 
 
 import 'package:provider/provider.dart';
@@ -21,8 +24,16 @@ import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.macOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
   // Precache SVG assets
-  // WidgetsFlutterBinding.ensureInitialized();
   // 
   // 
   // final svgLoader = SvgAssetLoader('assets/icons/print.svg');
@@ -63,7 +74,7 @@ class MyApp extends StatelessWidget {
         '/databasepage': (context) => DatabasePage(),
         '/appsettingspage': (context) => AppSettingsPage(),
         '/notes': (context) => NotesPage(),
-        '/disconnectionlist': (context) => const Scaffold(body: Center(child: Text('Disconnection List'))),
+        '/disconnectionlist': (context) => DisconnectionList(),
       },
     );
   }

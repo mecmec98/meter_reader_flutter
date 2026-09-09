@@ -19,6 +19,7 @@ dependencies:
   
   # Database
   sqflite: ^2.4.1
+  sqflite_common_ffi: ^2.3.2
   path_provider: ^2.1.5 
   path: ^1.9.0
   
@@ -52,7 +53,6 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
-  sqflite_common_ffi: ^2.3.2
   flutter_native_splash: ^2.4.6 
   flutter_launcher_icons: ^0.14.4
 

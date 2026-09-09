@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:image/image.dart' as img;
+import 'package:meter_reader_flutter/models/disconnection_model.dart';
 
 class BluePrinterHelper extends ChangeNotifier {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
@@ -192,6 +193,115 @@ class BluePrinterHelper extends ChangeNotifier {
     _reconnectionTimer?.cancel();
     _healthCheckTimer?.cancel();
     super.dispose();
+  }
+
+//Disconnection Print
+  Future<void> printDisconnection(DisconnectionModel item) async {
+    if (selectedDevice == null) {
+      connectionStatus = 'No device selected';
+      notifyListeners();
+      throw Exception('No printer device selected');
+    }
+
+    final actuallyConnected = await bluetooth.isConnected ?? false;
+    if (!actuallyConnected && connected) {
+      connected = false;
+      connectionStatus = 'Disconnected - Attempting to reconnect...';
+      notifyListeners();
+      await _attemptReconnection();
+    }
+
+    try {
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(PaperSize.mm58, profile);
+      List<int> bytes = [];
+
+      bytes += generator.feed(2);
+      try {
+        final data = await rootBundle.load('assets/icons/receiptlogo.png');
+        final imageBytes = data.buffer.asUint8List();
+        final logo = img.decodeImage(imageBytes);
+        if (logo != null) {
+          bytes += generator.image(logo, align: PosAlign.center);
+        }
+      } catch (e) {
+        print('Error loading logo: $e');
+      }
+
+      bytes += generator.text(
+        'Dapitan City Water District',
+        styles: PosStyles(align: PosAlign.center, bold: true),
+      );
+
+      bytes += generator.feed(1);
+      bytes += generator.text(
+        'DISCONNECTION',
+        styles: PosStyles(
+          align: PosAlign.center,
+          height: PosTextSize.size2,
+          width: PosTextSize.size2,
+          bold: true,
+        ),
+      );
+      bytes += generator.text(
+        'NOTICE',
+        styles: PosStyles(
+          align: PosAlign.center,
+          height: PosTextSize.size2,
+          width: PosTextSize.size2,
+          bold: true,
+        ),
+      );
+      bytes += generator.hr();
+      bytes += generator.text(
+          'Printed: ${DateFormat('MM/dd/yyyy HH:mm').format(DateTime.now())}');
+      bytes += generator.text('Account No.: ${item.accNo}');
+      bytes +=
+          generator.text('Name: ${item.name}', styles: PosStyles(bold: true));
+      bytes += generator.text('Address: ${item.address}');
+      bytes += generator.hr();
+      bytes += generator.text('Meter No.: ${item.metNo}');
+      bytes += generator.text('Meter Brand: ${item.brand}');
+      bytes += generator.text('Meter Status: ${item.metStat}');
+      bytes += generator.text('Last Reading: ${item.lrdg}');
+      bytes += generator.text('Disconnection Reading: ${item.disconReading}');
+
+      bytes += generator.text('Months Overdue: ${item.months}');
+      bytes += generator.hr();
+
+      bytes += generator.row([
+        PosColumn(
+          text: 'OUTSTANDING BALANCE',
+          width: 8,
+          styles: PosStyles(bold: true, height: PosTextSize.size2),
+        ),
+        PosColumn(
+          text: item.balance.toStringAsFixed(2),
+          width: 4,
+          styles: PosStyles(
+              align: PosAlign.right, bold: true, height: PosTextSize.size2),
+        ),
+      ]);
+      bytes += generator.hr();
+      bytes += generator.text('Disconnection Date: ${item.disconDate}',
+          styles: PosStyles(bold: true));
+      bytes += generator.text('Remarks: ${item.remarks}');
+      bytes += generator.hr();
+      bytes += generator.text(
+        'Please settle the outstanding   balance to restore your water   service.',
+        styles: PosStyles(align: PosAlign.center),
+      );
+      bytes += generator.feed(2);
+      bytes += generator.cut();
+
+      await bluetooth.writeBytes(Uint8List.fromList(bytes));
+    } catch (e) {
+      connected = false;
+      connectionStatus = 'Print failed - Attempting to reconnect...';
+      notifyListeners();
+      await _attemptReconnection();
+      throw Exception('Printer disconnected or error during print: $e');
+    }
   }
 
   Future<void> printReceipt(
