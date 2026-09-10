@@ -231,7 +231,10 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 85, 227),
           label: 'Post Meter Reading',
           description: 'Record new meter readings for consumers',
-          onTap: () => Navigator.pushNamed(context, '/postmeterreading'),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/postmeterreading');
+            if (mounted) await _loadReadingStats();
+          },
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -241,7 +244,10 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 117, 227),
           label: 'Edit Meter Reading',
           description: 'Modify previously saved and printed meter readings',
-          onTap: () => Navigator.pushNamed(context, '/editbilllist'),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/editbilllist');
+            if (mounted) await _loadReadingStats();
+          },
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -251,7 +257,10 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 137, 227),
           label: 'Print Bill',
           description: 'Print billing statements for saved readings',
-          onTap: () => Navigator.pushNamed(context, '/printbilllist'),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/printbilllist');
+            if (mounted) await _loadReadingStats();
+          },
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
