@@ -20,6 +20,7 @@ class NoticeModel {
   final String remarks;
   final String disconDate;
   final String optionType;
+  final String? printedAt;
 
   NoticeModel({
     this.id,
@@ -43,12 +44,14 @@ class NoticeModel {
     required this.remarks,
     required this.disconDate,
     required this.optionType,
+    this.printedAt,
   });
 
   NoticeModel copyWith({
     int? disconReading,
     String? metStat,
     String? remarks,
+    String? printedAt,
   }) {
     return NoticeModel(
       id: id,
@@ -72,6 +75,7 @@ class NoticeModel {
       remarks: remarks ?? this.remarks,
       disconDate: disconDate,
       optionType: optionType,
+      printedAt: printedAt ?? this.printedAt,
     );
   }
 
@@ -104,6 +108,7 @@ class NoticeModel {
       remarks: (map['REMARKS'] ?? map['remarks']) as String,
       disconDate: _dateOnly(map['DISCONDATE'] ?? map['discon_date']) ?? '',
       optionType: (map['OPTIONTYPE'] ?? map['option_type']) as String,
+      printedAt: map['printed_at'] as String?,
     );
   }
 
@@ -130,6 +135,7 @@ class NoticeModel {
       'remarks': remarks,
       'discon_date': disconDate,
       'option_type': optionType,
+      'printed_at': printedAt,
     };
   }
 }

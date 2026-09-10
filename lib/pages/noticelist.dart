@@ -190,13 +190,14 @@ class _NoticeListState extends State<NoticeList> {
               : const Color.fromARGB(255, 255, 249, 239);
           return InkWell(
             borderRadius: BorderRadius.circular(10),
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => NoticeDetailsPage(item: item),
                 ),
               );
+              if (mounted) await _loadData();
             },
             child: Card(
               color: tileColor,
@@ -239,6 +240,19 @@ class _NoticeListState extends State<NoticeList> {
                           ),
                         ),
                       ),
+                      if (item.printedAt != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(Icons.check,
+                              size: 14, color: Color(0xFF2E7D32)),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),

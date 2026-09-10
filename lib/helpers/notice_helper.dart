@@ -27,7 +27,7 @@ class NoticeHelper {
     final path = await getDatabasePath();
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notices (
@@ -51,12 +51,17 @@ class NoticeHelper {
             discon_reading INTEGER NOT NULL,
             remarks TEXT NOT NULL,
             discon_date TEXT NOT NULL,
-            option_type TEXT NOT NULL
+            option_type TEXT NOT NULL,
+            printed_at TEXT
           )
         ''');
         await db.execute('CREATE UNIQUE INDEX idx_notice_acc_no ON notices(acc_no)');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {},
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE notices ADD COLUMN printed_at TEXT');
+        }
+      },
     );
   }
 
@@ -79,6 +84,16 @@ class NoticeHelper {
     );
   }
 
+  Future<int> markNoticePrinted(String accNo) async {
+    final db = await database;
+    return db.update(
+      'notices',
+      {'printed_at': DateTime.now().toIso8601String()},
+      where: 'acc_no = ?',
+      whereArgs: [accNo],
+    );
+  }
+
   Future<List<NoticeModel>> getAllNotices() async {
     final db = await database;
     final rows = await db.query('notices', orderBy: 'name ASC');
@@ -90,14 +105,15 @@ class NoticeHelper {
     var count = 0;
     await db.transaction((txn) async {
       for (final item in items) {
+        final values = item.toMap()..remove('printed_at');
         final updated = await txn.update(
           'notices',
-          item.toMap(),
+          values,
           where: 'acc_no = ?',
           whereArgs: [item.accNo],
         );
         if (updated == 0) {
-          await txn.insert('notices', item.toMap());
+          await txn.insert('notices', values);
         }
         count++;
       }

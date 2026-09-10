@@ -262,9 +262,6 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.hr();
       bytes += generator.text('Meter No.: ${item.metNo}');
       bytes += generator.text('Meter Brand: ${item.brand}');
-      bytes += generator.text('Meter Status: ${item.metStat}');
-      bytes += generator.text('Last Reading: ${item.lrdg}');
-      bytes += generator.text('Disconnection Reading: ${item.disconReading}');
 
       bytes += generator.text('Months Overdue: ${item.months}');
       bytes += generator.hr();
@@ -285,10 +282,9 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.hr();
       bytes += generator.text('Disconnection Date: ${item.disconDate}',
           styles: PosStyles(bold: true));
-      bytes += generator.text('Remarks: ${item.remarks}');
       bytes += generator.hr();
       bytes += generator.text(
-        'Please settle the outstanding   balance to restore your water   service.',
+        'Please settle the outstanding   balance to maintain your water   service.',
         styles: PosStyles(align: PosAlign.center),
       );
       bytes += generator.feed(2);

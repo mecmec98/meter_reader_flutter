@@ -86,42 +86,22 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
               children: [
                 _buildDetailRow('Notice Date', _editedItem.disconDate,
                     valueColor: Colors.orange.shade800),
+                if (_editedItem.printedAt != null)
+                  _buildDetailRow(
+                    'Printed',
+                    _editedItem.printedAt!.replaceFirst('T', ' '),
+                    valueColor: const Color(0xFF2E7D32),
+                  ),
                 _buildDetailRow('Months Overdue', _editedItem.months.toString(),
                     valueColor: Colors.orange.shade800),
                 _buildDetailRow('Last Reading', _editedItem.lrdg.toString()),
-                const SizedBox(height: 4),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-                _buildInputField(
-                  controller: _readingController,
-                  label: 'Disconnection Reading',
-                  keyboardType: TextInputType.number,
-                ),
-                _buildDropdown(),
-                _buildInputField(
-                  controller: _remarksController,
-                  label: 'Remarks',
-                  maxLines: 3,
-                ),
                 const SizedBox(height: 8),
+                const Divider(height: 1),
+                 const SizedBox(height: 8),
+               
                 Row(
                   children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _saveDetails(context),
-                        icon: const Icon(Icons.save_outlined, size: 18),
-                        label: const Text('Save'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
+                    
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _printNotice(context),
@@ -274,54 +254,6 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
 
   String _formatAmount(double amount) => '₱${amount.toStringAsFixed(2)}';
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: const Color(0xFFF8F8F8),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdown() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: DropdownButtonFormField<String>(
-        initialValue: _meterStatus,
-        decoration: InputDecoration(
-          labelText: 'Meter Status',
-          filled: true,
-          fillColor: const Color(0xFFF8F8F8),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-        items: _meterStatuses
-            .map((status) =>
-                DropdownMenuItem(value: status, child: Text(status)))
-            .toList(),
-        onChanged: (status) {
-          if (status != null) setState(() => _meterStatus = status);
-        },
-      ),
-    );
-  }
-
   void _updateEditedItem() {
     final reading = int.tryParse(_readingController.text.trim());
     _editedItem = _editedItem.copyWith(
@@ -331,14 +263,6 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
     );
   }
 
-  Future<void> _saveDetails(BuildContext context) async {
-    _updateEditedItem();
-    await NoticeHelper().updateNoticeDetails(_editedItem);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notice details saved')),
-    );
-  }
 
   Future<void> _printNotice(BuildContext context) async {
     try {
@@ -347,6 +271,10 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
       await context
           .read<BluePrinterHelper>()
           .printDisconnection(_asDisconnection(_editedItem));
+      await NoticeHelper().markNoticePrinted(_editedItem.accNo);
+      _editedItem = _editedItem.copyWith(
+        printedAt: DateTime.now().toIso8601String(),
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Details saved and notice printed')),
