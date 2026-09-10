@@ -15,6 +15,7 @@ import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 import 'package:meter_reader_flutter/pages/notes.dart';
 import 'package:meter_reader_flutter/pages/consumer_note_details.dart';
 import 'package:meter_reader_flutter/pages/disconnectionlist.dart';
+import 'package:meter_reader_flutter/pages/noticelist.dart';
 
 
 import 'package:provider/provider.dart';
@@ -75,6 +76,7 @@ class MyApp extends StatelessWidget {
         '/appsettingspage': (context) => AppSettingsPage(),
         '/notes': (context) => NotesPage(),
         '/disconnectionlist': (context) => DisconnectionList(),
+        '/noticelist': (context) => NoticeList(),
       },
     );
   }

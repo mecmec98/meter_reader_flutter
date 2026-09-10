@@ -94,7 +94,7 @@ class _DisconnectionImportState extends State<DisconnectionImport> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    color: Colors.red,
                   ),
                 ),
                 const Spacer(),

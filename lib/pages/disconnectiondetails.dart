@@ -122,21 +122,6 @@ class _DisconnectionDetailsPageState extends State<DisconnectionDetailsPage> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _printDisconnection(context),
-                        icon: const Icon(Icons.print_outlined, size: 18),
-                        label: const Text('Print Notice'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),

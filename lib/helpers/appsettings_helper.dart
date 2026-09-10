@@ -23,7 +23,7 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -76,6 +76,13 @@ class AppSettingsHelper {
       'server_ip': '192.168.1.188',
       'server_port': 8765,
     });
+
+    await db.execute('''
+      CREATE TABLE app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL DEFAULT ''
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -119,6 +126,15 @@ class AppSettingsHelper {
     if (oldVersion < 5) {
       await db.delete('features',
           where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
+    }
+
+    if (oldVersion < 6) {
+      await db.execute('''
+        CREATE TABLE app_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL DEFAULT ''
+        )
+      ''');
     }
   }
 
@@ -252,6 +268,27 @@ class AppSettingsHelper {
       {'server_ip': ip, 'server_port': port},
       where: 'id = ?',
       whereArgs: [1],
+    );
+  }
+
+  Future<String> getAssignedPerson() async {
+    final db = await database;
+    final rows = await db.query(
+      'app_settings',
+      columns: ['value'],
+      where: 'key = ?',
+      whereArgs: ['assigned_person'],
+      limit: 1,
+    );
+    return rows.isEmpty ? '' : rows.first['value'] as String;
+  }
+
+  Future<void> saveAssignedPerson(String person) async {
+    final db = await database;
+    await db.insert(
+      'app_settings',
+      {'key': 'assigned_person', 'value': person.trim()},
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 }
