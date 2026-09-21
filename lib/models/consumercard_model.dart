@@ -147,7 +147,7 @@ class ConsumercardModel {
       cardTotaladd: 0, // Set default; update if needed.
       cardUsage: map['USAGE'] != null ? (map['USAGE'] as num).toDouble() : 0.0,
       cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
-      cardRateType: map['RATETYPE'] is int? map['RATETYPE'] as int : 0,
+      cardRateType: map['RATETYPE'] is int ? map['RATETYPE'] as int : 0,
       cardMasCode: map['MASCODE'] is int ? map['MASCODE'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',

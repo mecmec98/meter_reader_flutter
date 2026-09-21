@@ -23,7 +23,7 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -48,6 +48,16 @@ class AppSettingsHelper {
     await db.insert('features', {
       'key': 'feature_disconnection_list',
       'label': 'Disconnection List',
+      'enabled': 0,
+    });
+    await db.insert('features', {
+      'key': 'feature_ftax',
+      'label': 'Franchise Tax',
+      'enabled': 0,
+    });
+    await db.insert('features', {
+      'key': 'feature_penalty',
+      'label': 'Penalty',
       'enabled': 0,
     });
 
@@ -135,6 +145,19 @@ class AppSettingsHelper {
           value TEXT NOT NULL DEFAULT ''
         )
       ''');
+    }
+
+    if (oldVersion < 7) {
+      await db.insert('features', {
+        'key': 'feature_ftax',
+        'label': 'Franchise Tax',
+        'enabled': 0,
+      });
+      await db.insert('features', {
+        'key': 'feature_penalty',
+        'label': 'Penalty',
+        'enabled': 0,
+      });
     }
   }
 

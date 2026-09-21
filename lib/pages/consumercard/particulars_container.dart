@@ -9,8 +9,8 @@ class ParticularsContainer extends StatelessWidget {
   final double? calculatedSCDisc;
   final double? flatbill;
   final double? totalFlatbill;
-
-  final bool ftaxActivate = true;
+  final bool ftaxActivate;
+  final bool penaltyActivate;
   const ParticularsContainer(
       {super.key,
       required this.card,
@@ -18,6 +18,8 @@ class ParticularsContainer extends StatelessWidget {
       required this.beforeDatecalculation,
       required this.afterDatecalculation,
       required this.calculatedSCDisc,
+      required this.ftaxActivate,
+      required this.penaltyActivate,
       required this.flatbill,
       required this.totalFlatbill});
 
@@ -128,15 +130,17 @@ class ParticularsContainer extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
-            const Divider(color: Colors.grey, thickness: 0.5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Penalty', style: TextStyle(color: Colors.red)),
-                Text('${card.prefsPenper.toStringAsFixed(0)}%',
-                    style: TextStyle(fontWeight: FontWeight.w400)),
-              ],
-            ),
+            if (penaltyActivate) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Penalty', style: TextStyle(color: Colors.red)),
+                  Text('${card.prefsPenper.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w400)),
+                ],
+              ),
+            ],
             const Divider(color: Colors.grey, thickness: 0.5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

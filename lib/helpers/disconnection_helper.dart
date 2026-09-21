@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -53,7 +54,8 @@ class DisconnectionHelper {
             option_type TEXT NOT NULL
           )
         ''');
-        await db.execute('CREATE UNIQUE INDEX idx_discon_acc_no ON disconnections(acc_no)');
+        await db.execute(
+            'CREATE UNIQUE INDEX idx_discon_acc_no ON disconnections(acc_no)');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         // future migrations here
@@ -84,6 +86,24 @@ class DisconnectionHelper {
     final db = await database;
     final rows = await db.query('disconnections', orderBy: 'name ASC');
     return rows.map((row) => DisconnectionModel.fromMap(row)).toList();
+  }
+
+  Future<String> exportDisconnections() async {
+    final items = await getAllDisconnections();
+    final now = DateTime.now();
+    final timestamp =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}-${now.second.toString().padLeft(2, '0')}';
+    final fileName = 'Disconnect-$timestamp.json';
+    final downloadsDirectory = Directory('/storage/emulated/0/Download');
+
+    await downloadsDirectory.create(recursive: true);
+    final file = File(join(downloadsDirectory.path, fileName));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(
+        items.map((item) => item.toMap()).toList(),
+      ),
+    );
+    return file.path;
   }
 
   Future<int> upsertDisconnections(List<DisconnectionModel> items) async {

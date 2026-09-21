@@ -1,26 +1,121 @@
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 
+class BillTier {
+  final String label;
+  final double amount;
+  final int units;
+  final double ratePerUnit;
+
+  const BillTier({
+    required this.label,
+    required this.amount,
+    required this.units,
+    required this.ratePerUnit,
+  });
+}
+
+class BillBreakdown {
+  final double total;
+  final List<BillTier> tiers;
+
+  const BillBreakdown({required this.total, required this.tiers});
+}
+
 class CalculatebillHelper {
-  static Future<double> calculateBill(String clsssz, int usage) async {
-    // Validate that CSSSZ has at least 3 characters.
+  static BillBreakdown calculateBillBreakdownFromRates({
+    required double minCharge,
+    required double bulk1,
+    required double bulk2,
+    required double bulk3,
+    required double bulk4,
+    required int usage,
+  }) {
+    final tiers = <BillTier>[];
+    double total = 0;
+
+    const firstBlockLimit = 10;
+    const secondBlockLimit = 20;
+    const thirdBlockLimit = 30;
+    const fourthBlockLimit = 40;
+
+    final minAmount = minCharge / 100;
+    total += minAmount;
+    tiers.add(BillTier(
+      label: 'Minimum',
+      amount: minAmount,
+      units: 0,
+      ratePerUnit: 0,
+    ));
+
+    if (usage > firstBlockLimit) {
+      final secondBlockUnits =
+          (usage > secondBlockLimit ? secondBlockLimit : usage) - firstBlockLimit;
+      final secondBlockAmount = (bulk1 / 100) * secondBlockUnits;
+      total += secondBlockAmount;
+      tiers.add(BillTier(
+        label: '11-20m3',
+        amount: secondBlockAmount,
+        units: secondBlockUnits,
+        ratePerUnit: bulk1 / 100,
+      ));
+    }
+
+    if (usage > secondBlockLimit) {
+      final thirdBlockUnits =
+          (usage > thirdBlockLimit ? thirdBlockLimit : usage) - secondBlockLimit;
+      final thirdBlockAmount = (bulk2 / 100) * thirdBlockUnits;
+      total += thirdBlockAmount;
+      tiers.add(BillTier(
+        label: '21-30m3',
+        amount: thirdBlockAmount,
+        units: thirdBlockUnits,
+        ratePerUnit: bulk2 / 100,
+      ));
+    }
+
+    if (usage > thirdBlockLimit) {
+      final fourthBlockUnits =
+          (usage > fourthBlockLimit ? fourthBlockLimit : usage) - thirdBlockLimit;
+      final fourthBlockAmount = (bulk3 / 100) * fourthBlockUnits;
+      total += fourthBlockAmount;
+      tiers.add(BillTier(
+        label: '31-40m3',
+        amount: fourthBlockAmount,
+        units: fourthBlockUnits,
+        ratePerUnit: bulk3 / 100,
+      ));
+    }
+
+    if (usage > fourthBlockLimit) {
+      final remainingUnits = usage - fourthBlockLimit;
+      final remainingAmount = (bulk4 / 100) * remainingUnits;
+      total += remainingAmount;
+      tiers.add(BillTier(
+        label: '41+m3',
+        amount: remainingAmount,
+        units: remainingUnits,
+        ratePerUnit: bulk4 / 100,
+      ));
+    }
+
+    return BillBreakdown(total: total, tiers: tiers);
+  }
+
+  static Future<BillBreakdown> calculateBillBreakdown(
+      String clsssz, int usage) async {
     if (clsssz.length < 3) {
       throw Exception("Invalid CSSSZ code: $clsssz");
     }
 
-    // 1. Extract the row identifier from the first two characters.
-    int codePrefix = int.parse(clsssz.substring(0, 2)); // e.g., "102" -> 10
+    int codePrefix = int.parse(clsssz.substring(0, 2));
+    String suffix = clsssz.substring(2, 3);
 
-    // 2. Use the last character as the suffix.
-    String suffix = clsssz.substring(2, 3); // e.g., "102" -> "2"
+    String minCol = "MIN$suffix";
+    String bulk1Col = "BULK1$suffix";
+    String bulk2Col = "BULK2$suffix";
+    String bulk3Col = "BULK3$suffix";
+    String bulk4Col = "BULK4$suffix";
 
-    // 3. Build the dynamic column names.
-    String minCol = "MIN$suffix"; // e.g., MIN2
-    String bulk1Col = "BULK1$suffix"; // e.g., BULK12
-    String bulk2Col = "BULK2$suffix"; // e.g., BULK22
-    String bulk3Col = "BULK3$suffix"; // e.g., BULK32
-    String bulk4Col = "BULK4$suffix"; // e.g., BULK32
-
-    // 4. Query the rates table for the row with CODE = codePrefix.
     final db = await DatabaseHelper().database;
     List<Map<String, dynamic>> result = await db.query(
       'rates',
@@ -41,43 +136,19 @@ class CalculatebillHelper {
     double bulk3 = (rates[bulk3Col] as num).toDouble();
     double bulk4 = (rates[bulk4Col] as num).toDouble();
 
-    double finalValue = 0.0;
+    return calculateBillBreakdownFromRates(
+      minCharge: minCharge,
+      bulk1: bulk1,
+      bulk2: bulk2,
+      bulk3: bulk3,
+      bulk4: bulk4,
+      usage: usage,
+    );
+  }
 
-    // 5. Calculate the final bill based on the usage.
-    if (usage <= 10) {
-      // Usage less than or equal to 10: only the minimum charge applies.
-      finalValue = (minCharge / 100);
-    } else if (usage <= 20) {
-      // For usage 11 to 20:
-      // finalValue = MIN$suffix + ((BULK1$suffix/100) * (usage - 10))
-      int extraUnits = usage - 10; // For usage = 20, extraUnits = 10.
-      finalValue = (minCharge / 100) + ((bulk1 / 100) * extraUnits);
-    } else if (usage <= 30) {
-      // For usage 21 to 30:
-      // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * (usage - 20))
-      int extraUnits = usage - 20; // For usage = 30, extraUnits = 10.
-      finalValue = (minCharge / 100) +
-          ((bulk1 / 100) * 10) +
-          ((bulk2 / 100) * extraUnits);
-    } else if (usage <= 40) {
-      // For usage 31 to 40:
-      // finalValue = MIN$suffix + ((BULK1$suffix/100) * 10) + ((BULK2$suffix/100) * 10) + ((BULK3$suffix/100) * (usage - 30))
-      int extraUnits = usage - 30; // For usage = 40, extraUnits = 10.
-      finalValue = (minCharge / 100) +
-          ((bulk1 / 100) * 10) +
-          ((bulk2 / 100) * 10) +
-          ((bulk3 / 100) * extraUnits);
-    } else {
-      // If usage exceeds 40, you can extend this logic.
-      int extraUnits = usage - 40;
-      finalValue = (minCharge / 100) +
-          ((bulk1 / 100) * 10) +
-          ((bulk2 / 100) * 10) +
-          ((bulk3 / 100) * 10) +
-          ((bulk4 / 100) * extraUnits);
-    }
-
-    return finalValue;
+  static Future<double> calculateBill(String clsssz, int usage) async {
+    final breakdown = await calculateBillBreakdown(clsssz, usage);
+    return breakdown.total;
   }
 
   static Future<double> getFlatbill() async {

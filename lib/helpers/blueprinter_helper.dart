@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:image/image.dart' as img;
+import 'package:meter_reader_flutter/helpers/calculatebill_helper.dart';
 import 'package:meter_reader_flutter/models/disconnection_model.dart';
 
 class BluePrinterHelper extends ChangeNotifier {
@@ -332,7 +333,8 @@ class BluePrinterHelper extends ChangeNotifier {
       String messageText3,
       double afterdue,
       bool penaltyActivate,
-      double penaltyValue) async {
+      double penaltyValue,
+      [dynamic breakdown]) async {
     // Check connection before printing
     if (selectedDevice == null) {
       connectionStatus = 'No device selected';
@@ -547,19 +549,77 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.reset();
       */
       bytes += generator.hr();
-      bytes += generator.row([
-        PosColumn(
-          text: 'WATER BILL',
-          width: 8,
-          styles: PosStyles(height: PosTextSize.size1, bold: true),
-        ),
-        PosColumn(
-          text: waterBill,
-          width: 4,
-          styles: PosStyles(
-              height: PosTextSize.size1, bold: true, align: PosAlign.right),
-        ),
-      ]);
+      print('attempting breakdown');
+      bytes += generator.text(
+        'BILLING BREAKDOWN',
+        styles: PosStyles(align: PosAlign.center, bold: true),
+      );
+      bytes += generator.hr();
+      final parsedBreakdown = breakdown is BillBreakdown ? breakdown : null;
+      if (parsedBreakdown != null && parsedBreakdown.tiers.isNotEmpty) {
+        for (final tier in parsedBreakdown.tiers) {
+          final multiplierText = tier.units > 0
+              ? '${tier.units} x ${tier.ratePerUnit.toStringAsFixed(2)}'
+              : '--';
+
+          bytes += generator.row([
+            PosColumn(
+              text: tier.label,
+              width: 5,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: multiplierText,
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1,
+                  bold: true,
+                  align: PosAlign.center),
+            ),
+            PosColumn(
+              text: tier.amount.toStringAsFixed(2),
+              width: 3,
+              styles: PosStyles(
+                  height: PosTextSize.size1,
+                  bold: true,
+                  align: PosAlign.right),
+            ),
+          ]);
+        }
+        bytes += generator.row([
+          PosColumn(
+            text: 'SUBTOTAL',
+            width: 7,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: '',
+            width: 2,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.center),
+          ),
+          PosColumn(
+            text: parsedBreakdown.total.toStringAsFixed(2),
+            width: 3,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      } else {
+        bytes += generator.row([
+          PosColumn(
+            text: 'WATER BILL',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: waterBill,
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
 
       //show up if senior citizen discount is applied
       if (cardwithSeniorDisc == 1 && usage < 31) {
@@ -621,6 +681,8 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
+
+      print('breakdown finished');
 
       if (cardOthers != "0.00" && cardOthers.isNotEmpty) {
         bytes += generator.row([
@@ -730,7 +792,7 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);
-      bluetooth.writeBytes(byteList);
+      await bluetooth.writeBytes(byteList);
     } catch (e) {
       connected = false;
       connectionStatus = 'Print failed - Attempting to reconnect...';
@@ -945,7 +1007,7 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.cut();
 
       Uint8List byteList = Uint8List.fromList(bytes);
-      bluetooth.writeBytes(byteList);
+      await bluetooth.writeBytes(byteList);
     } catch (e) {
       connected = false;
       connectionStatus = 'Print failed - Attempting to reconnect...';

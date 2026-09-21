@@ -24,6 +24,7 @@ class DisconnectionImport extends StatefulWidget {
 
 class _DisconnectionImportState extends State<DisconnectionImport> {
   bool _loading = false;
+  bool _exportLoading = false;
   String? _error;
 
   Future<void> _importFromDownloads() async {
@@ -68,6 +69,31 @@ class _DisconnectionImportState extends State<DisconnectionImport> {
     } finally {
       if (mounted) {
         setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _exportToDownloads() async {
+    setState(() {
+      _exportLoading = true;
+      _error = null;
+    });
+
+    try {
+      final path = await DisconnectionHelper().exportDisconnections();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported disconnection list to $path')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export disconnection list: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _exportLoading = false);
       }
     }
   }
@@ -132,6 +158,16 @@ class _DisconnectionImportState extends State<DisconnectionImport> {
                     onPressed: _importFromDownloads,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ImportButton(
+                    label: 'Export JSON',
+                    icon: Icons.download_outlined,
+                    filled: false,
+                    loading: _exportLoading,
+                    onPressed: _exportToDownloads,
+                  ),
+                ),
               ],
             ),
           ),
@@ -179,8 +215,7 @@ class _ImportButton extends StatelessWidget {
         backgroundColor: const Color(0xFF444441),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
       ),
       icon: loading

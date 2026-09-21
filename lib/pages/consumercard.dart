@@ -8,6 +8,7 @@ import 'package:meter_reader_flutter/models/consumer_note_model.dart';
 import 'package:meter_reader_flutter/models/prefs_model.dart';
 import 'package:intl/intl.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
+import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 import 'package:provider/provider.dart';
 
 import 'consumercard/consumer_info_card.dart';
@@ -47,6 +48,8 @@ class _ConsumercardState extends State<Consumercard> {
   bool _isSaving = false;
   bool _ftaxActivate = false;
   bool _penaltyActivate = false;
+  bool _noteActivate = false;
+  bool _billingFeaturesLoaded = false;
   //String? _formattedDate =
   //    DateFormat('MM-dd-yyyy').format(DateTime.now().add(Duration(days: 15)));
 
@@ -69,6 +72,19 @@ class _ConsumercardState extends State<Consumercard> {
   void initState() {
     super.initState();
     _loadFlatbill();
+    _loadBillingFeatures();
+  }
+
+  Future<void> _loadBillingFeatures() async {
+    final settings = AppSettingsHelper();
+    final ftaxEnabled = await settings.isEnabled('feature_ftax');
+    final penaltyEnabled = await settings.isEnabled('feature_penalty');
+    if (!mounted) return;
+    setState(() {
+      _ftaxActivate = ftaxEnabled;
+      _penaltyActivate = penaltyEnabled;
+      _billingFeaturesLoaded = true;
+    });
   }
 
   // Future<void> _checkforFtax() {
@@ -320,12 +336,48 @@ class _ConsumercardState extends State<Consumercard> {
 
   Future<void> _printReceipt(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
-    int? intusage = _usage?.toInt();
+    final int usageValue = ((_usage ?? card.cardUsage ?? 0) as num).toInt();
     NumberFormat formatter = NumberFormat('#,##0.00');
     String formattedBill = formatter.format(_beforeDatecalculation ?? 0.0);
-    double ftaxValue = _ftax ?? 0;
-    double afterDue = _afterDatecalculation ?? 0.0;
-    double penaltyValue = _penaltyValue ?? 0.0;
+    final double ftaxValue = (_ftax ?? 0.0).toDouble();
+    final double afterDue = (_afterDatecalculation ?? 0.0).toDouble();
+    final double penaltyValue = (_penaltyValue ?? 0.0).toDouble();
+    final double waterBill =
+        ((_calculatedBill ?? card.cardCurrbill ?? 0.0) as num).toDouble();
+    BillBreakdown breakdown;
+
+    try {
+      if (card.cardCodeRaw.trim().length >= 3) {
+        breakdown = await CalculatebillHelper.calculateBillBreakdown(
+          card.cardCodeRaw,
+          usageValue,
+        );
+      } else {
+        breakdown = BillBreakdown(
+          total: waterBill,
+          tiers: [
+            BillTier(
+              label: 'WATER BILL',
+              amount: waterBill,
+              units: 0,
+              ratePerUnit: 0,
+            )
+          ],
+        );
+      }
+    } catch (_) {
+      breakdown = BillBreakdown(
+        total: waterBill,
+        tiers: [
+          BillTier(
+            label: 'WATER BILL',
+            amount: waterBill,
+            units: 0,
+            ratePerUnit: 0,
+          )
+        ],
+      );
+    }
 
     String messageText1 = '';
     String messageText2 = '';
@@ -342,9 +394,8 @@ class _ConsumercardState extends State<Consumercard> {
         (_newReading ?? card.cardCurrreading)
             .toString(), // Use new reading if available
         card.cardPrevreading.toString(),
-        (intusage ?? card.cardUsage).toInt(), // Current usage from state
-        (_calculatedBill ?? card.cardCurrbill)
-            .toStringAsFixed(2), // Calculated bill from state
+        usageValue,
+        waterBill.toStringAsFixed(2),
         card.cardWmf.toStringAsFixed(2),
         card.cardArrears,
         formattedBill,
@@ -365,7 +416,8 @@ class _ConsumercardState extends State<Consumercard> {
         messageText3,
         afterDue,
         _penaltyActivate,
-        penaltyValue);
+        penaltyValue,
+        breakdown);
   }
 
   Future<void> _printReceiptFlat(ConsumercardModel card) async {
@@ -377,7 +429,7 @@ class _ConsumercardState extends State<Consumercard> {
     String messageText2 = '';
     String messageText3 = '';
 
-    bluetoothHelper.printReceiptFlat(
+    await bluetoothHelper.printReceiptFlat(
         _currentReadingDate.toString(),
         card.prefsDatedue,
         card.cardName,
@@ -498,8 +550,8 @@ class _ConsumercardState extends State<Consumercard> {
                       setState(() {
                         _currentCard = card;
                         _rateType = card.cardRateType;
-                        String formattedDate =
-                            getFormattedReadingDate(card.cardcurrentReadingDate);
+                        String formattedDate = getFormattedReadingDate(
+                            card.cardcurrentReadingDate);
                         String onlyTime =
                             DateFormat('HH:mm:ss').format(DateTime.now());
                         String datePart = formattedDate.split(' ').first;
@@ -507,7 +559,9 @@ class _ConsumercardState extends State<Consumercard> {
                       });
                     }
                   });
-                  if (!_billUpdated && card.cardUsage != 0) {
+                    if (_billingFeaturesLoaded &&
+                      !_billUpdated &&
+                      card.cardUsage != 0) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _updateBill(card, card.cardUsage);
                       setState(() {
@@ -557,6 +611,8 @@ class _ConsumercardState extends State<Consumercard> {
                             beforeDatecalculation: _beforeDatecalculation,
                             afterDatecalculation: _afterDatecalculation,
                             calculatedSCDisc: _calculatedSCDisc,
+                            ftaxActivate: _ftaxActivate,
+                            penaltyActivate: _penaltyActivate,
                             flatbill: _flatbill,
                             totalFlatbill:
                                 (_flatbill ?? 0.0) + (card.cardArrears),
@@ -600,9 +656,11 @@ class _ConsumercardState extends State<Consumercard> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.note_add_outlined, color: Colors.green.shade600, size: 22),
+            Icon(Icons.note_add_outlined,
+                color: Colors.green.shade600, size: 22),
             const SizedBox(width: 8),
-            const Text('Add Note', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const Text('Add Note',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           ],
         ),
         content: SizedBox(
@@ -620,9 +678,13 @@ class _ConsumercardState extends State<Consumercard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(card.cardName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(card.cardName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
                     const SizedBox(height: 2),
-                    Text(card.cardAccno, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text(card.cardAccno,
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600)),
                   ],
                 ),
               ),
@@ -640,7 +702,8 @@ class _ConsumercardState extends State<Consumercard> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.green.shade400, width: 1.5),
+                    borderSide:
+                        BorderSide(color: Colors.green.shade400, width: 1.5),
                   ),
                   contentPadding: const EdgeInsets.all(12),
                 ),
@@ -651,7 +714,8 @@ class _ConsumercardState extends State<Consumercard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.black54)),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -678,11 +742,44 @@ class _ConsumercardState extends State<Consumercard> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             icon: const Icon(Icons.save_outlined, size: 18),
             label: const Text('Save Note'),
           ),
+          if (_noteActivate)
+            ElevatedButton.icon(
+              onPressed: () async {
+                final text = _noteController.text.trim();
+                if (text.isEmpty) return;
+                final prefs = await PrefsModel.fetch();
+                final note = ConsumerNoteModel(
+                  masCode: card.cardMasCode,
+                  noteText: text,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  readingDate: prefs?.billdate ?? '',
+                  readerName: prefs?.readername ?? '',
+                  zb: card.cardAccno.split('-').first,
+                );
+                await NotesHelper().insertNote(note);
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Note saved')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.save_outlined, size: 18),
+              label: const Text('Save Note'),
+            ),
         ],
       ),
     );
@@ -727,7 +824,8 @@ class _ConsumercardState extends State<Consumercard> {
               'assets/icons/note.svg',
               height: 25,
               width: 25,
-              colorFilter: const ColorFilter.mode(Colors.green, BlendMode.srcIn),
+              colorFilter:
+                  const ColorFilter.mode(Colors.green, BlendMode.srcIn),
             ),
           ),
         ),

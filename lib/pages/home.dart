@@ -8,7 +8,6 @@ import 'package:meter_reader_flutter/pages/appsettingspage.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/helpers/database_helper.dart';
 import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
-import 'package:meter_reader_flutter/pages/databasedrawer.dart';
 
 import 'package:meter_reader_flutter/widgets/printerfab_widget.dart';
 import 'package:meter_reader_flutter/widgets/pin_dialog.dart';
@@ -84,7 +83,6 @@ class _HomePageState extends State<HomePage> {
       appBar: appBar(context),
       floatingActionButton: const PrinterFab(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      drawer: Databasedrawer(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,10 +229,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 85, 227),
           label: 'Post Meter Reading',
           description: 'Record new meter readings for consumers',
-          onTap: () async {
-            await Navigator.pushNamed(context, '/postmeterreading');
-            if (mounted) await _loadReadingStats();
-          },
+          onTap: () => Navigator.pushNamed(context, '/postmeterreading'),
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -244,10 +239,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 117, 227),
           label: 'Edit Meter Reading',
           description: 'Modify previously saved and printed meter readings',
-          onTap: () async {
-            await Navigator.pushNamed(context, '/editbilllist');
-            if (mounted) await _loadReadingStats();
-          },
+          onTap: () => Navigator.pushNamed(context, '/editbilllist'),
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -257,10 +249,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 137, 227),
           label: 'Print Bill',
           description: 'Print billing statements for saved readings',
-          onTap: () async {
-            await Navigator.pushNamed(context, '/printbilllist');
-            if (mounted) await _loadReadingStats();
-          },
+          onTap: () => Navigator.pushNamed(context, '/printbilllist'),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
