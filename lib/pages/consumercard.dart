@@ -489,10 +489,12 @@ class _ConsumercardState extends State<Consumercard> {
       if (_penaltyActivate) {
         penalty = (card.prefsPenper / 100) + 1;
       }
-
+      int penaltyOption = 1;
       double penaltyValue = 0;
       if (_penaltyActivate) {
-        penaltyValue = (bill - scDisc) * (card.prefsPenper / 100);
+        if (penaltyOption == 1) {
+          penaltyValue = (bill - scDisc) * (card.prefsPenper / 100);
+        }
       }
 
       double totalBeforeDue = ((bill - scDisc) + fTaxValue) +
@@ -559,7 +561,7 @@ class _ConsumercardState extends State<Consumercard> {
                       });
                     }
                   });
-                    if (_billingFeaturesLoaded &&
+                  if (_billingFeaturesLoaded &&
                       !_billUpdated &&
                       card.cardUsage != 0) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -36,7 +36,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadFeatureFlags() async {
-    final enabled = await AppSettingsHelper().isEnabled('feature_disconnection_list');
+    final enabled =
+        await AppSettingsHelper().isEnabled('feature_disconnection_list');
     if (!mounted) return;
     setState(() => _disconnectionListEnabled = enabled);
   }
@@ -102,7 +103,8 @@ class _HomePageState extends State<HomePage> {
     final completed = stats['completed'] ?? 0;
     final remaining = stats['remaining'] ?? 0;
     final progress = total > 0 ? completed / total : 0.0;
-    final percentText = total > 0 ? '${(progress * 100).toStringAsFixed(0)}%' : '0%';
+    final percentText =
+        total > 0 ? '${(progress * 100).toStringAsFixed(0)}%' : '0%';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -118,7 +120,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.bar_chart_rounded, size: 20, color: Colors.blue),
+                const Icon(Icons.bar_chart_rounded,
+                    size: 20, color: Colors.blue),
                 const SizedBox(width: 8),
                 const Text(
                   'Reading Progress',
@@ -251,19 +254,21 @@ class _HomePageState extends State<HomePage> {
           description: 'Print billing statements for saved readings',
           onTap: () => Navigator.pushNamed(context, '/printbilllist'),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Divider(thickness: 1, height: 30),
-        ),
-        _menuButton(
-          padding: buttonPadding,
-          iconSize: iconSize,
-          iconPath: 'assets/icons/note.svg',
-          color: Colors.orange,
-          label: 'Notice for Disconnection',
-          description: 'Print out Notice for disconnection',
-          onTap: () => Navigator.pushNamed(context, '/noticelist'),
-        ),
+        if (_disconnectionListEnabled) ...[
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(thickness: 1, height: 30),
+          ),
+          _menuButton(
+            padding: buttonPadding,
+            iconSize: iconSize,
+            iconPath: 'assets/icons/note.svg',
+            color: Colors.orange,
+            label: 'Notice for Disconnection',
+            description: 'Print out Notice for disconnection',
+            onTap: () => Navigator.pushNamed(context, '/noticelist'),
+          ),
+        ],
         if (_disconnectionListEnabled) ...[
           const SizedBox(height: 14),
           _menuButton(
