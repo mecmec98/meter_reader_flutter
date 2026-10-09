@@ -379,9 +379,10 @@ class _ConsumercardState extends State<Consumercard> {
       );
     }
 
-    String messageText1 = '';
-    String messageText2 = '';
-    String messageText3 = '';
+    final receiptMessages = await AppSettingsHelper().getReceiptMessages();
+    final messageText1 = receiptMessages[0];
+    final messageText2 = receiptMessages[1];
+    final messageText3 = receiptMessages[2];
 
     await bluetoothHelper.printReceipt(
         _currentReadingDate.toString(),

@@ -22,11 +22,14 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   // Server settings controllers
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
+  final List<TextEditingController> _receiptMessageControllers =
+      List.generate(3, (_) => TextEditingController());
 
   // Ping state
   bool _pinging = false;
   bool? _pingSuccess;
   String _pingMessage = '';
+  bool _savingReceiptMessages = false;
 
   @override
   void initState() {
@@ -38,6 +41,9 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   void dispose() {
     _ipController.dispose();
     _portController.dispose();
+    for (final controller in _receiptMessageControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -45,6 +51,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
     final features = await _settingsHelper.getAllFeatures();
     final logs = await _settingsHelper.getLogs();
     final server = await _settingsHelper.getServerSettings();
+    final receiptMessages = await _settingsHelper.getReceiptMessages();
     if (!mounted) return;
     setState(() {
       _features = features;
@@ -52,13 +59,40 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
       _server = server;
       _ipController.text = server.ip;
       _portController.text = server.port.toString();
+      for (var index = 0; index < _receiptMessageControllers.length; index++) {
+        _receiptMessageControllers[index].text = receiptMessages[index];
+      }
       _loading = false;
     });
   }
 
   Future<void> _toggle(String key, bool value) async {
     await _settingsHelper.setFeature(key, value);
-    await _loadData();
+    final features = await _settingsHelper.getAllFeatures();
+    if (!mounted) return;
+    setState(() => _features = features);
+  }
+
+  Future<void> _saveReceiptMessages() async {
+    setState(() => _savingReceiptMessages = true);
+    try {
+      await _settingsHelper.saveReceiptMessages(
+        _receiptMessageControllers
+            .map((controller) => controller.text)
+            .toList(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Receipt messages saved')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save receipt messages: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingReceiptMessages = false);
+    }
   }
 
   Future<void> _saveServerSettings() async {
@@ -376,6 +410,84 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
                 const SizedBox(height: 20),
 
+                // ── Receipt Messages ──────────────────────
+                const _SectionLabel(label: 'Receipt Messages'),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.black.withOpacity(0.08)),
+                  ),
+                  child: Column(
+                    children: [
+                      for (var index = 0;
+                          index < _receiptMessageControllers.length;
+                          index++) ...[
+                        TextField(
+                          controller: _receiptMessageControllers[index],
+                          minLines: 2,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            labelText: 'Message ${index + 1}',
+                            hintText: 'Enter a receipt message',
+                            alignLabelWithHint: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: Colors.blue),
+                            ),
+                          ),
+                        ),
+                        if (index < _receiptMessageControllers.length - 1)
+                          const SizedBox(height: 12),
+                      ],
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _savingReceiptMessages
+                              ? null
+                              : _saveReceiptMessages,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: _savingReceiptMessages
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.save_outlined, size: 18),
+                          label: Text(
+                            _savingReceiptMessages
+                                ? 'Saving...'
+                                : 'Save Messages',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
                 // ── Database Logs ──────────────────────────
                 Row(
                   children: [
@@ -441,8 +553,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                                         color: isUpload
                                             ? Colors.green.withOpacity(0.1)
                                             : Colors.blue.withOpacity(0.1),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
                                         isUpload
@@ -499,8 +610,8 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                                                           : Icons.usb_outlined,
                                                       size: 10,
                                                       color: isWireless
-                                                          ? Colors.orange
-                                                              .shade700
+                                                          ? Colors
+                                                              .orange.shade700
                                                           : Colors.black54,
                                                     ),
                                                     const SizedBox(width: 3),
@@ -513,8 +624,8 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                                                         fontWeight:
                                                             FontWeight.w500,
                                                         color: isWireless
-                                                            ? Colors.orange
-                                                                .shade700
+                                                            ? Colors
+                                                                .orange.shade700
                                                             : Colors.black54,
                                                       ),
                                                     ),

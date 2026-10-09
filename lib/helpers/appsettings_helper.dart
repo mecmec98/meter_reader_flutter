@@ -5,6 +5,12 @@ import 'package:meter_reader_flutter/models/databaselog_model.dart';
 import 'package:meter_reader_flutter/models/serversettings_model.dart';
 
 class AppSettingsHelper {
+  static const List<String> _receiptMessageKeys = [
+    'receipt_message_1',
+    'receipt_message_2',
+    'receipt_message_3',
+  ];
+
   static final AppSettingsHelper _instance = AppSettingsHelper._internal();
   factory AppSettingsHelper() => _instance;
   AppSettingsHelper._internal();
@@ -23,14 +29,15 @@ class AppSettingsHelper {
 
     final db = await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
 
     // Auto-clean logs older than 1 year on every init
     await _clearOldLogs(db);
-    await db.delete('features', where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
+    await db.delete('features',
+        where: 'key LIKE ?', whereArgs: ['feature_placeholder_%']);
     return db;
   }
 
@@ -93,6 +100,7 @@ class AppSettingsHelper {
         value TEXT NOT NULL DEFAULT ''
       )
     ''');
+    await _seedReceiptMessages(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -158,6 +166,21 @@ class AppSettingsHelper {
         'label': 'Penalty',
         'enabled': 0,
       });
+    }
+
+    if (oldVersion < 8) {
+      await _seedReceiptMessages(db);
+    }
+
+  }
+
+  Future<void> _seedReceiptMessages(DatabaseExecutor db) async {
+    for (final key in _receiptMessageKeys) {
+      await db.insert(
+        'app_settings',
+        {'key': key, 'value': ''},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     }
   }
 
@@ -313,5 +336,40 @@ class AppSettingsHelper {
       {'key': 'assigned_person', 'value': person.trim()},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<List<String>> getReceiptMessages() async {
+    final db = await database;
+    final rows = await db.query(
+      'app_settings',
+      columns: ['key', 'value'],
+      where: 'key IN (?, ?, ?)',
+      whereArgs: _receiptMessageKeys,
+    );
+    final messagesByKey = {
+      for (final row in rows) row['key'] as String: row['value'] as String,
+    };
+    return _receiptMessageKeys.map((key) => messagesByKey[key] ?? '').toList();
+  }
+
+  Future<void> saveReceiptMessages(List<String> messages) async {
+    if (messages.length != _receiptMessageKeys.length) {
+      throw ArgumentError.value(
+        messages.length,
+        'messages.length',
+        'Exactly ${_receiptMessageKeys.length} receipt messages are required.',
+      );
+    }
+
+    final db = await database;
+    await db.transaction((txn) async {
+      for (var index = 0; index < _receiptMessageKeys.length; index++) {
+        await txn.insert(
+          'app_settings',
+          {'key': _receiptMessageKeys[index], 'value': messages[index]},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 }
