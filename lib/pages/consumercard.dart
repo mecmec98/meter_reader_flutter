@@ -328,8 +328,25 @@ class _ConsumercardState extends State<Consumercard> {
           );
         }
       }
-    } else {
-      print("saving flatbill");
+    } else if (ratetype == 1 && _cardId != null) {
+      try {
+        final count = await DatabaseHelper().updateMasterData(_cardId!, {
+          'POSTED': 1,
+          'BILL_STAT': billStatind,
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                count > 0 ? 'Record updated successfully!' : 'Update failed.'),
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving the record: $e')),
+        );
+      }
     }
     setState(() => _isSaving = false);
   }

@@ -66,27 +66,44 @@ class _ManualTransferState extends State<ManualTransfer> {
 
     if (result == null ||
         result.files.single.path == null ||
-        !result.files.single.name.toLowerCase().endsWith('.dbi')) return;
+        !result.files.single.name.toLowerCase().endsWith('.dbi')) {
+      return;
+    }
 
     setState(() => _uploadLoading = true);
 
-    final success =
-        await _dbHelper.importNewDatabase(result.files.single.path!);
+    try {
+      final success =
+          await _dbHelper.importNewDatabase(result.files.single.path!);
 
-    if (!mounted) return;
-    setState(() => _uploadLoading = false);
-
-    if (success) {
-      // Refresh CurrentReadingInfo with new DB data
-      await widget.onRefresh();
-      widget.onUpload();
+      if (!mounted) return;
+      if (success) {
+        await widget.onRefresh();
+        if (!mounted) return;
+        widget.onUpload();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Database imported successfully. Previous database backed up.',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Import failed. The current database was not replaced.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Database imported successfully!')),
+        SnackBar(content: Text('Database import failed: $e')),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to import database')),
-      );
+    } finally {
+      if (mounted) setState(() => _uploadLoading = false);
     }
   }
 
@@ -127,8 +144,7 @@ class _ManualTransferState extends State<ManualTransfer> {
     if (success) {
       widget.onDownload();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Database exported to Downloads folder!')),
+        const SnackBar(content: Text('Database exported to Downloads folder!')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +168,8 @@ class _ManualTransferState extends State<ManualTransfer> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                const Icon(Icons.usb_outlined, size: 20, color: Color(0xFF888780)),
+                const Icon(Icons.usb_outlined,
+                    size: 20, color: Color(0xFF888780)),
                 const SizedBox(width: 10),
                 const Text(
                   'Manual',
@@ -260,8 +277,7 @@ class _ManualButton extends StatelessWidget {
           backgroundColor: const Color(0xFF444441),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         icon: loading
@@ -282,16 +298,14 @@ class _ManualButton extends StatelessWidget {
           foregroundColor: Colors.black87,
           padding: const EdgeInsets.symmetric(vertical: 12),
           side: BorderSide(color: Colors.black.withOpacity(0.2)),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: loading
             ? SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.black.withOpacity(0.5)),
+                    strokeWidth: 2, color: Colors.black.withOpacity(0.5)),
               )
             : Icon(icon, size: 16),
         label: Text(loading ? 'Downloading...' : label,

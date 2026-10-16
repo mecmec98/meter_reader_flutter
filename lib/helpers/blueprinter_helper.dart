@@ -450,7 +450,7 @@ class BluePrinterHelper extends ChangeNotifier {
         styles: PosStyles(align: PosAlign.center),
       );
 
-      bytes += generator.text(
+      bytes += generator.text( 
         'NON-VAT-REG. TIN 000-553-002-00000',
         styles: PosStyles(align: PosAlign.center),
       );

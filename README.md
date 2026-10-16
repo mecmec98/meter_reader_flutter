@@ -118,6 +118,30 @@ The database schema is compatible with the legacy LWUA BCWIN/MRDBA system.
 
 ## Building
 
+### Android release signing
+
+Release builds require a production keystore; debug signing is not used. Create
+and securely back up a keystore outside the repository. On Windows, for example:
+
+```powershell
+keytool -genkeypair -v `
+  -keystore "$env:USERPROFILE\meter_reader_upload-keystore.jks" `
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Create `android/key.properties` (already ignored by Git) with the values for
+your keystore. Do not commit this file or share its passwords:
+
+```properties
+storePassword=<your-keystore-password>
+keyPassword=<your-key-password>
+keyAlias=upload
+storeFile=C:/Users/<your-user>/meter_reader_upload-keystore.jks
+```
+
+Keep a secure backup of the keystore and its passwords. Losing them can prevent
+future updates from being signed with the same app identity.
+
 ```bash
 # Build APK
 flutter build apk --release

@@ -11,6 +11,7 @@ class DatabaseHelper {
 
   factory DatabaseHelper() => _instance;
   final String _dbName = 'MRADB.dbi';
+  static const String _importBackupName = 'MRADB-backup-before-import.dbi';
   static Database? _database;
 
   DatabaseHelper._internal();
@@ -26,6 +27,82 @@ class DatabaseHelper {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     return join(
         documentsDirectory.path, _dbName); // Returns the full database path
+  }
+
+  Future<String> getImportBackupPath() async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return join(documentsDirectory.path, _importBackupName);
+  }
+
+  Future<void> _validateDatabaseFile(String path) async {
+    final db = await openDatabase(path, readOnly: true);
+    try {
+      await _validateDatabase(db);
+    } finally {
+      await db.close();
+    }
+  }
+
+  Future<void> _validateDatabase(Database db) async {
+    final integrity = await db.rawQuery('PRAGMA quick_check');
+    if (integrity.length != 1 ||
+        integrity.first['quick_check'].toString().toLowerCase() != 'ok') {
+      throw const FormatException('Database integrity check failed.');
+    }
+
+    const requiredColumns = <String, Set<String>>{
+      'master': {
+        '_id',
+        'NAME',
+        'ADDRESS',
+        'MNO',
+        'POSTED',
+        'BILL_STAT',
+        'CLSSSZ',
+      },
+      'prefs': {
+        '_id',
+        'cutdate',
+        'datedue',
+        'billdate',
+        'meterreader',
+        'ftaxbill',
+        'pen_per',
+      },
+      'rates': {'_id', 'CODE', 'LTYPE'},
+    };
+
+    for (final entry in requiredColumns.entries) {
+      final tables = await db.rawQuery(
+        'SELECT name FROM sqlite_master WHERE type = ? AND lower(name) = ?',
+        ['table', entry.key],
+      );
+      if (tables.isEmpty) {
+        throw FormatException('Database is missing the ${entry.key} table.');
+      }
+
+      final columns = await db.rawQuery('PRAGMA table_info("${entry.key}")');
+      final actualColumns = columns
+          .map((column) => column['name'].toString().toLowerCase())
+          .toSet();
+      final missingColumns = entry.value
+          .where((column) => !actualColumns.contains(column.toLowerCase()));
+      if (missingColumns.isNotEmpty) {
+        throw FormatException(
+          'Database ${entry.key} table is missing required columns: '
+          '${missingColumns.join(', ')}.',
+        );
+      }
+    }
+
+    final prefs = await db.query('prefs', limit: 1);
+    final rates = await db.query('rates', limit: 1);
+    final master = await db.query('master', limit: 1);
+    if (prefs.isEmpty || rates.isEmpty || master.isEmpty) {
+      throw const FormatException(
+        'Database must contain consumer, preference, and rate records.',
+      );
+    }
   }
 
   Future<Database?> _initDatabase() async {
@@ -49,29 +126,87 @@ class DatabaseHelper {
   }
 
   Future<bool> importNewDatabase(String sourcePath) async {
-    try {
-      Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String destPath = join(documentsDirectory.path, _dbName);
+    final sourceFile = File(sourcePath);
+    final destPath = await getDatabasePath();
+    final backupPath = await getImportBackupPath();
+    final documentsDirectory = Directory(dirname(destPath));
+    final importId = DateTime.now().microsecondsSinceEpoch;
+    final stagedPath =
+        join(documentsDirectory.path, 'MRADB-import-$importId.dbi');
+    final backupStagedPath =
+        join(documentsDirectory.path, 'MRADB-backup-$importId.tmp');
+    var backupCreated = false;
+    var hadLiveDatabase = false;
 
-      // Close existing database connection
-      if (_database != null) {
-        await _database!.close();
-        _database = null;
+    try {
+      if (!await sourceFile.exists()) {
+        throw const FileSystemException(
+            'Selected database file does not exist.');
+      }
+      if (normalize(sourceFile.absolute.path) == normalize(destPath)) {
+        throw const FileSystemException(
+          'The selected file is already the active database.',
+        );
       }
 
-      // Delete old database
-      await deleteDatabase(destPath);
+      await sourceFile.copy(stagedPath);
+      await _validateDatabaseFile(stagedPath);
 
-      // Copy new database
-      File sourceFile = File(sourcePath);
-      await sourceFile.copy(destPath);
+      hadLiveDatabase = await File(destPath).exists();
+      if (_database?.isOpen ?? false) {
+        await _database!.close();
+      }
+      _database = null;
 
-      // Reinitialize database
+      if (hadLiveDatabase) {
+        await File(destPath).copy(backupStagedPath);
+        final backupFile = File(backupPath);
+        if (await backupFile.exists()) {
+          await backupFile.delete();
+        }
+        await File(backupStagedPath).rename(backupPath);
+        backupCreated = true;
+
+        await deleteDatabase(destPath);
+      }
+
+      await File(stagedPath).rename(destPath);
       _database = await _initDatabase();
+      await _validateDatabase(_database!);
       return true;
     } catch (e) {
       print('Error replacing database: $e');
+
+      try {
+        if (_database?.isOpen ?? false) {
+          await _database!.close();
+        }
+        _database = null;
+
+        if (backupCreated) {
+          await deleteDatabase(destPath);
+          await File(backupPath).copy(destPath);
+          _database = await _initDatabase();
+          await _validateDatabase(_database!);
+        } else if (await File(destPath).exists()) {
+          _database = await _initDatabase();
+        }
+      } catch (rollbackError) {
+        _database = null;
+        throw StateError(
+          'Database import failed and automatic rollback also failed. '
+          'The recovery backup is at $backupPath. '
+          'Import error: $e. Rollback error: $rollbackError',
+        );
+      }
       return false;
+    } finally {
+      for (final path in [stagedPath, backupStagedPath]) {
+        final file = File(path);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
     }
   }
 
@@ -278,11 +413,15 @@ class DatabaseHelper {
     final db = await database;
     final totalResult =
         await db.rawQuery('SELECT COUNT(*) as count FROM master');
-    final postedResult =
-        await db.rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED > 0');
+    final postedResult = await db
+        .rawQuery('SELECT COUNT(*) as count FROM master WHERE POSTED > 0');
     final total = totalResult.first['count'] as int;
     final completed = postedResult.first['count'] as int;
-    return {'total': total, 'completed': completed, 'remaining': total - completed};
+    return {
+      'total': total,
+      'completed': completed,
+      'remaining': total - completed
+    };
   }
 
 //get all zone and books currently in database

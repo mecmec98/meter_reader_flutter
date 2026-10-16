@@ -317,6 +317,7 @@ final result = await db
       _downloadProgress = 0;
     });
 
+    File? tempFile;
     try {
       final settings = await _getSettings();
       final uri = Uri.parse(
@@ -341,19 +342,12 @@ final result = await db
       }
       if (!mounted) return;
 
-      // Backup current DB before replacing
-      final dbPath = await _dbHelper.getDatabasePath();
-      final dbFile = File(dbPath);
       final tempDir = await getTemporaryDirectory();
-      if (await dbFile.exists()) {
-        await dbFile.copy('${tempDir.path}/MRADB_backup_before_import.dbi');
-      }
 
       // Import new DB
-      final tempFile = File('${tempDir.path}/temp_import.dbi');
+      tempFile = File('${tempDir.path}/temp_import.dbi');
       await tempFile.writeAsBytes(bytes);
       final success = await _dbHelper.importNewDatabase(tempFile.path);
-      await tempFile.delete();
 
       if (!mounted) return;
       if (success) {
@@ -366,11 +360,14 @@ final result = await db
           _showDownloadPanel = false;
           _resetDownloadPanel();
         });
-        _showSnack('$filename imported successfully.');
+        _showSnack(
+          '$filename imported successfully. Previous database backed up.',
+        );
       } else {
         setState(() {
           _downloading = false;
-          _errorMessage = 'Failed to import the downloaded database.';
+          _errorMessage =
+              'Import failed validation. The current database was not replaced.';
         });
       }
     } catch (e) {
@@ -379,6 +376,10 @@ final result = await db
         _downloading = false;
         _errorMessage = 'Download failed: $e';
       });
+    } finally {
+      if (tempFile != null && await tempFile.exists()) {
+        await tempFile.delete();
+      }
     }
   }
 
