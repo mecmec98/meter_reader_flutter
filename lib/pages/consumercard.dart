@@ -263,13 +263,12 @@ class _ConsumercardState extends State<Consumercard> {
 
         double dbBill = _calculatedBill! * 100;
         double scDisc = _calculatedSCDisc! * 100;
-        double ftax = _ftax! * 100;
+        int pca = (_ftax! * 100).round();
 
         int finalSCdisc = scDisc.toInt();
         int calculateBillInt = dbBill.toInt();
         int usageInt = _usage!.toInt();
         int penalty = 0;
-        int pca = ftax.toInt();
 
         int isPosted = 1;
         int billStatus =

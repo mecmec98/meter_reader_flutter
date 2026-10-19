@@ -40,9 +40,13 @@ class CurrentReadingInfo extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             child: Row(
               children: [
-                Expanded(child: _buildChipColumn(Icons.location_on_outlined, 'Zone', zone)),
+                Expanded(
+                    child: _buildChipColumn(
+                        Icons.location_on_outlined, 'Zone', zone)),
                 const SizedBox(width: 16),
-                Expanded(child: _buildChipColumn(Icons.menu_book_outlined, 'Book', book)),
+                Expanded(
+                    child: _buildChipColumn(
+                        Icons.menu_book_outlined, 'Book', book)),
               ],
             ),
           ),
@@ -50,6 +54,7 @@ class CurrentReadingInfo extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildChipColumn(IconData icon, String label, List<String> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,22 +63,29 @@ class CurrentReadingInfo extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: Colors.blue),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+            Text(label,
+                style: const TextStyle(fontSize: 11, color: Colors.black54)),
           ],
         ),
         const SizedBox(height: 6),
         items.isEmpty
-            ? const Text('--', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87))
+            ? const Text('--',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87))
             : Wrap(
                 spacing: 6,
                 runSpacing: 4,
                 children: items
                     .map((item) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(
                             color: const Color(0xFFE3F2FD),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                            border:
+                                Border.all(color: Colors.blue.withOpacity(0.3)),
                           ),
                           child: Text(
                             item,
@@ -126,7 +138,7 @@ class _InfoRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    value,
+                    value.trim().isEmpty ? '--' : value,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

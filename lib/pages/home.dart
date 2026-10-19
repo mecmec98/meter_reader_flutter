@@ -374,11 +374,12 @@ class _HomePageState extends State<HomePage> {
       ),
       centerTitle: true,
       leading: GestureDetector(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const DatabasePage()),
           );
+          if (mounted) await _loadReadingStats();
         },
         child: Container(
           margin: const EdgeInsets.all(10),

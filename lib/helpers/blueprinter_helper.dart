@@ -358,7 +358,7 @@ class BluePrinterHelper extends ChangeNotifier {
           ? 'Accounts with existing arrears  will be disconnected immediately without further notice.'
           : messageText2;
       final receiptMessage3 = messageText3.trim().isEmpty
-          ? 'We are now implenting a 2% FTAX implented via Board Resolution 0-0000-00'
+          ? 'We are now implenting a 2% FTAX implented adopted from DapCWD Board Resolution No. 03, s. 2026'
           : messageText3;
 
 // Convert date from "01/07/2025" format to "July 2025"
@@ -450,7 +450,7 @@ class BluePrinterHelper extends ChangeNotifier {
         styles: PosStyles(align: PosAlign.center),
       );
 
-      bytes += generator.text( 
+      bytes += generator.text(
         'NON-VAT-REG. TIN 000-553-002-00000',
         styles: PosStyles(align: PosAlign.center),
       );
@@ -589,9 +589,7 @@ class BluePrinterHelper extends ChangeNotifier {
               text: tier.amount.toStringAsFixed(2),
               width: 3,
               styles: PosStyles(
-                  height: PosTextSize.size1,
-                  bold: true,
-                  align: PosAlign.right),
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
             ),
           ]);
         }
@@ -784,18 +782,17 @@ class BluePrinterHelper extends ChangeNotifier {
       //messages
       bytes += generator.text('N O T I C E',
           styles: PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.text(
-          receiptMessage1,
+      bytes += generator.text(receiptMessage1,
           styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text(
-          receiptMessage2,
+      bytes += generator.text(receiptMessage2,
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(receiptMessage3,
           styles: PosStyles(align: PosAlign.center));
 
-      bytes += generator.text('   Thank you for your prompt       payment.',
+      bytes += generator.text(
+          'This Document is not valid for claim of input tax (RR7-2024 Section 6(B.15))',
           styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text('This Document is not valid for claim of input tax (RR7-2024 Section 6(B.15))',
+      bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
 

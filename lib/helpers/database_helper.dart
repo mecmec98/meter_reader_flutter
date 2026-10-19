@@ -400,6 +400,12 @@ class DatabaseHelper {
   //get data from prefs
   Future<Map<String, dynamic>?> getPrefsData() async {
     final db = await database;
+    final prefsTable = await db.rawQuery(
+      'SELECT name FROM sqlite_master WHERE type = ? AND lower(name) = ?',
+      ['table', 'prefs'],
+    );
+    if (prefsTable.isEmpty) return null;
+
     List<Map<String, dynamic>> result = await db.query(
       'prefs',
       where: '_id=?',
@@ -411,6 +417,14 @@ class DatabaseHelper {
 
   Future<Map<String, int>> getReadingStats() async {
     final db = await database;
+    final masterTable = await db.rawQuery(
+      'SELECT name FROM sqlite_master WHERE type = ? AND lower(name) = ?',
+      ['table', 'master'],
+    );
+    if (masterTable.isEmpty) {
+      return {'total': 0, 'completed': 0, 'remaining': 0};
+    }
+
     final totalResult =
         await db.rawQuery('SELECT COUNT(*) as count FROM master');
     final postedResult = await db
@@ -427,6 +441,12 @@ class DatabaseHelper {
 //get all zone and books currently in database
   Future<List<String>> getDistinctZB() async {
     final db = await database;
+    final masterTable = await db.rawQuery(
+      'SELECT name FROM sqlite_master WHERE type = ? AND lower(name) = ?',
+      ['table', 'master'],
+    );
+    if (masterTable.isEmpty) return [];
+
     final result =
         await db.rawQuery('SELECT DISTINCT ZB FROM master ORDER BY ZB ASC');
     return result.map((row) => row['ZB'].toString()).toList();
