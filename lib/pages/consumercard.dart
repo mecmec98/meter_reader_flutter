@@ -440,7 +440,7 @@ class _ConsumercardState extends State<Consumercard> {
   Future<void> _printReceiptFlat(ConsumercardModel card) async {
     final bluetoothHelper = context.read<BluePrinterHelper>();
 
-    String waterbillString = (_flatbill ?? 0.0).toStringAsFixed(0);
+    String waterbillString = (_flatbill ?? 0.0).toStringAsFixed(2);
     double flatTotaldue = (_flatbill ?? 0.0) + card.cardArrears;
     String messageText1 = '';
     String messageText2 = '';
@@ -502,6 +502,11 @@ class _ConsumercardState extends State<Consumercard> {
         fTaxValue = (bill - scDisc) * (card.prefsFtax / 100);
       }
 
+      double wTaxValue = 0;
+      if (card.cardWtaxExempt == 1){
+        wTaxValue = bill * 0.02;
+      }
+
       double penalty = 0;
       if (_penaltyActivate) {
         penalty = (card.prefsPenper / 100) + 1;
@@ -513,16 +518,29 @@ class _ConsumercardState extends State<Consumercard> {
           penaltyValue = (bill - scDisc) * (card.prefsPenper / 100);
         }
       }
-
-      double totalBeforeDue = ((bill - scDisc) + fTaxValue) +
-          card.cardArrears +
-          card.cardOthers +
-          card.cardWmf;
-      double totalAfterDue = (((bill - scDisc)) * penalty) +
-          fTaxValue +
-          card.cardArrears +
-          card.cardOthers +
-          card.cardWmf;
+      double totalBeforeDue = 0.00;
+      double totalAfterDue = 0.00;
+      if (card.cardWtaxExempt == 0) {
+        totalBeforeDue = ((bill - scDisc) + fTaxValue) +
+            card.cardArrears +
+            card.cardOthers +
+            card.cardWmf;
+        totalAfterDue = (((bill - scDisc)) * penalty) +
+            fTaxValue +
+            card.cardArrears +
+            card.cardOthers +
+            card.cardWmf;
+      } else if (card.cardWtaxExempt == 1){
+        totalBeforeDue = ((bill) + wTaxValue) +
+            card.cardArrears +
+            card.cardOthers +
+            card.cardWmf;
+        totalAfterDue = (((bill)) * penalty) +
+            wTaxValue +
+            card.cardArrears +
+            card.cardOthers +
+            card.cardWmf;
+      }
 
       setState(() {
         _calculatedBill = bill;
@@ -832,22 +850,23 @@ class _ConsumercardState extends State<Consumercard> {
         ),
       ),
       actions: [
-        GestureDetector(
-          onTap: () {
-            _showNoteDialog(context);
-          },
-          child: Container(
-            margin: const EdgeInsets.all(10),
-            alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/icons/note.svg',
-              height: 25,
-              width: 25,
-              colorFilter:
-                  const ColorFilter.mode(Colors.green, BlendMode.srcIn),
+        if (_noteActivate)
+          GestureDetector(
+            onTap: () {
+              _showNoteDialog(context);
+            },
+            child: Container(
+              margin: const EdgeInsets.all(10),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                'assets/icons/note.svg',
+                height: 25,
+                width: 25,
+                colorFilter:
+                    const ColorFilter.mode(Colors.green, BlendMode.srcIn),
+              ),
             ),
           ),
-        ),
       ],
     );
   }

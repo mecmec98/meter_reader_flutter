@@ -59,6 +59,11 @@ class _HomePageState extends State<HomePage> {
     setState(() => _readingStats = stats);
   }
 
+  Future<void> _openPageAndRefreshStats(String route) async {
+    await Navigator.pushNamed(context, route);
+    await _loadReadingStats();
+  }
+
   void _showBluetoothDialog() {
     showDialog(
       context: context,
@@ -232,7 +237,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 85, 227),
           label: 'Post Meter Reading',
           description: 'Record new meter readings for consumers',
-          onTap: () => Navigator.pushNamed(context, '/postmeterreading'),
+          onTap: () => _openPageAndRefreshStats('/postmeterreading'),
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -241,8 +246,8 @@ class _HomePageState extends State<HomePage> {
           iconPath: 'assets/icons/edit.svg',
           color: const Color.fromARGB(255, 28, 117, 227),
           label: 'Edit Meter Reading',
-          description: 'Modify previously saved and printed meter readings',
-          onTap: () => Navigator.pushNamed(context, '/editbilllist'),
+          description: 'Modify pr  eviously saved and printed meter readings',
+          onTap: () => _openPageAndRefreshStats('/editbilllist'), 
         ),
         const SizedBox(height: 14),
         _menuButton(
@@ -252,7 +257,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 28, 137, 227),
           label: 'Print Bill',
           description: 'Print billing statements for saved readings',
-          onTap: () => Navigator.pushNamed(context, '/printbilllist'),
+          onTap: () => _openPageAndRefreshStats('/printbilllist'),
         ),
         if (_disconnectionListEnabled) ...[
           const Padding(

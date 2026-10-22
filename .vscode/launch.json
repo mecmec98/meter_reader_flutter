@@ -7,18 +7,21 @@
         {
             "name": "meter_reader_flutter",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "deviceId": "c47f5464"
         },
         {
             "name": "meter_reader_flutter (profile mode)",
             "request": "launch",
             "type": "dart",
+            "deviceId": "c47f5464",
             "flutterMode": "profile"
         },
         {
             "name": "meter_reader_flutter (release mode)",
             "request": "launch",
             "type": "dart",
+            "deviceId": "c47f5464",
             "flutterMode": "release"
         }
     ]
