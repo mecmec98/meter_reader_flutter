@@ -262,7 +262,7 @@ class DatabaseHelper {
 
 //for getting data for the Post Meter List
   Future<List<Map<String, dynamic>>?> getMasterByIDforlist(
-      {int offset = 0}) async {
+      {int limit = 8, int offset = 0}) async {
     try {
       final db = await database;
       List<Map<String, dynamic>> result = await db.query(
@@ -270,6 +270,8 @@ class DatabaseHelper {
         columns: ['NAME', 'ADDRESS', 'MNO', '_id'],
         where: 'POSTED=?',
         whereArgs: [0],
+        orderBy: '_id ASC',
+        limit: limit,
         offset: offset,
       );
       return result;

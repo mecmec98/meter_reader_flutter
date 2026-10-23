@@ -151,7 +151,8 @@ class ConsumercardModel {
       cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
       cardRateType: map['RATETYPE'] is int ? map['RATETYPE'] as int : 0,
       cardMasCode: map['MASCODE'] is int ? map['MASCODE'] as int : 0,
-      cardWtaxExempt: map['WTAX_EXEMPT'] is int ? map['MASCODE'] as int : 0,
+      cardWtaxExempt:
+          map['WTAX_EXEMPT'] is int ? map['WTAX_EXEMPT'] as int : 0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',

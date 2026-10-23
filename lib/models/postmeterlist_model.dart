@@ -27,11 +27,17 @@ class PostmeterlistModel {
     try {
       final dbHelper = DatabaseHelper();
       final List<Map<String, dynamic>>? maps =
-          await dbHelper.getMasterByIDforlist(offset: offset);
+          await dbHelper.getMasterByIDforlist(limit: limit, offset: offset);
       return maps?.map((map) => PostmeterlistModel.fromMap(map)).toList();
     } catch (e) {
       print('Error: $e');
       return null;
     }
+  }
+
+  static Future<List<PostmeterlistModel>> searchMasterModelList(
+      String query) async {
+    final maps = await DatabaseHelper().searchMasterData(query);
+    return maps.map((map) => PostmeterlistModel.fromMap(map)).toList();
   }
 }

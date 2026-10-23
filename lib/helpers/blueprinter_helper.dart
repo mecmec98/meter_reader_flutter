@@ -334,6 +334,8 @@ class BluePrinterHelper extends ChangeNotifier {
       double afterdue,
       bool penaltyActivate,
       double penaltyValue,
+      int wTax,
+      double wTaxValue,
       [dynamic breakdown]) async {
     // Check connection before printing
     if (selectedDevice == null) {
@@ -450,11 +452,11 @@ class BluePrinterHelper extends ChangeNotifier {
         styles: PosStyles(align: PosAlign.center),
       );
 
-      bytes += generator.text( 
+      bytes += generator.text(
         'NON-VAT-REG.',
         styles: PosStyles(align: PosAlign.center),
       );
-      bytes += generator.text( 
+      bytes += generator.text(
         'TIN 000-553-002-00000',
         styles: PosStyles(align: PosAlign.center),
       );
@@ -572,13 +574,13 @@ class BluePrinterHelper extends ChangeNotifier {
       if (parsedBreakdown != null && parsedBreakdown.tiers.isNotEmpty) {
         for (final tier in parsedBreakdown.tiers) {
           final multiplierText = tier.units > 0
-              ? '${tier.units} x ${tier.ratePerUnit.toStringAsFixed(2)}'
+              ? '${tier.units}x${tier.ratePerUnit.toStringAsFixed(2)}'
               : '--';
 
           bytes += generator.row([
             PosColumn(
               text: tier.label,
-              width: 5,
+              width: 4,
               styles: PosStyles(height: PosTextSize.size1, bold: true),
             ),
             PosColumn(
@@ -591,11 +593,9 @@ class BluePrinterHelper extends ChangeNotifier {
             ),
             PosColumn(
               text: tier.amount.toStringAsFixed(2),
-              width: 3,
+              width: 4,
               styles: PosStyles(
-                  height: PosTextSize.size1,
-                  bold: true,
-                  align: PosAlign.right),
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
             ),
           ]);
         }
@@ -638,7 +638,7 @@ class BluePrinterHelper extends ChangeNotifier {
       if (cardwithSeniorDisc == 1 && usage < 31) {
         bytes += generator.row([
           PosColumn(
-            text: 'SC DISCOUNT',
+            text: 'SC DISC(5%)',
             width: 8,
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
@@ -650,21 +650,37 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
-      //ftax
-      if (ftaxActivate) {
-        bytes += generator.row([
-          PosColumn(
-            text: 'FTAX(2%)',
-            width: 8,
-            styles: PosStyles(height: PosTextSize.size1, bold: true),
-          ),
-          PosColumn(
-            text: ftax.toStringAsFixed(2),
-            width: 4,
-            styles: PosStyles(
-                height: PosTextSize.size1, bold: true, align: PosAlign.right),
-          ),
-        ]);
+      //ftax and wtax
+      if (wTax == 0) {
+        if (ftaxActivate) {
+          bytes += generator.row([
+            PosColumn(
+              text: 'FTAX(2%)',
+              width: 8,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: ftax.toStringAsFixed(2),
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
+            ),
+          ]);
+        }
+      } else if (wTax == 1) {
+            bytes += generator.row([
+            PosColumn(
+              text: 'WTAX(2%)',
+              width: 8,
+              styles: PosStyles(height: PosTextSize.size1, bold: true),
+            ),
+            PosColumn(
+              text: '-$wTaxValue',
+              width: 4,
+              styles: PosStyles(
+                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
+            ),
+          ]);
       }
       bytes += generator.row([
         PosColumn(
@@ -694,8 +710,6 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
-
-      print('breakdown finished');
 
       if (cardOthers != "0.00" && cardOthers.isNotEmpty) {
         bytes += generator.row([
@@ -788,21 +802,19 @@ class BluePrinterHelper extends ChangeNotifier {
       //messages
       bytes += generator.text('N O T I C E',
           styles: PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.text(
-          receiptMessage1,
+      bytes += generator.text(receiptMessage1,
           styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text(
-          receiptMessage2,
+      bytes += generator.text(receiptMessage2,
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(receiptMessage3,
           styles: PosStyles(align: PosAlign.center));
 
-     
-      bytes += generator.text('This Document is not valid for  claim of input tax',
+      bytes += generator.text(
+          'This Document is not valid for  claim of input tax',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.text('(RR7-2024 Section 6(B.15))',
           styles: PosStyles(align: PosAlign.center));
-           bytes += generator.text('   Thank you for your prompt       payment.',
+      bytes += generator.text('   Thank you for your prompt       payment.',
           styles: PosStyles(align: PosAlign.center));
       bytes += generator.cut();
 
@@ -960,7 +972,7 @@ class BluePrinterHelper extends ChangeNotifier {
       );
       bytes += generator.reset();
       bytes += generator.hr();
-       bytes += generator.text(
+      bytes += generator.text(
         'WATER BILL-',
         styles: PosStyles(
           fontType: PosFontType.fontA, // Explicitly set Font B

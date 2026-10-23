@@ -43,6 +43,9 @@ class _ConsumercardState extends State<Consumercard> {
   double? _ftax;
   double? _penaltyValue;
   double? _flatbill;
+  double? _wtaxValue;
+  int? _wtax;
+  int? _senior;
 
   bool _billUpdated = false;
   bool _isSaving = false;
@@ -84,6 +87,14 @@ class _ConsumercardState extends State<Consumercard> {
       _ftaxActivate = ftaxEnabled;
       _penaltyActivate = penaltyEnabled;
       _billingFeaturesLoaded = true;
+    });
+  }
+
+  Future<void> _checkforWtaxandSenior(ConsumercardModel card) async {
+    if (!mounted) return;
+    setState(() {
+      _wtax = card.cardWtaxExempt;
+      _senior = card.cardwithSeniorDisc;
     });
   }
 
@@ -264,6 +275,7 @@ class _ConsumercardState extends State<Consumercard> {
         double dbBill = _calculatedBill! * 100;
         double scDisc = _calculatedSCDisc! * 100;
         int pca = (_ftax! * 100).round();
+        int wtaxValue = (_wtaxValue! * 100).round();
 
         int finalSCdisc = scDisc.toInt();
         int calculateBillInt = dbBill.toInt();
@@ -276,18 +288,32 @@ class _ConsumercardState extends State<Consumercard> {
         int? isNewReading = _newReading;
         String dateUpdated =
             _currentReadingDate!; // Use the current date from the state
-        Map<String, dynamic> updatedData = {
-          'AMOUNT': calculateBillInt,
-          'USAGE': usageInt,
-          'POSTED': isPosted,
-          'BILL_STAT': billStatus,
-          'CREADING': isNewReading,
-          'MCRDGDT': dateUpdated,
-          'SCDISC': finalSCdisc,
-          'PEN': penalty,
-          'PCA': pca,
-        };
-
+        Map<String, dynamic> updatedData = {};
+        if (_wtax == 0) {
+          updatedData = {
+            'AMOUNT': calculateBillInt,
+            'USAGE': usageInt,
+            'POSTED': isPosted,
+            'BILL_STAT': billStatus,
+            'CREADING': isNewReading,
+            'MCRDGDT': dateUpdated,
+            'SCDISC': finalSCdisc,
+            'PEN': penalty,
+            'PCA': pca,
+          };
+        }else if(_wtax == 1){
+           updatedData = {
+            'AMOUNT': calculateBillInt,
+            'USAGE': usageInt,
+            'POSTED': isPosted,
+            'BILL_STAT': billStatus,
+            'CREADING': isNewReading,
+            'MCRDGDT': dateUpdated,
+            'SCDISC': finalSCdisc,
+            'PEN': penalty,
+            'WTAX': wtaxValue,
+          };
+        }
         try {
           int count =
               await DatabaseHelper().updateMasterData(_cardId!, updatedData);
@@ -360,6 +386,7 @@ class _ConsumercardState extends State<Consumercard> {
     final double penaltyValue = (_penaltyValue ?? 0.0).toDouble();
     final double waterBill =
         ((_calculatedBill ?? card.cardCurrbill ?? 0.0) as num).toDouble();
+    final double wtaxValue = ((_wtaxValue ?? 0.0) as num).toDouble();
     BillBreakdown breakdown;
 
     try {
@@ -434,6 +461,8 @@ class _ConsumercardState extends State<Consumercard> {
         afterDue,
         _penaltyActivate,
         penaltyValue,
+        card.cardWtaxExempt,
+        wtaxValue,
         breakdown);
   }
 
@@ -503,7 +532,7 @@ class _ConsumercardState extends State<Consumercard> {
       }
 
       double wTaxValue = 0;
-      if (card.cardWtaxExempt == 1){
+      if (card.cardWtaxExempt == 1) {
         wTaxValue = bill * 0.02;
       }
 
@@ -530,12 +559,12 @@ class _ConsumercardState extends State<Consumercard> {
             card.cardArrears +
             card.cardOthers +
             card.cardWmf;
-      } else if (card.cardWtaxExempt == 1){
-        totalBeforeDue = ((bill) + wTaxValue) +
+      } else if (card.cardWtaxExempt == 1) {
+        totalBeforeDue = ((bill) - wTaxValue) +
             card.cardArrears +
             card.cardOthers +
             card.cardWmf;
-        totalAfterDue = (((bill)) * penalty) +
+        totalAfterDue = (((bill)) * penalty) -
             wTaxValue +
             card.cardArrears +
             card.cardOthers +
@@ -549,6 +578,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedSCDisc = scDisc;
         _ftax = fTaxValue;
         _penaltyValue = penaltyValue;
+        _wtaxValue = wTaxValue;
       });
     } catch (e) {
       print("Error calculating bill: $e");
@@ -559,6 +589,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedSCDisc = null;
         _ftax = null;
         _penaltyValue = null;
+        _wtaxValue = null;
       });
     }
   }
@@ -594,6 +625,7 @@ class _ConsumercardState extends State<Consumercard> {
                         String datePart = formattedDate.split(' ').first;
                         _currentReadingDate = '$datePart $onlyTime';
                       });
+                      _checkforWtaxandSenior(card);
                     }
                   });
                   if (_billingFeaturesLoaded &&
@@ -651,6 +683,8 @@ class _ConsumercardState extends State<Consumercard> {
                             ftaxActivate: _ftaxActivate,
                             penaltyActivate: _penaltyActivate,
                             flatbill: _flatbill,
+                            wtax: _wtax ?? 0,
+                            senior: _senior ?? 0,
                             totalFlatbill:
                                 (_flatbill ?? 0.0) + (card.cardArrears),
                           ),

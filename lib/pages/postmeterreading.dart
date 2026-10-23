@@ -11,13 +11,18 @@ class Postmeterreading extends StatefulWidget {
 }
 
 class _PostmeterreadingState extends State<Postmeterreading> {
+  static const int _pageSize = 8;
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
   List<PostmeterlistModel> _posts = [];
   List<PostmeterlistModel> _filtered = [];
-  bool _loading = true;
+  bool _loading = false;
+  bool _searching = false;
+  bool _hasMore = true;
   int _remainingCount = 0;
+  int _searchRequest = 0;
   String _searchQuery = '';
 
   @override
@@ -26,14 +31,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     _loadData();
     _loadRemainingCount();
     _searchController.addListener(_onSearchChanged);
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 200 &&
-          !_loading &&
-          _searchQuery.isEmpty) {
-        _loadData();
-      }
-    });
+    _scrollController.addListener(_loadMoreWhenNearEnd);
   }
 
   @override
@@ -44,25 +42,49 @@ class _PostmeterreadingState extends State<Postmeterreading> {
   }
 
   Future<void> _loadData() async {
+    if (_loading || !_hasMore) return;
     setState(() => _loading = true);
     try {
       List<PostmeterlistModel>? newPosts =
           await PostmeterlistModel.getMasterModelList(
-        limit: 8,
+        limit: _pageSize,
         offset: _posts.length,
       );
+      if (newPosts == null) {
+        throw StateError('Could not load meter readings.');
+      }
 
       if (!mounted) return;
       setState(() {
-        if (newPosts != null) {
-          _posts.addAll(newPosts);
-          _filtered = _posts;
-        }
+        _posts.addAll(newPosts);
+        _filtered = _posts;
+        _hasMore = newPosts.length == _pageSize;
         _loading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadMoreWhenNearEnd();
       });
     } catch (e) {
       print('Error: $e');
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load meter readings: $e')),
+      );
+    }
+  }
+
+  void _loadMoreWhenNearEnd() {
+    if (!_scrollController.hasClients ||
+        _loading ||
+        !_hasMore ||
+        _searchQuery.isNotEmpty) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      _loadData();
     }
   }
 
@@ -74,28 +96,46 @@ class _PostmeterreadingState extends State<Postmeterreading> {
 
   void _onSearchChanged() {
     final query = _searchController.text.trim();
-    _filter(query);
+    _search(query);
   }
 
-  void _filter(String query) {
+  Future<void> _search(String query) async {
+    final request = ++_searchRequest;
     setState(() {
       _searchQuery = query;
       if (query.isEmpty) {
         _filtered = _posts;
+        _searching = false;
       } else {
-        final q = query.toLowerCase();
-        _filtered = _posts.where((post) {
-          return post.postName.toLowerCase().contains(q) ||
-              post.postAddress.toLowerCase().contains(q) ||
-              post.postMeterno.toLowerCase().contains(q);
-        }).toList();
+        _filtered = [];
+        _searching = true;
       }
     });
+
+    if (query.isEmpty) return;
+
+    try {
+      final results =
+          await PostmeterlistModel.searchMasterModelList(query);
+      if (!mounted || request != _searchRequest) return;
+      setState(() {
+        _filtered = results;
+        _searching = false;
+      });
+    } catch (e) {
+      if (!mounted || request != _searchRequest) return;
+      setState(() => _searching = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not search meter readings: $e')),
+      );
+    }
   }
 
   Future<void> _refreshList() async {
     setState(() {
       _posts.clear();
+      _filtered.clear();
+      _hasMore = true;
     });
     await _loadData();
     await _loadRemainingCount();
@@ -163,6 +203,9 @@ class _PostmeterreadingState extends State<Postmeterreading> {
     if (_loading && _posts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (_searching) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_filtered.isEmpty) {
       return Center(
         child: Text(
@@ -176,7 +219,9 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _searchQuery.isEmpty ? _posts.length + 1 : _filtered.length,
+        itemCount: _searchQuery.isEmpty
+            ? _posts.length + (_hasMore ? 1 : 0)
+            : _filtered.length,
         itemBuilder: (context, index) {
           if (_searchQuery.isNotEmpty && index < _filtered.length) {
             return _buildPostItem(_filtered[index], index);
@@ -184,7 +229,7 @@ class _PostmeterreadingState extends State<Postmeterreading> {
           if (_searchQuery.isEmpty && index < _posts.length) {
             return _buildPostItem(_posts[index], index);
           }
-          return _hasMore
+          return _loading
               ? const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Center(child: CircularProgressIndicator()),
@@ -194,8 +239,6 @@ class _PostmeterreadingState extends State<Postmeterreading> {
       ),
     );
   }
-
-  bool get _hasMore => _searchQuery.isEmpty;
 
   Widget _buildPostItem(PostmeterlistModel post, int index) {
     final tileColor = index % 2 == 0

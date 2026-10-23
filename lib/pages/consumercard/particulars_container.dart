@@ -10,6 +10,8 @@ class ParticularsContainer extends StatelessWidget {
   final double? flatbill;
   final double? totalFlatbill;
   final bool ftaxActivate;
+  final int wtax;
+  final int senior;
   final bool penaltyActivate;
   const ParticularsContainer(
       {super.key,
@@ -19,6 +21,8 @@ class ParticularsContainer extends StatelessWidget {
       required this.afterDatecalculation,
       required this.calculatedSCDisc,
       required this.ftaxActivate,
+      required this.wtax,
+      required this.senior,
       required this.penaltyActivate,
       required this.flatbill,
       required this.totalFlatbill});
@@ -89,7 +93,7 @@ class ParticularsContainer extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w400)),
               ],
             ),
-            if (card.cardwithSeniorDisc == 1) ...[
+            if (senior == 1) ...[
               const Divider(color: Colors.grey, thickness: 0.5),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -106,16 +110,32 @@ class ParticularsContainer extends StatelessWidget {
                 ],
               ),
             ],
-            if (ftaxActivate) ...[
+
+            if (wtax == 0) ...[
+              if (ftaxActivate) ...[
+                const Divider(color: Colors.grey, thickness: 0.5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Franchise Tax',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                    Text('${card.prefsFtax.toStringAsFixed(0)}%',
+                        style: const TextStyle(fontWeight: FontWeight.w400)),
+                  ],
+                ),
+              ]
+            ] else if (wtax == 1) ...[
               const Divider(color: Colors.grey, thickness: 0.5),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Franchise Tax',
+                    'Withholding Tax',
                     style: TextStyle(color: Colors.green),
                   ),
-                  Text('${card.prefsFtax.toStringAsFixed(0)}%',
+                  Text('2%(LESS)',
                       style: const TextStyle(fontWeight: FontWeight.w400)),
                 ],
               ),
