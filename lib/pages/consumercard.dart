@@ -37,6 +37,7 @@ class _ConsumercardState extends State<Consumercard> {
   double? _calculatedBill;
   double? _beforeDatecalculation;
   double? _afterDatecalculation;
+  double? _totalPayableForWtax;
   double? _calculatedSCDisc;
   String scDiscLimitWarning = 'Limit Usage for Senior Citezen Discount';
   String? _currentReadingDate; //holds card.cardcurrentReadingDate
@@ -312,6 +313,7 @@ class _ConsumercardState extends State<Consumercard> {
             'SCDISC': finalSCdisc,
             'PEN': penalty,
             'WTAX': wtaxValue,
+            'PCA': pca,
           };
         }
         try {
@@ -387,6 +389,7 @@ class _ConsumercardState extends State<Consumercard> {
     final double waterBill =
         ((_calculatedBill ?? card.cardCurrbill ?? 0.0) as num).toDouble();
     final double wtaxValue = ((_wtaxValue ?? 0.0) as num).toDouble();
+    final double totalPayableForWtax = (_totalPayableForWtax ?? 0.0).toDouble();
     BillBreakdown breakdown;
 
     try {
@@ -463,6 +466,7 @@ class _ConsumercardState extends State<Consumercard> {
         penaltyValue,
         card.cardWtaxExempt,
         wtaxValue,
+        totalPayableForWtax.toStringAsFixed(2),
         breakdown);
   }
 
@@ -548,6 +552,7 @@ class _ConsumercardState extends State<Consumercard> {
         }
       }
       double totalBeforeDue = 0.00;
+      double totalPayableForWtax = 0.00;
       double totalAfterDue = 0.00;
       if (card.cardWtaxExempt == 0) {
         totalBeforeDue = ((bill - scDisc) + fTaxValue) +
@@ -560,7 +565,11 @@ class _ConsumercardState extends State<Consumercard> {
             card.cardOthers +
             card.cardWmf;
       } else if (card.cardWtaxExempt == 1) {
-        totalBeforeDue = ((bill) - wTaxValue) +
+        totalPayableForWtax = (bill) + fTaxValue +
+            card.cardArrears +
+            card.cardOthers +
+            card.cardWmf;
+        totalBeforeDue = ((bill) - wTaxValue) + fTaxValue +
             card.cardArrears +
             card.cardOthers +
             card.cardWmf;
@@ -575,6 +584,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill = bill;
         _beforeDatecalculation = totalBeforeDue;
         _afterDatecalculation = totalAfterDue;
+        _totalPayableForWtax = totalPayableForWtax;
         _calculatedSCDisc = scDisc;
         _ftax = fTaxValue;
         _penaltyValue = penaltyValue;
@@ -586,6 +596,7 @@ class _ConsumercardState extends State<Consumercard> {
         _calculatedBill = null;
         _beforeDatecalculation = null;
         _afterDatecalculation = null;
+        _totalPayableForWtax = null;
         _calculatedSCDisc = null;
         _ftax = null;
         _penaltyValue = null;

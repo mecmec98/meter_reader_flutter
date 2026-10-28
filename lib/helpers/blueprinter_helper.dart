@@ -336,7 +336,10 @@ class BluePrinterHelper extends ChangeNotifier {
       double penaltyValue,
       int wTax,
       double wTaxValue,
+      String totalPayableForWtax,
       [dynamic breakdown]) async {
+    final formatter = NumberFormat('#,##0.00');
+
     // Check connection before printing
     if (selectedDevice == null) {
       connectionStatus = 'No device selected';
@@ -352,6 +355,7 @@ class BluePrinterHelper extends ChangeNotifier {
       await _attemptReconnection();
     }
     try {
+      String wtaxPrint = formatter.format(wTaxValue);
       String formonth = billdate;
       final receiptMessage1 = messageText1.trim().isEmpty
           ? 'Failure to pay your bill 3 days after the due-date, your service connection will be disconnected immediately without further     notice.'
@@ -360,14 +364,12 @@ class BluePrinterHelper extends ChangeNotifier {
           ? 'Accounts with existing arrears  will be disconnected immediately without further notice.'
           : messageText2;
       final receiptMessage3 = messageText3.trim().isEmpty
-          ? 'We are now implenting a 2% FTAX implented adopted from DapCWD   Board Resolution No. 03, s. 2026'
+          ? 'We are now implenting a 2% FTAX adopted from DapCWD Board Resolution No. 03, s. 2026'
           : messageText3;
 
 // Convert date from "01/07/2025" format to "July 2025"
       if (formonth.isNotEmpty && formonth.contains('/')) {
         try {
-          print(formonth);
-          print("parsing month");
           DateTime date = DateFormat('MM/dd/yyyy').parse(formonth);
           formonth = DateFormat('MMMM yyyy').format(date);
         } catch (e) {
@@ -574,7 +576,7 @@ class BluePrinterHelper extends ChangeNotifier {
       if (parsedBreakdown != null && parsedBreakdown.tiers.isNotEmpty) {
         for (final tier in parsedBreakdown.tiers) {
           final multiplierText = tier.units > 0
-              ? '${tier.units}x${tier.ratePerUnit.toStringAsFixed(2)}'
+              ? '${tier.units}x${formatter.format(tier.ratePerUnit)}'
               : '--';
 
           bytes += generator.row([
@@ -592,7 +594,7 @@ class BluePrinterHelper extends ChangeNotifier {
                   align: PosAlign.center),
             ),
             PosColumn(
-              text: tier.amount.toStringAsFixed(2),
+              text: formatter.format(tier.amount),
               width: 4,
               styles: PosStyles(
                   height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -602,18 +604,18 @@ class BluePrinterHelper extends ChangeNotifier {
         bytes += generator.row([
           PosColumn(
             text: 'SUBTOTAL',
-            width: 7,
+            width: 4,
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
             text: '',
-            width: 2,
+            width: 4,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.center),
           ),
           PosColumn(
-            text: parsedBreakdown.total.toStringAsFixed(2),
-            width: 3,
+            text: formatter.format(parsedBreakdown.total),
+            width: 4,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
           ),
@@ -650,37 +652,21 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
-      //ftax and wtax
-      if (wTax == 0) {
-        if (ftaxActivate) {
-          bytes += generator.row([
-            PosColumn(
-              text: 'FTAX(2%)',
-              width: 8,
-              styles: PosStyles(height: PosTextSize.size1, bold: true),
-            ),
-            PosColumn(
-              text: ftax.toStringAsFixed(2),
-              width: 4,
-              styles: PosStyles(
-                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
-            ),
-          ]);
-        }
-      } else if (wTax == 1) {
-            bytes += generator.row([
-            PosColumn(
-              text: 'WTAX(2%)',
-              width: 8,
-              styles: PosStyles(height: PosTextSize.size1, bold: true),
-            ),
-            PosColumn(
-              text: '-$wTaxValue',
-              width: 4,
-              styles: PosStyles(
-                  height: PosTextSize.size1, bold: true, align: PosAlign.right),
-            ),
-          ]);
+      //ftax
+      if (ftaxActivate) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'FTAX(2%)',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: formatter.format(ftax),
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
       }
       bytes += generator.row([
         PosColumn(
@@ -703,7 +689,7 @@ class BluePrinterHelper extends ChangeNotifier {
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
-            text: balance.toStringAsFixed(2),
+            text: formatter.format(balance),
             width: 4,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -726,7 +712,36 @@ class BluePrinterHelper extends ChangeNotifier {
           ),
         ]);
       }
+      if (wTax == 1) {
+        bytes += generator.hr();
+        bytes += generator.row([
+          PosColumn(
+            text: 'TOTAL Payable',
+            width: 8,
+            styles: PosStyles(bold: true),
+          ),
+          PosColumn(
+            text: totalPayableForWtax,
+            width: 4,
+            styles: PosStyles(bold: true, align: PosAlign.right),
+          ),
+        ]);
+        bytes += generator.row([
+          PosColumn(
+            text: 'WTAX(2%)',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: '-$wtaxPrint',
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
 
+      bytes += generator.hr();
       bytes += generator.row([
         PosColumn(
           text: 'TOTAL DUE',
@@ -763,7 +778,7 @@ class BluePrinterHelper extends ChangeNotifier {
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
-            text: penaltyValue.toStringAsFixed(2),
+            text: formatter.format(penaltyValue),
             width: 5,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -776,7 +791,7 @@ class BluePrinterHelper extends ChangeNotifier {
             styles: PosStyles(height: PosTextSize.size1, bold: true),
           ),
           PosColumn(
-            text: afterdue.toStringAsFixed(2),
+            text: formatter.format(afterdue),
             width: 5,
             styles: PosStyles(
                 height: PosTextSize.size1, bold: true, align: PosAlign.right),
@@ -809,6 +824,10 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.text(receiptMessage3,
           styles: PosStyles(align: PosAlign.center));
 
+          
+      bytes += generator.text(
+          '-',
+          styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(
           'This Document is not valid for  claim of input tax',
           styles: PosStyles(align: PosAlign.center));

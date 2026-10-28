@@ -110,23 +110,21 @@ class ParticularsContainer extends StatelessWidget {
                 ],
               ),
             ],
-
-            if (wtax == 0) ...[
-              if (ftaxActivate) ...[
-                const Divider(color: Colors.grey, thickness: 0.5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Franchise Tax',
-                      style: TextStyle(color: Colors.green),
-                    ),
-                    Text('${card.prefsFtax.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontWeight: FontWeight.w400)),
-                  ],
-                ),
-              ]
-            ] else if (wtax == 1) ...[
+            if (ftaxActivate) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Franchise Tax',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  Text('${card.prefsFtax.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w400)),
+                ],
+              ),
+            ],
+            if (wtax == 1) ...[
               const Divider(color: Colors.grey, thickness: 0.5),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
