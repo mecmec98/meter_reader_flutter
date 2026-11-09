@@ -35,6 +35,8 @@ class ConsumercardModel {
   int cardMasCode;
   int cardWtaxExempt;
 
+  double cardMaterialsBalance;
+
   String prefsDatedue;
   String prefsCutdate;
   String prefsBilldate;
@@ -73,6 +75,7 @@ class ConsumercardModel {
       required this.cardRateType,
       required this.cardMasCode,
       required this.cardWtaxExempt,
+      required this.cardMaterialsBalance,
       required this.prefsCutdate,
       required this.prefsDatedue,
       required this.prefsBilldate,
@@ -151,8 +154,9 @@ class ConsumercardModel {
       cardPreviousUsage: map['PCUMUSED'] is int ? map['PCUMUSED'] as int : 0,
       cardRateType: map['RATETYPE'] is int ? map['RATETYPE'] as int : 0,
       cardMasCode: map['MASCODE'] is int ? map['MASCODE'] as int : 0,
-      cardWtaxExempt:
-          map['WTAX_EXEMPT'] is int ? map['WTAX_EXEMPT'] as int : 0,
+      cardWtaxExempt: map['WTAX_EXEMPT'] is int ? map['WTAX_EXEMPT'] as int : 0,
+      cardMaterialsBalance:
+          map['UBARO'] != null ? (map['UBARO'] as num).toDouble() / 100 : 0.0,
 
       cardprevReadingDate: map['MPRDGDT'] ?? '',
       cardcurrentReadingDate: map['MCRDGDT'] ?? '',

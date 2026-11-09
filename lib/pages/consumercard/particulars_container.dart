@@ -169,16 +169,18 @@ class ParticularsContainer extends StatelessWidget {
                         fontWeight: FontWeight.w500, color: Colors.orange)),
               ],
             ),
-            const Divider(color: Colors.grey, thickness: 0.5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total After Due Date',
-                    style: TextStyle(color: Colors.orange)),
-                Text((afterDatecalculation ?? 0.0).toStringAsFixed(2),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
+            if (penaltyActivate) ...[
+              const Divider(color: Colors.grey, thickness: 0.5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total After Due Date',
+                      style: TextStyle(color: Colors.orange)),
+                  Text((afterDatecalculation ?? 0.0).toStringAsFixed(2),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
             const Divider(color: Colors.grey, thickness: 0.5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
