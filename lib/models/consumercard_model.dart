@@ -34,6 +34,7 @@ class ConsumercardModel {
   int cardRateType;
   int cardMasCode;
   int cardWtaxExempt;
+  
 
   double cardMaterialsBalance;
 

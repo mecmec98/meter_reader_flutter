@@ -394,9 +394,11 @@ class _ConsumercardState extends State<Consumercard> {
 
     try {
       if (card.cardCodeRaw.trim().length >= 3) {
+        final breakdownUsage = usageValue +
+            (card.cardPreviousUsage != 0 ? card.cardPreviousUsage : 0);
         breakdown = await CalculatebillHelper.calculateBillBreakdown(
           card.cardCodeRaw,
-          usageValue,
+          breakdownUsage,
         );
       } else {
         breakdown = BillBreakdown(
