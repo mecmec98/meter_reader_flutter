@@ -856,6 +856,8 @@ class BluePrinterHelper extends ChangeNotifier {
     String address, //
     String accNo, //
     String waterBill, //
+    double ftax,
+    bool ftaxActivate,
     double balance,
     String totaldue,
     String billdate,
@@ -1011,6 +1013,21 @@ class BluePrinterHelper extends ChangeNotifier {
               height: PosTextSize.size1, bold: true, align: PosAlign.right),
         ),
       ]);
+      if (ftaxActivate) {
+        bytes += generator.row([
+          PosColumn(
+            text: 'FTAX(2%)',
+            width: 8,
+            styles: PosStyles(height: PosTextSize.size1, bold: true),
+          ),
+          PosColumn(
+            text: ftax.toStringAsFixed(2),
+            width: 4,
+            styles: PosStyles(
+                height: PosTextSize.size1, bold: true, align: PosAlign.right),
+          ),
+        ]);
+      }
       if (balance != 0) {
         bytes += generator.row([
           PosColumn(

@@ -208,6 +208,13 @@ class _ConsumercardState extends State<Consumercard> {
 
 //Handles the Save Button click event.
   Future<void> handleSaveButton() async {
+    if (_rateType == 1) {
+      final saved = await updateFlatRecord(1);
+      if (!saved || !mounted) return;
+      Navigator.pop(context, true);
+      return;
+    }
+
     // Check if there is input (adjust the condition as needed for your logic)
     if (_newReading == null && _usage == null) {
       if (!mounted) return;
@@ -232,7 +239,8 @@ class _ConsumercardState extends State<Consumercard> {
     if (bluetoothHelper.connected == true &&
         await bluetoothHelper.bluetooth.isConnected == true) {
       int billStatePrinted = 2;
-      await updateMasterRecord(billStatePrinted, 1);
+      final saved = await updateFlatRecord(billStatePrinted);
+      if (!saved) return;
       try {
         if (_currentCard != null) {
           await _printReceiptFlat(_currentCard!);
@@ -254,6 +262,52 @@ class _ConsumercardState extends State<Consumercard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Printer not connected!')),
       );
+    }
+  }
+
+  Future<bool> updateFlatRecord(int billStatus) async {
+    if (!_billingFeaturesLoaded) await _loadBillingFeatures();
+    if (!mounted) return false;
+
+    final card = _currentCard;
+    final flatBill = _flatbill;
+    final readingDate = _currentReadingDate;
+    if (_cardId == null ||
+        card == null ||
+        flatBill == null ||
+        readingDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Flat bill data is not ready.')),
+      );
+      return false;
+    }
+
+    final amount = ((flatBill + card.cardArrears) * 100).round();
+    final pca =
+        _ftaxActivate ? (flatBill * (card.prefsFtax / 100) * 100).round() : 0;
+
+    try {
+      final count = await DatabaseHelper().updateMasterData(_cardId!, {
+        'AMOUNT': amount,
+        'POSTED': 1,
+        'BILL_STAT': billStatus,
+        'PCA': pca,
+        'MCRDGDT': readingDate,
+      });
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              count > 0 ? 'Record updated successfully!' : 'Update failed.'),
+        ),
+      );
+      return count > 0;
+    } catch (e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving the record: $e')),
+      );
+      return false;
     }
   }
 
@@ -476,7 +530,11 @@ class _ConsumercardState extends State<Consumercard> {
     final bluetoothHelper = context.read<BluePrinterHelper>();
 
     String waterbillString = (_flatbill ?? 0.0).toStringAsFixed(2);
-    double flatTotaldue = (_flatbill ?? 0.0) + card.cardArrears;
+    final flatBill = _flatbill ?? 0.0;
+    final ftaxValue = _ftaxActivate
+        ? flatBill * (card.prefsFtax / 100)
+        : 0.0;
+    double flatTotaldue = flatBill + card.cardArrears + ftaxValue;
     String messageText1 = '';
     String messageText2 = '';
     String messageText3 = '';
@@ -488,6 +546,8 @@ class _ConsumercardState extends State<Consumercard> {
         card.cardAddress,
         card.cardAccno,
         waterbillString,
+        ftaxValue,
+        _ftaxActivate,
         card.cardArrears,
         flatTotaldue.toStringAsFixed(2),
         card.prefsBilldate,
