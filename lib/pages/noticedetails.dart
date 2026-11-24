@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
+import 'package:meter_reader_flutter/helpers/camera_helper.dart';
 import 'package:meter_reader_flutter/helpers/notice_helper.dart';
 import 'package:meter_reader_flutter/models/disconnection_model.dart';
 import 'package:meter_reader_flutter/models/notice_model.dart';
@@ -30,6 +33,7 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
   late final TextEditingController _remarksController;
   late String _meterStatus;
   late NoticeModel _editedItem;
+  CapturedPhoto? _capturedPhoto;
 
   @override
   void initState() {
@@ -92,16 +96,41 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                     _editedItem.printedAt!.replaceFirst('T', ' '),
                     valueColor: const Color(0xFF2E7D32),
                   ),
+                _buildDetailRow(
+                  'Notice Status',
+                  _editedItem.noticeStatus == 2
+                      ? 'Printed with photo evidence'
+                      : _editedItem.noticeStatus == 1
+                          ? 'Printed'
+                          : 'Pending',
+                  valueColor: _editedItem.noticeStatus > 0
+                      ? const Color(0xFF2E7D32)
+                      : Colors.orange.shade800,
+                ),
                 _buildDetailRow('Months Overdue', _editedItem.months.toString(),
                     valueColor: Colors.orange.shade800),
                 _buildDetailRow('Last Reading', _editedItem.lrdg.toString()),
                 const SizedBox(height: 8),
                 const Divider(height: 1),
-                 const SizedBox(height: 8),
-               
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _takeTestPhoto,
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                        label: const Text('Take Photo'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.orange.shade800,
+                          side: BorderSide(color: Colors.orange.shade800),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _printNotice(context),
@@ -120,6 +149,23 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
+                if (_capturedPhoto != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(_capturedPhoto!.path),
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _capturedPhoto!.fileName,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ],
             ),
           ],
@@ -254,6 +300,31 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
 
   String _formatAmount(double amount) => '₱${amount.toStringAsFixed(2)}';
 
+  Future<void> _takeTestPhoto() async {
+    try {
+      final photo = await CameraHelper().takePhoto(
+        accountNo: _editedItem.accNo,
+        category: 'notices',
+      );
+      if (!mounted) return;
+      if (photo == null) return;
+
+      await NoticeHelper().markNoticePhotoEvidence(_editedItem.accNo);
+      setState(() {
+        _capturedPhoto = photo;
+        _editedItem = _editedItem.copyWith(noticeStatus: 2);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Photo saved: ${photo.fileName}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Camera failed: $error')),
+      );
+    }
+  }
+
   void _updateEditedItem() {
     final reading = int.tryParse(_readingController.text.trim());
     _editedItem = _editedItem.copyWith(
@@ -263,17 +334,18 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
     );
   }
 
-
   Future<void> _printNotice(BuildContext context) async {
     try {
       _updateEditedItem();
       await NoticeHelper().updateNoticeDetails(_editedItem);
+      if (!context.mounted) return;
       await context
           .read<BluePrinterHelper>()
           .printDisconnection(_asDisconnection(_editedItem));
       await NoticeHelper().markNoticePrinted(_editedItem.accNo);
       _editedItem = _editedItem.copyWith(
         printedAt: DateTime.now().toIso8601String(),
+        noticeStatus: _editedItem.noticeStatus == 2 ? 2 : 1,
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

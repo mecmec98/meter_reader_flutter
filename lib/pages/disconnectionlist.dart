@@ -212,13 +212,21 @@ class _DisconnectionListState extends State<DisconnectionList> {
           return InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () async {
-              await Navigator.push(
+              final saved = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DisconnectionDetailsPage(item: item),
                 ),
               );
-              if (mounted) await _loadData();
+              if (!mounted) return;
+              await _loadData();
+              if (saved == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Disconnection details saved'),
+                  ),
+                );
+              }
             },
             child: Card(
               color: tileColor,

@@ -36,7 +36,7 @@ class _DisconnectionDetailsPageState extends State<DisconnectionDetailsPage> {
     super.initState();
     _editedItem = widget.item;
     _disconnectionReadingController =
-      TextEditingController(text: widget.item.disconReading.toString());
+        TextEditingController(text: widget.item.disconReading.toString());
     _remarksController = TextEditingController(text: widget.item.remarks);
     _meterStatus = _meterStatuses.contains(widget.item.metStat)
         ? widget.item.metStat
@@ -86,12 +86,12 @@ class _DisconnectionDetailsPageState extends State<DisconnectionDetailsPage> {
               children: [
                 _buildDetailRow('Disconnection Date', _editedItem.disconDate,
                     valueColor: Colors.red.shade700),
-                    _buildDetailRow('Months Overdue',  _editedItem.months.toString(),
+                _buildDetailRow('Months Overdue', _editedItem.months.toString(),
                     valueColor: Colors.red.shade700),
-                     _buildDetailRow('Last Reading', _editedItem.lrdg.toString()),
-                    const SizedBox(height: 4),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
+                _buildDetailRow('Last Reading', _editedItem.lrdg.toString()),
+                const SizedBox(height: 4),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
                 _buildInputField(
                   controller: _disconnectionReadingController,
                   label: 'Disconnection Reading',
@@ -315,7 +315,8 @@ class _DisconnectionDetailsPageState extends State<DisconnectionDetailsPage> {
               const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
         items: _meterStatuses
-            .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+            .map((status) =>
+                DropdownMenuItem(value: status, child: Text(status)))
             .toList(),
         onChanged: (status) {
           if (status != null) {
@@ -339,12 +340,49 @@ class _DisconnectionDetailsPageState extends State<DisconnectionDetailsPage> {
   }
 
   Future<void> _saveDetails(BuildContext context) async {
+    final enteredReading =
+        int.tryParse(_disconnectionReadingController.text.trim());
+    if (enteredReading == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid disconnection reading'),
+        ),
+      );
+      return;
+    }
+
+    if (enteredReading < _editedItem.lrdg) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Reading is lower than last reading'),
+            content: Text(
+              'Disconnection Reading ($enteredReading) is lower than '
+              'Last Reading (${_editedItem.lrdg}). Proceed anyway?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Check Again'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Proceed'),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true) return;
+    }
+
     _updateEditedItem();
     await DisconnectionHelper().updateDisconnectionDetails(_editedItem);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Disconnection details saved')),
-    );
+    Navigator.pop(context, true);
   }
 
   Future<void> _printDisconnection(BuildContext context) async {

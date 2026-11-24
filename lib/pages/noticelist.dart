@@ -103,10 +103,8 @@ class _NoticeListState extends State<NoticeList> {
   }
 
   Widget _buildCounter() {
-    final pendingCount =
-        _items.where((item) => item.printedAt == null).length;
-    final noticedCount =
-        _items.where((item) => item.printedAt != null).length;
+    final pendingCount = _items.where((item) => item.noticeStatus == 0).length;
+    final noticedCount = _items.where((item) => item.noticeStatus > 0).length;
 
     return Container(
       width: double.infinity,
@@ -171,9 +169,8 @@ class _NoticeListState extends State<NoticeList> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    var items = _items
-        .where((item) => (item.printedAt != null) == isNoticed)
-        .toList();
+    var items =
+        _items.where((item) => (item.noticeStatus > 0) == isNoticed).toList();
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       items = items.where((item) {
@@ -187,9 +184,7 @@ class _NoticeListState extends State<NoticeList> {
       return Center(
         child: Text(
           _searchQuery.isEmpty
-              ? (isNoticed
-                  ? 'No noticed records'
-                  : 'No pending notice records')
+              ? (isNoticed ? 'No noticed records' : 'No pending notice records')
               : 'No matches found',
           style: const TextStyle(color: Colors.black45, fontSize: 14),
         ),
@@ -257,7 +252,7 @@ class _NoticeListState extends State<NoticeList> {
                             ),
                           ),
                         ),
-                        if (item.printedAt != null) ...[
+                        if (item.noticeStatus > 0) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(

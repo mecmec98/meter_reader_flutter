@@ -21,6 +21,7 @@ class NoticeModel {
   final String disconDate;
   final String optionType;
   final String? printedAt;
+  final int noticeStatus;
 
   NoticeModel({
     this.id,
@@ -45,6 +46,7 @@ class NoticeModel {
     required this.disconDate,
     required this.optionType,
     this.printedAt,
+    this.noticeStatus = 0,
   });
 
   NoticeModel copyWith({
@@ -52,6 +54,7 @@ class NoticeModel {
     String? metStat,
     String? remarks,
     String? printedAt,
+    int? noticeStatus,
   }) {
     return NoticeModel(
       id: id,
@@ -76,6 +79,7 @@ class NoticeModel {
       disconDate: disconDate,
       optionType: optionType,
       printedAt: printedAt ?? this.printedAt,
+      noticeStatus: noticeStatus ?? this.noticeStatus,
     );
   }
 
@@ -109,6 +113,7 @@ class NoticeModel {
       disconDate: _dateOnly(map['DISCONDATE'] ?? map['discon_date']) ?? '',
       optionType: (map['OPTIONTYPE'] ?? map['option_type']) as String,
       printedAt: map['printed_at'] as String?,
+      noticeStatus: (map['NOTICESTATUS'] ?? map['notice_status'] ?? 0) as int,
     );
   }
 
@@ -136,6 +141,7 @@ class NoticeModel {
       'discon_date': disconDate,
       'option_type': optionType,
       'printed_at': printedAt,
+      'notice_status': noticeStatus,
     };
   }
 }

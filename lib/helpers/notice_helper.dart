@@ -38,7 +38,7 @@ class NoticeHelper {
     final path = await getDatabasePath();
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notices (
@@ -63,7 +63,8 @@ class NoticeHelper {
             remarks TEXT NOT NULL,
             discon_date TEXT NOT NULL,
             option_type TEXT NOT NULL,
-            printed_at TEXT
+            printed_at TEXT,
+            notice_status INTEGER NOT NULL DEFAULT 0
           )
         ''');
         await db.execute(
@@ -72,6 +73,11 @@ class NoticeHelper {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE notices ADD COLUMN printed_at TEXT');
+        }
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE notices ADD COLUMN notice_status INTEGER NOT NULL DEFAULT 0',
+          );
         }
       },
     );
@@ -98,9 +104,24 @@ class NoticeHelper {
 
   Future<int> markNoticePrinted(String accNo) async {
     final db = await database;
+    return db.rawUpdate(
+      '''
+      UPDATE notices
+      SET printed_at = ?, notice_status = CASE
+        WHEN notice_status = 2 THEN 2
+        ELSE 1
+      END
+      WHERE acc_no = ?
+      ''',
+      [DateTime.now().toIso8601String(), accNo],
+    );
+  }
+
+  Future<int> markNoticePhotoEvidence(String accNo) async {
+    final db = await database;
     return db.update(
       'notices',
-      {'printed_at': DateTime.now().toIso8601String()},
+      {'notice_status': 2},
       where: 'acc_no = ?',
       whereArgs: [accNo],
     );
@@ -121,7 +142,10 @@ class NoticeHelper {
     await db.transaction((txn) async {
       await txn.delete('notices');
       for (final item in items) {
-        final values = item.toMap()..remove('printed_at');
+        final values = item.toMap()
+          ..remove('printed_at')
+          ..remove('notice_status');
+        values['notice_status'] = 0;
         await txn.insert('notices', values);
       }
     });
@@ -155,7 +179,9 @@ class NoticeHelper {
     var count = 0;
     await db.transaction((txn) async {
       for (final item in items) {
-        final values = item.toMap()..remove('printed_at');
+        final values = item.toMap()
+          ..remove('printed_at')
+          ..remove('notice_status');
         final updated = await txn.update(
           'notices',
           values,
