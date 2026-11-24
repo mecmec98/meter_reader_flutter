@@ -75,11 +75,8 @@ class DisconnectionModel {
     );
   }
 
-  static String? _dateOnly(dynamic value) {
-    if (value == null) return null;
-    final date = value.toString();
-    return date.length > 10 ? date.substring(0, 10) : date;
-  }
+  static String? _stringValue(dynamic value) =>
+      value == null ? null : value.toString();
 
   factory DisconnectionModel.fromMap(Map<String, dynamic> map) {
     return DisconnectionModel(
@@ -91,18 +88,18 @@ class DisconnectionModel {
       brand: (map['BRAND'] ?? map['brand']) as String,
       lrdg: (map['LRDG'] ?? map['lrdg']) as int,
       months: (map['MONTHS'] ?? map['months']) as int,
-      oldest: _dateOnly(map['OLDEST'] ?? map['oldest']),
+      oldest: _stringValue(map['OLDEST'] ?? map['oldest']),
       balance: ((map['BALANCE'] ?? map['balance']) as num).toDouble(),
       others: map['OTHERS'] ?? map['others'] as String?,
       payDate: map['PAYDATE'] ?? map['pay_date'] as String?,
       payAmt: ((map['PAY_AMT'] ?? map['pay_amt']) as num).toDouble(),
       months2: map['MONTHS2'] ?? map['months2'] as int?,
-      oldest1: _dateOnly(map['OLDEST1'] ?? map['oldest1']),
+      oldest1: _stringValue(map['OLDEST1'] ?? map['oldest1']),
       masCode: (map['MASCODE'] ?? map['mas_code']) as int,
       metStat: (map['METSTAT'] ?? map['met_stat']) as String,
       disconReading: (map['DISCONREADING'] ?? map['discon_reading']) as int,
       remarks: (map['REMARKS'] ?? map['remarks']) as String,
-      disconDate: _dateOnly(map['DISCONDATE'] ?? map['discon_date']) ?? '',
+      disconDate: _stringValue(map['DISCONDATE'] ?? map['discon_date']) ?? '',
       optionType: (map['OPTIONTYPE'] ?? map['option_type']) as String,
     );
   }
@@ -130,6 +127,31 @@ class DisconnectionModel {
       'remarks': remarks,
       'discon_date': disconDate,
       'option_type': optionType,
+    };
+  }
+
+  Map<String, dynamic> toJsonMap() {
+    return {
+      'ACCNO': accNo,
+      'NAME': name,
+      'ADDRESS': address,
+      'METNO': metNo,
+      'BRAND': brand,
+      'LRDG': lrdg,
+      'MONTHS': months,
+      'OLDEST': oldest,
+      'BALANCE': balance,
+      'OTHERS': others,
+      'PAYDATE': payDate,
+      'PAY_AMT': payAmt,
+      'MONTHS2': months2,
+      'OLDEST1': oldest1,
+      'MASCODE': masCode,
+      'METSTAT': metStat,
+      'DISCONREADING': disconReading,
+      'REMARKS': remarks,
+      'DISCONDATE': disconDate,
+      'OPTIONTYPE': optionType,
     };
   }
 }

@@ -53,12 +53,16 @@ class _DisconnectionImportState extends State<DisconnectionImport> {
           .toList();
 
       final helper = DisconnectionHelper();
-      final count = await helper.upsertDisconnections(items);
+      final replacementResult = await helper.replaceDisconnections(items);
 
       if (!mounted) return;
       widget.onImported();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported $count disconnection records')),
+        SnackBar(
+          content: Text(
+            'Imported ${replacementResult.count} records. Backup: ${replacementResult.backupPath}',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;

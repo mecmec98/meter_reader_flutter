@@ -12,14 +12,13 @@ class NoticeList extends StatefulWidget {
 }
 
 class _NoticeListState extends State<NoticeList> {
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
 
   List<NoticeModel> _items = [];
-  List<NoticeModel> _filtered = [];
   bool _loading = true;
   String _searchQuery = '';
-  double _totalBalance = 0.0;
+  int _selectedSection = 0;
 
   @override
   void initState() {
@@ -31,18 +30,15 @@ class _NoticeListState extends State<NoticeList> {
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
     final items = await NoticeHelper().getAllNotices();
     if (!mounted) return;
-    final total = items.fold<double>(0.0, (sum, item) => sum + item.balance);
     setState(() {
       _items = items;
-      _filtered = items;
-      _totalBalance = total;
       _loading = false;
     });
   }
@@ -54,17 +50,6 @@ class _NoticeListState extends State<NoticeList> {
   void _filter(String query) {
     setState(() {
       _searchQuery = query;
-      if (query.isEmpty) {
-        _filtered = _items;
-      } else {
-        final q = query.toLowerCase();
-        _filtered = _items.where((item) {
-          return item.name.toLowerCase().contains(q) ||
-              item.accNo.toLowerCase().contains(q) ||
-              item.metNo.toLowerCase().contains(q) ||
-              item.address.toLowerCase().contains(q);
-        }).toList();
-      }
     });
   }
 
@@ -99,13 +84,30 @@ class _NoticeListState extends State<NoticeList> {
             ),
           ),
           const SizedBox(height: 8),
-          Expanded(child: _buildList()),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _selectedSection = index);
+              },
+              children: [
+                _buildList(isNoticed: false),
+                _buildList(isNoticed: true),
+              ],
+            ),
+          ),
         ],
       ),
+      bottomNavigationBar: _buildListNavigation(),
     );
   }
 
   Widget _buildCounter() {
+    final pendingCount =
+        _items.where((item) => item.printedAt == null).length;
+    final noticedCount =
+        _items.where((item) => item.printedAt != null).length;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -120,7 +122,7 @@ class _NoticeListState extends State<NoticeList> {
               size: 18, color: Colors.orange.shade800),
           const SizedBox(width: 10),
           Text(
-            'Notice Count: ${_filtered.length}',
+            'Pending: $pendingCount  •  Noticed: $noticedCount',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -165,14 +167,30 @@ class _NoticeListState extends State<NoticeList> {
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList({required bool isNoticed}) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_filtered.isEmpty) {
+    var items = _items
+        .where((item) => (item.printedAt != null) == isNoticed)
+        .toList();
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.name.toLowerCase().contains(q) ||
+            item.accNo.toLowerCase().contains(q) ||
+            item.metNo.toLowerCase().contains(q) ||
+            item.address.toLowerCase().contains(q);
+      }).toList();
+    }
+    if (items.isEmpty) {
       return Center(
         child: Text(
-          _searchQuery.isEmpty ? 'No notice records' : 'No matches found',
+          _searchQuery.isEmpty
+              ? (isNoticed
+                  ? 'No noticed records'
+                  : 'No pending notice records')
+              : 'No matches found',
           style: const TextStyle(color: Colors.black45, fontSize: 14),
         ),
       );
@@ -180,11 +198,10 @@ class _NoticeListState extends State<NoticeList> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        controller: _scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filtered.length,
+        itemCount: items.length,
         itemBuilder: (context, index) {
-          final item = _filtered[index];
+          final item = items[index];
           final tileColor = index % 2 == 0
               ? Colors.white
               : const Color.fromARGB(255, 255, 249, 239);
@@ -208,65 +225,119 @@ class _NoticeListState extends State<NoticeList> {
                 side: BorderSide(color: Colors.black.withOpacity(0.08)),
               ),
               child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '₱${item.balance.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade800,
-                          ),
-                        ),
-                      ),
-                      if (item.printedAt != null) ...[
-                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Icon(Icons.check,
-                              size: 14, color: Color(0xFF2E7D32)),
+                          child: Text(
+                            '₱${item.balance.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
                         ),
+                        if (item.printedAt != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(Icons.check,
+                                size: 14, color: Color(0xFF2E7D32)),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(item.accNo,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  const SizedBox(height: 4),
-                  Text(item.address,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
-                ],
-              ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(item.accNo,
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600)),
+                    const SizedBox(height: 4),
+                    Text(item.address,
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey.shade800)),
+                  ],
+                ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildListNavigation() {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF7),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: BottomNavigationBar(
+          currentIndex: _selectedSection,
+          onTap: (index) {
+            setState(() => _selectedSection = index);
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+            );
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.orange.shade800,
+          unselectedItemColor: const Color(0xFF8A8178),
+          selectedLabelStyle:
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule_outlined),
+              activeIcon: Icon(Icons.schedule),
+              label: 'Pending',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_circle_outline),
+              activeIcon: Icon(Icons.check_circle),
+              label: 'Noticed',
+            ),
+          ],
+        ),
       ),
     );
   }

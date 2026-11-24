@@ -1,9 +1,20 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meter_reader_flutter/models/notice_model.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+class NoticeReplacementResult {
+  final int count;
+  final String backupPath;
+
+  const NoticeReplacementResult({
+    required this.count,
+    required this.backupPath,
+  });
+}
 
 class NoticeHelper {
   static final NoticeHelper _instance = NoticeHelper._internal();
@@ -55,7 +66,8 @@ class NoticeHelper {
             printed_at TEXT
           )
         ''');
-        await db.execute('CREATE UNIQUE INDEX idx_notice_acc_no ON notices(acc_no)');
+        await db.execute(
+            'CREATE UNIQUE INDEX idx_notice_acc_no ON notices(acc_no)');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -98,6 +110,44 @@ class NoticeHelper {
     final db = await database;
     final rows = await db.query('notices', orderBy: 'name ASC');
     return rows.map((row) => NoticeModel.fromMap(row)).toList();
+  }
+
+  Future<NoticeReplacementResult> replaceNotices(
+    List<NoticeModel> items,
+  ) async {
+    final backupPath = await createBackup();
+    final db = await database;
+
+    await db.transaction((txn) async {
+      await txn.delete('notices');
+      for (final item in items) {
+        final values = item.toMap()..remove('printed_at');
+        await txn.insert('notices', values);
+      }
+    });
+
+    return NoticeReplacementResult(
+      count: items.length,
+      backupPath: backupPath,
+    );
+  }
+
+  Future<String> createBackup() async {
+    final items = await getAllNotices();
+    final now = DateTime.now();
+    final date =
+        '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
+    final fileName = 'notice-data-$date.json';
+    final downloadsDirectory = Directory('/storage/emulated/0/Download');
+
+    await downloadsDirectory.create(recursive: true);
+    final file = File(join(downloadsDirectory.path, fileName));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(
+        items.map((item) => item.toMap()).toList(),
+      ),
+    );
+    return file.path;
   }
 
   Future<int> upsertNotices(List<NoticeModel> items) async {

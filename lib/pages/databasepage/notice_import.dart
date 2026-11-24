@@ -50,12 +50,16 @@ class _NoticeImportState extends State<NoticeImport> {
           .map((map) => NoticeModel.fromMap(map as Map<String, dynamic>))
           .toList();
 
-      final count = await NoticeHelper().upsertNotices(items);
+      final replacementResult = await NoticeHelper().replaceNotices(items);
 
       if (!mounted) return;
       widget.onImported();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported $count notice records')),
+        SnackBar(
+          content: Text(
+            'Imported ${replacementResult.count} records. Backup: ${replacementResult.backupPath}',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;

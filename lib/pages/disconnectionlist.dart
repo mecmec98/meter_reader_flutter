@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:meter_reader_flutter/models/disconnection_model.dart';
@@ -14,14 +12,13 @@ class DisconnectionList extends StatefulWidget {
 }
 
 class _DisconnectionListState extends State<DisconnectionList> {
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
 
   List<DisconnectionModel> _items = [];
-  List<DisconnectionModel> _filtered = [];
   bool _loading = true;
   String _searchQuery = '';
-  double _totalBalance = 0.0;
+  int _selectedSection = 0;
 
   @override
   void initState() {
@@ -33,20 +30,18 @@ class _DisconnectionListState extends State<DisconnectionList> {
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
     final items = await DisconnectionHelper().getAllDisconnections();
     if (!mounted) return;
-    final total = items.fold<double>(0.0, (sum, item) => sum + item.balance);
     setState(() {
       _items = items;
-      _filtered = items;
-      _totalBalance = total;
       _loading = false;
     });
+    _filter(_searchQuery);
   }
 
   void _onSearchChanged() {
@@ -57,17 +52,6 @@ class _DisconnectionListState extends State<DisconnectionList> {
   void _filter(String query) {
     setState(() {
       _searchQuery = query;
-      if (query.isEmpty) {
-        _filtered = _items;
-      } else {
-        final q = query.toLowerCase();
-        _filtered = _items.where((item) {
-          return item.name.toLowerCase().contains(q) ||
-              item.accNo.toLowerCase().contains(q) ||
-              item.metNo.toLowerCase().contains(q) ||
-              item.address.toLowerCase().contains(q);
-        }).toList();
-      }
     });
   }
 
@@ -102,13 +86,30 @@ class _DisconnectionListState extends State<DisconnectionList> {
             ),
           ),
           const SizedBox(height: 8),
-          Expanded(child: _buildList()),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _selectedSection = index);
+                _filter(_searchQuery);
+              },
+              children: [
+                _buildList(isDisconnected: false),
+                _buildList(isDisconnected: true),
+              ],
+            ),
+          ),
         ],
       ),
+      bottomNavigationBar: _buildListNavigation(),
     );
   }
 
   Widget _buildCounter() {
+    final pendingCount = _items.where((item) => item.disconReading == 0).length;
+    final disconnectedCount =
+        _items.where((item) => item.disconReading != 0).length;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -123,7 +124,7 @@ class _DisconnectionListState extends State<DisconnectionList> {
               size: 18, color: Colors.red.shade700),
           const SizedBox(width: 10),
           Text(
-            'Disconnecion Count: ${_filtered.length}',
+            'Pending: $pendingCount  •  Disconnected: $disconnectedCount',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -167,15 +168,29 @@ class _DisconnectionListState extends State<DisconnectionList> {
     );
   }
 
-  Widget _buildList() {
+  Widget _buildList({required bool isDisconnected}) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_filtered.isEmpty) {
+    var items = _items
+        .where((item) => (item.disconReading != 0) == isDisconnected)
+        .toList();
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.name.toLowerCase().contains(q) ||
+            item.accNo.toLowerCase().contains(q) ||
+            item.metNo.toLowerCase().contains(q) ||
+            item.address.toLowerCase().contains(q);
+      }).toList();
+    }
+    if (items.isEmpty) {
       return Center(
         child: Text(
           _searchQuery.isEmpty
-              ? 'No disconnection records'
+              ? (isDisconnected
+                  ? 'No disconnected records'
+                  : 'No pending disconnection records')
               : 'No matches found',
           style: const TextStyle(color: Colors.black45, fontSize: 14),
         ),
@@ -184,23 +199,26 @@ class _DisconnectionListState extends State<DisconnectionList> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        controller: _scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filtered.length,
+        itemCount: items.length,
         itemBuilder: (context, index) {
-          final item = _filtered[index];
+          final item = items[index];
+          final disconnected = item.disconReading != 0;
           final tileColor = index % 2 == 0
               ? Colors.white
-              : const Color.fromARGB(255, 255, 243, 243);
+              : disconnected
+                  ? const Color.fromARGB(255, 255, 232, 232)
+                  : const Color.fromARGB(255, 255, 243, 243);
           return InkWell(
             borderRadius: BorderRadius.circular(10),
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DisconnectionDetailsPage(item: item),
                 ),
               );
+              if (mounted) await _loadData();
             },
             child: Card(
               color: tileColor,
@@ -231,7 +249,9 @@ class _DisconnectionListState extends State<DisconnectionList> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.08),
+                            color: disconnected
+                                ? Colors.red
+                                : Colors.red.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -239,7 +259,9 @@ class _DisconnectionListState extends State<DisconnectionList> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.red.shade700,
+                              color: disconnected
+                                  ? Colors.white
+                                  : Colors.red.shade700,
                             ),
                           ),
                         ),
@@ -267,6 +289,58 @@ class _DisconnectionListState extends State<DisconnectionList> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildListNavigation() {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF7),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: BottomNavigationBar(
+          currentIndex: _selectedSection,
+          onTap: (index) {
+            setState(() => _selectedSection = index);
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+            );
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.red.shade700,
+          unselectedItemColor: const Color(0xFF8A8178),
+          selectedLabelStyle:
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule_outlined),
+              activeIcon: Icon(Icons.schedule),
+              label: 'Pending',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_circle_outline),
+              activeIcon: Icon(Icons.check_circle),
+              label: 'Disconnected',
+            ),
+          ],
+        ),
       ),
     );
   }
