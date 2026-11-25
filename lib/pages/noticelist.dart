@@ -91,8 +91,18 @@ class _NoticeListState extends State<NoticeList> {
                 setState(() => _selectedSection = index);
               },
               children: [
-                _buildList(isNoticed: false),
-                _buildList(isNoticed: true),
+                _buildList(
+                  noticeStatus: NoticeModel.noticeStatusPending,
+                  emptyMessage: 'No pending notice records',
+                ),
+                _buildList(
+                  noticeStatus: NoticeModel.noticeStatusPrinted,
+                  emptyMessage: 'No saved notices awaiting photo proof',
+                ),
+                _buildList(
+                  noticeStatus: NoticeModel.noticeStatusPrintedWithPhoto,
+                  emptyMessage: 'No confirmed notices',
+                ),
               ],
             ),
           ),
@@ -103,8 +113,22 @@ class _NoticeListState extends State<NoticeList> {
   }
 
   Widget _buildCounter() {
-    final pendingCount = _items.where((item) => item.noticeStatus == 0).length;
-    final noticedCount = _items.where((item) => item.noticeStatus > 0).length;
+    final pendingCount = _items
+        .where(
+          (item) => item.noticeStatus == NoticeModel.noticeStatusPending,
+        )
+        .length;
+    final savedCount = _items
+        .where(
+          (item) => item.noticeStatus == NoticeModel.noticeStatusPrinted,
+        )
+        .length;
+    final confirmedCount = _items
+        .where(
+          (item) =>
+              item.noticeStatus == NoticeModel.noticeStatusPrintedWithPhoto,
+        )
+        .length;
 
     return Container(
       width: double.infinity,
@@ -119,16 +143,28 @@ class _NoticeListState extends State<NoticeList> {
           Icon(Icons.notifications_active_outlined,
               size: 18, color: Colors.orange.shade800),
           const SizedBox(width: 10),
-          Text(
-            'Pending: $pendingCount  •  Noticed: $noticedCount',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.orange.shade800,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatusCount('Pending', pendingCount),
+                _buildStatusCount('Saved', savedCount),
+                _buildStatusCount('Confirmed', confirmedCount),
+              ],
             ),
           ),
-          const Spacer(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCount(String label, int count) {
+    return Text(
+      '$label: $count',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.orange.shade800,
       ),
     );
   }
@@ -165,12 +201,15 @@ class _NoticeListState extends State<NoticeList> {
     );
   }
 
-  Widget _buildList({required bool isNoticed}) {
+  Widget _buildList({
+    required int noticeStatus,
+    required String emptyMessage,
+  }) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
     var items =
-        _items.where((item) => (item.noticeStatus > 0) == isNoticed).toList();
+        _items.where((item) => item.noticeStatus == noticeStatus).toList();
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       items = items.where((item) {
@@ -183,9 +222,7 @@ class _NoticeListState extends State<NoticeList> {
     if (items.isEmpty) {
       return Center(
         child: Text(
-          _searchQuery.isEmpty
-              ? (isNoticed ? 'No noticed records' : 'No pending notice records')
-              : 'No matches found',
+          _searchQuery.isEmpty ? emptyMessage : 'No matches found',
           style: const TextStyle(color: Colors.black45, fontSize: 14),
         ),
       );
@@ -252,7 +289,10 @@ class _NoticeListState extends State<NoticeList> {
                             ),
                           ),
                         ),
-                        if (item.noticeStatus > 0) ...[
+                        if (item.noticeStatus ==
+                                NoticeModel.noticeStatusPrinted ||
+                            item.noticeStatus ==
+                                NoticeModel.noticeStatusPrintedWithPhoto) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -261,8 +301,17 @@ class _NoticeListState extends State<NoticeList> {
                               color: const Color(0xFFE8F5E9),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Icon(Icons.check,
-                                size: 14, color: Color(0xFF2E7D32)),
+                            child: Icon(
+                              item.noticeStatus ==
+                                      NoticeModel.noticeStatusPrintedWithPhoto
+                                  ? Icons.verified_outlined
+                                  : Icons.print_outlined,
+                              size: 14,
+                              color: item.noticeStatus ==
+                                      NoticeModel.noticeStatusPrintedWithPhoto
+                                  ? const Color(0xFF2E7D32)
+                                  : Colors.orange.shade800,
+                            ),
                           ),
                         ],
                       ],
@@ -327,9 +376,14 @@ class _NoticeListState extends State<NoticeList> {
               label: 'Pending',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.check_circle_outline),
-              activeIcon: Icon(Icons.check_circle),
-              label: 'Noticed',
+              icon: Icon(Icons.print_outlined),
+              activeIcon: Icon(Icons.print),
+              label: 'Saved',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.verified_outlined),
+              activeIcon: Icon(Icons.verified),
+              label: 'Confirmed',
             ),
           ],
         ),

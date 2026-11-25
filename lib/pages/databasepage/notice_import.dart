@@ -24,6 +24,7 @@ class NoticeImport extends StatefulWidget {
 
 class _NoticeImportState extends State<NoticeImport> {
   bool _loading = false;
+  bool _exportLoading = false;
   String? _error;
 
   Future<void> _importNotice() async {
@@ -72,6 +73,29 @@ class _NoticeImportState extends State<NoticeImport> {
     }
   }
 
+  Future<void> _exportNotices() async {
+    setState(() {
+      _exportLoading = true;
+      _error = null;
+    });
+
+    try {
+      final path = await NoticeHelper().exportNotices();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported notice list to $path')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export notice list: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _exportLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -115,30 +139,28 @@ class _NoticeImportState extends State<NoticeImport> {
           const Divider(height: 1, thickness: 0.5),
           Padding(
             padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _loading ? null : _importNotice,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF444441),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _NoticeTransferButton(
+                    label: 'Import JSON',
+                    icon: Icons.upload_outlined,
+                    loading: _loading,
+                    onPressed: _importNotice,
+                    filled: true,
+                  ),
                 ),
-                icon: _loading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.upload_outlined, size: 16),
-                label: Text(_loading ? 'Importing...' : 'Import JSON',
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500)),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _NoticeTransferButton(
+                    label: 'Export JSON',
+                    icon: Icons.download_outlined,
+                    loading: _exportLoading,
+                    onPressed: _exportNotices,
+                    filled: false,
+                  ),
+                ),
+              ],
             ),
           ),
           if (widget.imported)
@@ -158,6 +180,46 @@ class _NoticeImportState extends State<NoticeImport> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _NoticeTransferButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool loading;
+  final VoidCallback onPressed;
+  final bool filled;
+
+  const _NoticeTransferButton({
+    required this.label,
+    required this.icon,
+    required this.loading,
+    required this.onPressed,
+    required this.filled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: loading ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        backgroundColor: filled ? const Color(0xFF444441) : Colors.white,
+        foregroundColor: filled ? Colors.white : const Color(0xFF444441),
+        side: BorderSide(
+          color: filled ? const Color(0xFF444441) : Colors.black26,
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      icon: loading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(icon, size: 16),
+      label: Text(loading ? '${label.split(' ').first}ing...' : label),
     );
   }
 }

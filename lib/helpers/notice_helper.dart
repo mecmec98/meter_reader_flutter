@@ -38,7 +38,7 @@ class NoticeHelper {
     final path = await getDatabasePath();
     return openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notices (
@@ -79,6 +79,22 @@ class NoticeHelper {
             'ALTER TABLE notices ADD COLUMN notice_status INTEGER NOT NULL DEFAULT 0',
           );
         }
+        if (oldVersion < 4) {
+          await db.execute('''
+            UPDATE notices
+            SET notice_status = 0
+            WHERE notice_status = ${NoticeModel.noticeStatusPrintedWithPhoto}
+              AND printed_at IS NULL
+          ''');
+        }
+        if (oldVersion < 5) {
+          await db.execute('''
+            UPDATE notices
+            SET notice_status = ${NoticeModel.noticeStatusPrinted}
+            WHERE notice_status = ${NoticeModel.noticeStatusPrintedWithPhoto}
+              AND printed_at IS NOT NULL
+          ''');
+        }
       },
     );
   }
@@ -107,23 +123,29 @@ class NoticeHelper {
     return db.rawUpdate(
       '''
       UPDATE notices
-      SET printed_at = ?, notice_status = CASE
-        WHEN notice_status = 2 THEN 2
-        ELSE 1
-      END
+      SET printed_at = ?, notice_status = ?
       WHERE acc_no = ?
       ''',
-      [DateTime.now().toIso8601String(), accNo],
+      [
+        DateTime.now().toIso8601String(),
+        NoticeModel.noticeStatusPrinted,
+        accNo,
+      ],
     );
   }
 
   Future<int> markNoticePhotoEvidence(String accNo) async {
     final db = await database;
-    return db.update(
-      'notices',
-      {'notice_status': 2},
-      where: 'acc_no = ?',
-      whereArgs: [accNo],
+    return db.rawUpdate(
+      '''
+      UPDATE notices
+      SET notice_status = CASE
+        WHEN printed_at IS NOT NULL THEN ?
+        ELSE notice_status
+      END
+      WHERE acc_no = ?
+      ''',
+      [NoticeModel.noticeStatusPrintedWithPhoto, accNo],
     );
   }
 
@@ -131,6 +153,21 @@ class NoticeHelper {
     final db = await database;
     final rows = await db.query('notices', orderBy: 'name ASC');
     return rows.map((row) => NoticeModel.fromMap(row)).toList();
+  }
+
+  Future<String> exportNotices() async {
+    final items = await getAllNotices();
+    const fileName = 'NOTICE_ACCOUNTS.json';
+    final downloadsDirectory = Directory('/storage/emulated/0/Download');
+
+    await downloadsDirectory.create(recursive: true);
+    final file = File(join(downloadsDirectory.path, fileName));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(
+        items.map((item) => item.toJsonMap()).toList(),
+      ),
+    );
+    return file.path;
   }
 
   Future<NoticeReplacementResult> replaceNotices(

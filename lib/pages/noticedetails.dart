@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:meter_reader_flutter/helpers/appsettings_helper.dart';
 import 'package:meter_reader_flutter/helpers/blueprinter_helper.dart';
 import 'package:meter_reader_flutter/helpers/camera_helper.dart';
 import 'package:meter_reader_flutter/helpers/notice_helper.dart';
@@ -34,6 +35,9 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
   late String _meterStatus;
   late NoticeModel _editedItem;
   CapturedPhoto? _capturedPhoto;
+  bool _photoLoading = true;
+  bool _photoLoadError = false;
+  final CameraHelper _cameraHelper = CameraHelper();
 
   @override
   void initState() {
@@ -45,6 +49,7 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
     _meterStatus = _meterStatuses.contains(widget.item.metStat)
         ? widget.item.metStat
         : 'N/A';
+    _loadSavedPhoto();
   }
 
   @override
@@ -98,12 +103,9 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                   ),
                 _buildDetailRow(
                   'Notice Status',
-                  _editedItem.noticeStatus == 2
-                      ? 'Printed with photo evidence'
-                      : _editedItem.noticeStatus == 1
-                          ? 'Printed'
-                          : 'Pending',
-                  valueColor: _editedItem.noticeStatus > 0
+                  _noticeStatusLabel,
+                  valueColor: _editedItem.noticeStatus ==
+                          NoticeModel.noticeStatusPrintedWithPhoto
                       ? const Color(0xFF2E7D32)
                       : Colors.orange.shade800,
                 ),
@@ -117,9 +119,11 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _takeTestPhoto,
-                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                        label: const Text('Take Photo'),
+                        onPressed: _photoLoading || _photoLoadError
+                            ? null
+                            : () => _printNotice(context),
+                        icon: const Icon(Icons.print_outlined, size: 18),
+                        label: const Text('Print Notice'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.orange.shade800,
                           side: BorderSide(color: Colors.orange.shade800),
@@ -133,9 +137,12 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _printNotice(context),
-                        icon: const Icon(Icons.print_outlined, size: 18),
-                        label: const Text('Print Notice'),
+                        onPressed:
+                            _photoLoading || _editedItem.printedAt == null
+                                ? null
+                                : _takePhotoProof,
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                        label: const Text('Take Photo Proof'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.orange.shade800,
                           side: BorderSide(color: Colors.orange.shade800),
@@ -149,7 +156,12 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (_capturedPhoto != null) ...[
+                if (_photoLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (!_photoLoading && _capturedPhoto != null) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.file(
@@ -300,9 +312,54 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
 
   String _formatAmount(double amount) => '₱${amount.toStringAsFixed(2)}';
 
-  Future<void> _takeTestPhoto() async {
+  String get _noticeStatusLabel {
+    switch (_editedItem.noticeStatus) {
+      case NoticeModel.noticeStatusPrintedWithPhoto:
+        return 'Printed with photo confirmation';
+      case NoticeModel.noticeStatusPrinted:
+        return 'Printed - photo confirmation pending';
+      default:
+        return 'Pending';
+    }
+  }
+
+  Future<void> _loadSavedPhoto() async {
     try {
-      final photo = await CameraHelper().takePhoto(
+      final photos = await _cameraHelper.getPhotos(
+        accountNo: _editedItem.accNo,
+        category: 'notices',
+      );
+      if (!mounted) return;
+      setState(() {
+        _capturedPhoto = _editedItem.noticeStatus ==
+                    NoticeModel.noticeStatusPrintedWithPhoto &&
+                photos.isNotEmpty
+            ? photos.first
+            : null;
+        _photoLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _photoLoading = false;
+        _photoLoadError = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to load saved photo: $error')),
+      );
+    }
+  }
+
+  Future<void> _takePhotoProof() async {
+    if (_editedItem.printedAt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Print the notice before taking proof.')),
+      );
+      return;
+    }
+
+    try {
+      final photo = await _cameraHelper.takePhoto(
         accountNo: _editedItem.accNo,
         category: 'notices',
       );
@@ -310,9 +367,15 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
       if (photo == null) return;
 
       await NoticeHelper().markNoticePhotoEvidence(_editedItem.accNo);
+      if (!mounted) return;
       setState(() {
         _capturedPhoto = photo;
-        _editedItem = _editedItem.copyWith(noticeStatus: 2);
+        _photoLoadError = false;
+        _editedItem = _editedItem.copyWith(
+          noticeStatus: _editedItem.printedAt == null
+              ? _editedItem.noticeStatus
+              : NoticeModel.noticeStatusPrintedWithPhoto,
+        );
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Photo saved: ${photo.fileName}')),
@@ -339,17 +402,38 @@ class _NoticeDetailsPageState extends State<NoticeDetailsPage> {
       _updateEditedItem();
       await NoticeHelper().updateNoticeDetails(_editedItem);
       if (!context.mounted) return;
-      await context
-          .read<BluePrinterHelper>()
-          .printDisconnection(_asDisconnection(_editedItem));
-      await NoticeHelper().markNoticePrinted(_editedItem.accNo);
-      _editedItem = _editedItem.copyWith(
-        printedAt: DateTime.now().toIso8601String(),
-        noticeStatus: _editedItem.noticeStatus == 2 ? 2 : 1,
+      final printer = context.read<BluePrinterHelper>();
+      final assignedPerson = await AppSettingsHelper().getAssignedPerson();
+      if (!context.mounted) return;
+      if (assignedPerson.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Set the assigned person in Database settings before printing.',
+            ),
+          ),
+        );
+        return;
+      }
+      await printer.printDisconnection(
+        _asDisconnection(_editedItem),
+        assignedPerson: assignedPerson,
       );
+      await NoticeHelper().markNoticePrinted(_editedItem.accNo);
+      if (mounted) {
+        setState(() {
+          _capturedPhoto = null;
+          _editedItem = _editedItem.copyWith(
+            printedAt: DateTime.now().toIso8601String(),
+            noticeStatus: NoticeModel.noticeStatusPrinted,
+          );
+        });
+      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Details saved and notice printed')),
+          const SnackBar(
+            content: Text('Notice printed. Take a photo to confirm delivery.'),
+          ),
         );
       }
     } catch (error) {

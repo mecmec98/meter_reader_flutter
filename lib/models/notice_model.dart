@@ -1,4 +1,8 @@
 class NoticeModel {
+  static const noticeStatusPending = 0;
+  static const noticeStatusPrinted = 1;
+  static const noticeStatusPrintedWithPhoto = 2;
+
   final int? id;
   final String accNo;
   final String name;
@@ -142,6 +146,31 @@ class NoticeModel {
       'option_type': optionType,
       'printed_at': printedAt,
       'notice_status': noticeStatus,
+    };
+  }
+
+  Map<String, dynamic> toJsonMap() {
+    return {
+      'ACCNO': accNo,
+      'NAME': name,
+      'ADDRESS': address,
+      'METNO': metNo,
+      'BRAND': brand,
+      'LRDG': lrdg,
+      'MONTHS': months,
+      'OLDEST': oldest,
+      'BALANCE': balance,
+      'OTHERS': others,
+      'PAYDATE': payDate,
+      'PAY_AMT': payAmt,
+      'MONTHS2': months2,
+      'OLDEST1': oldest1,
+      'MASCODE': masCode,
+      'METSTAT': metStat,
+      'DISCONREADING': disconReading,
+      'REMARKS': remarks,
+      'DISCONDATE': disconDate,
+      'OPTIONTYPE': optionType,
     };
   }
 }

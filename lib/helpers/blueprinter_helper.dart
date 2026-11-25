@@ -197,7 +197,10 @@ class BluePrinterHelper extends ChangeNotifier {
   }
 
 //Disconnection Print
-  Future<void> printDisconnection(DisconnectionModel item) async {
+  Future<void> printDisconnection(
+    DisconnectionModel item, {
+    String? assignedPerson,
+  }) async {
     if (selectedDevice == null) {
       connectionStatus = 'No device selected';
       notifyListeners();
@@ -254,8 +257,12 @@ class BluePrinterHelper extends ChangeNotifier {
         ),
       );
       bytes += generator.hr();
+      if (assignedPerson != null && assignedPerson.trim().isNotEmpty) {
+        bytes += generator.text('Plumber: ${assignedPerson.trim()}');
+      }
       bytes += generator.text(
           'Printed: ${DateFormat('MM/dd/yyyy HH:mm').format(DateTime.now())}');
+
       bytes += generator.text('Account No.: ${item.accNo}');
       bytes +=
           generator.text('Name: ${item.name}', styles: PosStyles(bold: true));
@@ -289,6 +296,16 @@ class BluePrinterHelper extends ChangeNotifier {
         styles: PosStyles(align: PosAlign.center),
       );
       bytes += generator.feed(2);
+      bytes += generator.text(
+        '------------------------',
+        styles: PosStyles(align: PosAlign.center),
+      );
+      bytes += generator.text(
+        'Received by:',
+        styles: PosStyles(align: PosAlign.center),
+      );
+
+      bytes += generator.feed(1);
       bytes += generator.cut();
 
       await bluetooth.writeBytes(Uint8List.fromList(bytes));
@@ -824,10 +841,7 @@ class BluePrinterHelper extends ChangeNotifier {
       bytes += generator.text(receiptMessage3,
           styles: PosStyles(align: PosAlign.center));
 
-          
-      bytes += generator.text(
-          '-',
-          styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text('-', styles: PosStyles(align: PosAlign.center));
       bytes += generator.text(
           'This Document is not valid for  claim of input tax',
           styles: PosStyles(align: PosAlign.center));
